@@ -1,0 +1,277 @@
+/* 1. БАЗОВЫЕ НАСТРОЙКИ (RESET) */
+
+/* Цветовая палитра игры */
+:root {
+	--bg1: #071c51;
+	--bg2: #430127;
+	--card: rgba(255, 255, 255, 0.05);
+	--accent: #f9f0f0;
+	--accent2: #7ccdce;
+	--gold: #ffcc00;
+	--text: #ffffff;
+	--muted: #b0b9d1;
+	--glass: rgba(255,255,255,0.03);
+	--radius: 16px;
+	--shadow: 0 10px 30px rgba(2,6,23,0.6);
+}
+
+body {
+	margin: 0;
+	padding: 0;
+	background: linear-gradient(135deg, var(--bg1), var(--bg2));
+	color: var(--text);
+	font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+ /*Шрифт*/
+	user-select: none;
+ /*Не выделять синий экран*/
+	-webkit-user-select: none;
+	overflow: hidden;
+ /*Убирает полосы прокрутки*/
+	height: 100vh;
+	width: 100vw;
+}
+
+/* 2. ЭКРАН */
+
+.menu {
+	display: flex;
+	width: 100%;
+	height: 100%;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	padding: 20px;
+	box-sizing: border-box;
+}
+
+/* 3. КАРТОЧКА МЕНЮ */
+.menu-card {
+	background: var(--card);
+	backdrop-filter: blur(10px);
+ /* Эффект размытия фона под стеклом */
+	-webkit-backdrop-filter: blur(10px);
+	border: 1px solid var(--glass);
+ /* Тонкая стеклянная рамка */
+	border-radius: var(--radius);
+	padding: 40px;
+	text-align: center;
+	width: 100%;
+	max-width: 360px;
+	box-shadow: var(--shadow);
+}
+
+.menu-title {
+	font-size: 36px;
+	margin: 0;
+    /* Текстовый градиент (неоновый эффект) */
+	background: linear-gradient(90deg, var(--accent), var(--accent2));
+    /* Сначала пишем стандартный вариант */
+	background-clip: text;
+    /* Затем вариант для Chrome/Safari */
+	-webkit-background-clip: text;
+    /* И обязательно цвет текста прозрачный, чтобы увидеть градиент */
+	-webkit-text-fill-color: transparent;
+	-webkit-text-fill-color: transparent;
+	text-transform: uppercase;
+	font-weight: 900;
+}
+
+/*Фраза кликай,улучшай*/
+.menu-sub {
+	color: var(--muted);
+	margin-bottom: 20px;
+}
+
+/*Разделение нижних кнопок от: начать игру*/
+.menu-content {
+	margin-bottom: 5px;
+	width: 100%;
+	display: flex;
+	justify-content: center;
+}
+
+.menu-extra {
+	display: flex;
+	justify-content: space-between;
+	gap: 10px;
+}
+
+.menu-btn {
+	cursor: pointer;
+}
+
+.menu-btn:disabled {
+	cursor: not-allowed;
+}
+
+/*Главная кнопка*/
+.primary-btn {
+	background: linear-gradient(90deg,var(--accent),var(--accent2));
+	border: none;
+	color: #1b1b1b;
+	padding: 12px 18px;
+	border-radius: 14px;
+	font-weight: 800;
+	box-shadow: 0 10px 24px rgba(255,100,140,0.08);
+}
+
+/*Второстепенная кнопка*/
+.secondary-btn {
+	margin-top: 10px;
+	width: 48%;
+	padding: 10px;
+	border-radius: 12px;
+	border: 1px solid rgba(255, 255, 255, 0.06);
+	background: transparent;
+	color: var(--muted);
+}
+
+
+/* Внутренний игровой экран*/
+
+/* Контейнер игрового экрана (мы используем ID для точности) */
+#game {
+	display: flex;
+ /* Скрыт по умолчанию */
+	flex-direction: column;
+	justify-content: space-between;
+ /* Распределяет header, main и aside по высоте */
+	align-items: center;
+	padding: 40px 20px;
+}
+
+#game.active {
+	display: flex;
+ /* Показывается, когда JS добавит класс active */;
+}
+
+/* ВЕРХНЯЯ ЧАСТЬ: Статистика и деньги */
+#game header {
+	width: 100%;
+	max-width: 500px;
+	background: var(--card);
+	backdrop-filter: blur(10px);
+	border: 1px solid var(--glass);
+	border-radius: var(--radius);
+	padding: 15px 25px;
+	display: flex;
+	justify-content: space-around;
+	box-shadow: var(--shadow);
+	color: var(--text);
+	font-size: 20px;
+}
+
+/* ЦЕНТРАЛЬНАЯ ЧАСТЬ: Зона кликера */
+#game main {
+	flex-grow: 1;
+ /* Занимает все свободное место в центре */
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	width: 100%;
+}
+
+#click-object {
+	font-size: 125px;
+ /* Размер нашего робота или объекта клика */
+	cursor: pointer;
+	filter: drop-shadow(0 0 30px var(--accent));
+	transition: transform 0.05s ease-in-out;
+	user-select: none;
+}
+
+/* НИЖНЯЯ ЧАСТЬ: Прогресс и кнопки */
+#back-menu-btn {
+    /* 1. Делаем кнопку прозрачной ("стеклянной") */
+	background: var(--glass);
+	color: var(--muted);
+    /* 2. Тонкая рамка в цвет акцента, но тусклее */
+	border: 1px solid rgba(5, 90, 96, 0.3);
+	padding: 12px 24px;
+	font-size: 14px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 1px;
+	border-radius: var(--radius);
+	cursor: pointer;
+	transition: all 0.3s ease;
+    /* Убираем стандартную ширину 100%, если она не нужна во весь экран */
+	width: auto;
+	min-width: 120px;
+}
+
+/* [data-lang] {
+	/* color: red !important; }
+
+
+/*Кнопка об игре*/
+.about-modal {
+    display: flex; /* Прячем по умолчанию */
+    /* position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%; */
+    background: radial-gradient(circle at center, var(--bg2), var(--bg1));
+	backdrop-filter: blur(5px);
+    z-index: 100;
+	 justify-content: center;
+    align-items: center;
+    padding: 40px 20px;
+    flex-direction: column;
+    align-items: center;
+}
+
+.hidden {
+	display: none !important;
+}
+
+
+.menu-title {
+    text-align: center; 
+    color: #00d4ff; /* Твой старый цвет из кода */
+    text-shadow: 0 0 10px rgba(0,212,255,0.5); 
+    margin-bottom: 15px;
+}
+
+/* Блок с описанием (бывший .about-story) */
+.wait {
+    background: rgba(255, 255, 255, 0.05); /* Легкий фон */
+    padding: 15px;
+    border-radius: 10px;
+    border-left: 4px solid #ffcc00; /* Та самая желтая полоска */
+    margin-bottom: 20px;
+    font-style: italic;
+    color: #e0e0e0;
+    text-align: left; /* Текст слева, как ты и хотел */
+}
+
+/* Список особенностей */
+.about-list {
+    list-style: none;
+    padding: 0;
+    margin-top: 10px;
+}
+
+.about-wait li {
+    margin-bottom: 8px;
+    font-style: normal; /* Убираем курсив для списка */
+    font-size: 0.95em;
+}
+
+/* Футер окна (подвал) */
+.about-footer {
+    margin-top: 20px;
+    text-align: center;
+    border-top: 1px solid #444; /* Линия разделения */
+    padding-top: 15px;
+    color: #888;
+    font-size: 0.9em;
+}
+
+.about-go p:last-child {
+    color: #ffcc00; /* Акцент на слове ПОЕХАЛИ */
+    font-weight: bold;
+    margin-bottom: 15px;
+}

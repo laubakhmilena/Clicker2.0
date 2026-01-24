@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width,initial-scale=1" />
+	<title>Robo Clicker</title>
+	<link rel="stylesheet" href="Style.css" /> </head>
+
+<body>
+
+	<!-- Об игре-->
+	<section id="show-about-modal" class="menu about-modal hidden">
+		<header class="about-title">
+			<div class="menu-title">
+				<p data-lang="gamename">Robo Clicker<span data-lang="about-title">— это космическое приключение!</span></p>
+				<p data-lang="inginer">Ты — главный инженер секретной лаборатории будущего!</p>
+			</div>
+		</header>
+		<main class="about-wait">
+			<div class="wait">
+				<p data-lang="">Что тебя ждёт:</p>
+				<ul class="about-list">
+					<li data-lang="klik">✨Кликай: Зарабатывай золото своими руками!</li>
+					<li data-lang="Upgrade">⚙️Прокачивай: Увеличивай силу клика и покупай автоматических роботов.</li>
+					<li data-lang="Skin">🎭Скины: Открывай новых уникальных героев за достижения.</li>
+					<li data-lang="Level">🏆Уровни: Докажи, что ты лучший, повышая свой уровень инженера.</li>
+				</ul>
+			</div>
+		</main>
+		<aside class="about-footer">
+			<div class="about-go">
+				<p data-lang="young">Создано специально для юных изобретателей!</p>
+				<p data-lang="Go">ПОЕХАЛИ!</p>
+			</div>
+		</aside>
+		<button id="close-about" class="secondary-btn">Закрыть</button>
+	</section>
+	
+	<!-- Главное меню-->
+	<section id="menu" class="menu">
+		<div class="menu-card">
+			<header>
+				<h1 class="menu-title" data-lang="gamename">Robo Clicker</h1>
+				<p class="menu-sub" data-lang="welcome">Кликай, улучшай и собирай скины!</p>
+			</header>
+			<main class="menu-content">
+				<button id="start-btn" class="menu-btn primary-btn" data-lang="start-btn">Начать игру</button>
+			</main>
+			<nav class="menu-extra">
+				<button id="about-btn" class="menu-btn secondary-btn" data-lang="about-btn">Об игре</button>
+				<button id="settings-btn" class="menu-btn secondary-btn" data-lang="settings-btn">Настройки</button>
+			</nav>
+		</div>
+	</section>
+
+	<!-- Главный экран-->
+	<section id="game" class="menu">
+		<header class="game-stats">
+			<div class="stat"><span id="score-label" data-lang="gold">Золото</span>: <span id="score">0</span> 💰</div>
+			<div class="stat"><span id="power-label" data-lang="power-label">Сила клика</span>: <span id="click-power-val">1</span> ⚡</div>
+		</header>
+		<main class="game-arena">
+			<div id="click-object">🤖</div>
+		</main>
+		<aside class="game-shop">
+			<button id="back-menu-btn" class="exit-btn" data-lang="back-menu-btn">В меню</button>
+		</aside>
+	</section>
+	<script src="Script.js"></script>
+</body>
+</html>
+
