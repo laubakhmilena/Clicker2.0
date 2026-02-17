@@ -15,10 +15,13 @@
 	--shadow: 0 10px 30px rgba(2,6,23,0.6);
 }
 
+html {
+	overflow: hidden;
+}
+
 body {
 	margin: 0;
 	padding: 0;
-	background: linear-gradient(135deg, var(--bg1), var(--bg2));
 	color: var(--text);
 	font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
  /*Шрифт*/
@@ -34,17 +37,49 @@ body {
 /* 2. ЭКРАН */
 
 .menu {
+	padding: 20px;
+	position: fixed;
+	top: 0;
+	bottom: 0;
+	left: 0;
+	right: 0;
+	z-index: 1000;
+	background: linear-gradient(135deg, var(--bg1), var(--bg2));
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	max-height: 95%;
+}
+
+#game {
 	display: flex;
 	width: 100%;
 	height: 100%;
 	flex-direction: column;
 	align-items: center;
 	justify-content: center;
-	padding: 20px;
 	box-sizing: border-box;
+	background: linear-gradient(135deg, var(--bg1), var(--bg2));
+	align-items: center;
+	padding: 40px 20px;
+
+	position: relative; /* обязательно, чтобы absolute работал внутри */
+  	overflow: visible;  /* чтобы цифры не обрезались */
 }
 
 /* 3. КАРТОЧКА МЕНЮ */
+
+.menu-frame {
+	position: relative;
+	height: 95%;
+	max-height: 95%;
+	overflow: hidden;
+
+	display: flex;
+	align-items: center;
+	
+}
+
 .menu-card {
 	background: var(--card);
 	backdrop-filter: blur(10px);
@@ -55,9 +90,20 @@ body {
 	border-radius: var(--radius);
 	padding: 40px;
 	text-align: center;
-	width: 100%;
+	/* width: 100%;*/
 	max-width: 360px;
+	box-sizing: border-box;
 	box-shadow: var(--shadow);
+	overflow-y: auto;
+	max-height: 100%;
+}
+
+.about-card {
+	max-width: 440px;
+}
+
+.menu-card::-webkit-scrollbar {
+	display: none;
 }
 
 .menu-title {
@@ -70,10 +116,32 @@ body {
     /* Затем вариант для Chrome/Safari */
 	-webkit-background-clip: text;
     /* И обязательно цвет текста прозрачный, чтобы увидеть градиент */
-	-webkit-text-fill-color: transparent;
-	-webkit-text-fill-color: transparent;
 	text-transform: uppercase;
 	font-weight: 900;
+	
+	text-align: center; 
+    color: #00d4ff; /* Твой старый цвет из кода */
+    text-shadow: 0 0 10px rgba(0,212,255,0.5); 
+    margin-bottom: 15px;
+}
+
+.main-title {
+	-webkit-text-fill-color: transparent;
+	
+}
+
+.game-title {
+	-webkit-text-fill-color: transparent;
+	color: #aca826;
+	text-shadow: 0px 0px 0px #fff00085; 
+	font-size: 20px;
+}
+
+.game-description {
+	color: white;
+	text-shadow: 0px 0px 20px rgba(1, 12, 14, 0.5); 
+	font-size: 15px;
+
 }
 
 /*Фраза кликай,улучшай*/
@@ -115,6 +183,13 @@ body {
 	box-shadow: 0 10px 24px rgba(255,100,140,0.08);
 }
 
+/*при наведении*/
+.primary-btn:hover{
+	transform: scale(1.02);
+	box-shadow: 0 14px 34px rgba(70, 78, 92, 0.34);
+	transition: all 0.3s ease;
+}
+
 /*Второстепенная кнопка*/
 .secondary-btn {
 	margin-top: 10px;
@@ -126,19 +201,12 @@ body {
 	color: var(--muted);
 }
 
-
-/* Внутренний игровой экран*/
-
-/* Контейнер игрового экрана (мы используем ID для точности) */
-#game {
-	display: flex;
- /* Скрыт по умолчанию */
-	flex-direction: column;
-	justify-content: space-between;
- /* Распределяет header, main и aside по высоте */
-	align-items: center;
-	padding: 40px 20px;
+.secondary-btn:hover{
+	transform: scale(1.02);
+	box-shadow: 0 14px 34px rgba(70, 78, 92, 0.34);
+	transition: all 0.3s ease;
 }
+
 
 #game.active {
 	display: flex;
@@ -170,6 +238,7 @@ body {
 	align-items: center;
 	justify-content: center;
 	width: 100%;
+	position: relative;
 }
 
 #click-object {
@@ -183,11 +252,16 @@ body {
 
 /* НИЖНЯЯ ЧАСТЬ: Прогресс и кнопки */
 #back-menu-btn {
-    /* 1. Делаем кнопку прозрачной ("стеклянной") */
-	background: var(--glass);
-	color: var(--muted);
-    /* 2. Тонкая рамка в цвет акцента, но тусклее */
-	border: 1px solid rgba(5, 90, 96, 0.3);
+	/* матовое стекло */
+	background: rgba(255, 255, 255, 0.08);
+	backdrop-filter: blur(10px);
+	-webkit-backdrop-filter: blur(10px);
+
+	color: rgba(255, 255, 255, 0.88);
+
+	border: 1px solid rgba(255, 255, 255, 0.18);
+	box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+
 	padding: 12px 24px;
 	font-size: 14px;
 	font-weight: 600;
@@ -195,47 +269,29 @@ body {
 	letter-spacing: 1px;
 	border-radius: var(--radius);
 	cursor: pointer;
-	transition: all 0.3s ease;
-    /* Убираем стандартную ширину 100%, если она не нужна во весь экран */
 	width: auto;
 	min-width: 120px;
 }
 
-/* [data-lang] {
-	/* color: red !important; }
-
+#back-menu-btn:hover{
+	transform: scale(1.02);
+	box-shadow: 0 14px 34px rgba(70, 78, 92, 0.34);
+	transition: all 0.3s ease;
+}
 
 /*Кнопка об игре*/
 .about-modal {
-    display: flex; /* Прячем по умолчанию */
-    /* position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%; */
     background: radial-gradient(circle at center, var(--bg2), var(--bg1));
 	backdrop-filter: blur(5px);
-    z-index: 100;
-	 justify-content: center;
-    align-items: center;
     padding: 40px 20px;
-    flex-direction: column;
-    align-items: center;
+	z-index: 2000;
 }
 
 .hidden {
 	display: none !important;
 }
 
-
-.menu-title {
-    text-align: center; 
-    color: #00d4ff; /* Твой старый цвет из кода */
-    text-shadow: 0 0 10px rgba(0,212,255,0.5); 
-    margin-bottom: 15px;
-}
-
-/* Блок с описанием (бывший .about-story) */
+/* Блок с описанием */
 .wait {
     background: rgba(255, 255, 255, 0.05); /* Легкий фон */
     padding: 15px;
@@ -274,4 +330,402 @@ body {
     color: #ffcc00; /* Акцент на слове ПОЕХАЛИ */
     font-weight: bold;
     margin-bottom: 15px;
+}
+
+/*Крестик ОБ игре*/
+.close-btn{
+	position: absolute;
+	top: 10px; /*отступы*/
+	right: 10px;
+	background: none;
+	border: none;
+	font-size: 18px; /* размер*/
+	color: rgba(255, 255, 255, 0.5); /*цвет*/
+	cursor: pointer; /*курсор*/
+	transition: color 0.2s ease; /*время при наведении*/
+}
+
+/*Состояние при наведении на крестик*/
+.close-btn:hover{
+	color: var(--accent2);
+}
+
+/*НАСТРОЙКИ*/
+
+.settings-modal{
+	backdrop-filter: blur(5px);
+	padding: 20px 20px;
+	z-index: 2000;
+}
+
+.settings-card{
+	background: var(--card);
+	backdrop-filter: blur(10px);
+	-webkit-backdrop-filter: blur(10px);
+
+	border: 1px solid var(--glass);
+	border-radius: var(--radius);
+
+	box-shadow: var(--shadow);
+
+	padding: 30px 40px;
+	max-width: 420px;
+	position: relative;
+}
+
+/*Расположение блока настроек*/
+.menu-settings{
+text-align: center;
+margin-bottom:20px;
+}
+
+.menu-settings p {
+	margin: 0;              /* убрали стандартные отступы <p> */
+	color: var(--text);
+	font-size: 22px;
+	font-weight: 800;
+}
+
+.settings-list{
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	margin-top: -10px;
+}
+
+.settings-list li{
+	color: var(--text);
+	font-size: 18px;
+	font-weight: 700;
+
+	padding: 2px 2px;
+	letter-spacing: 0.7px;
+}
+
+/* Блок "Сбросить прогресс" (текст) */
+.settings-footer {
+	display: flex;
+	justify-content: center;
+	margin-top: 15px;
+}
+
+.settings-restart {
+	border: 1px solid #b9e564; 
+	border-radius: 20px;
+	padding: 3px 9px;
+
+	background: var(--card);
+	cursor: pointer;
+
+	transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+/* Текст внутри кнопки */
+
+.settings-restart p {
+	color: #b9e564;
+	font-size: 15px;
+	font-weight: 700;
+	letter-spacing: 0.3px;
+	text-align: center;
+}
+
+.settings-restart:hover {
+	background: rgba(255, 107, 107, 0.12);
+	border-color: #ff6b6b;
+}
+
+.settings-restart:hover p {
+	color: #ffffff;
+}
+
+
+/*НАСТРОЙКИ ОБЩЕЕ ОФОРМЛЕНИЕ*/
+
+.settings-list{
+	display: grid;
+	grid-template-columns: 1fr auto;
+	gap: 14px 12px;
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+
+/* Название настройки (нечётные li) */
+.settings-list li:nth-child(odd){
+	display: flex;
+	align-items: center;
+	font-size: 16px;
+	font-weight: 600;
+}
+
+/* Управление (чётные li) — элементы всегда в одну строку */
+.settings-list li:nth-child(even){
+	display: grid;
+	grid-auto-flow: column;            /* выстраиваем controls в строку */
+	grid-auto-columns: max-content;    /* каждый элемент по своей ширине */
+	align-items: center;
+	justify-content: end;              /* на широком экране прижимаем вправо */
+	gap: 10px;
+	white-space: nowrap;               /* не переносить иконки/кнопки/ползунок */
+	min-width: 0;                      /* важно для range внутри grid */
+}
+
+/* ===== SELECT ===== */
+.settings-list select{
+	appearance: none;        /* убираем нативную стрелку */
+	-webkit-appearance: none;
+	-moz-appearance: none;
+
+	padding: 8px 34px 8px 12px; /* справа место под кастомную стрелку */
+	border-radius: 12px;
+	border:  1px solid var(--glass);
+
+	background-color: rgba(255,255,255,.08);
+	color: var(--text);
+
+	font-size: 14px;
+	font-weight: 600;
+
+	cursor: pointer;
+	min-width: 110px;
+
+	color-scheme: dark;      /* просим браузер рисовать dropdown в тёмной теме */
+}
+
+/* Фокус/активность — чтобы было понятно, что выбираем */
+.settings-list select:focus,
+.settings-list select:active{
+	outline: none;
+	border-color: var(--accent2);
+	box-shadow: 0 0 0 2px rgba(118,255,106,.25);
+}
+
+/* Пункты dropdown (сработает не во всех браузерах, но где можно — уберёт белое) */
+.settings-list select option{
+	background: #1e1533;
+	color: #fff;
+}
+
+/* Подсветка выбранного пункта (где поддерживается) */
+.settings-list select option:checked{
+	background: rgba(118,255,106,.25);
+	color: #fff;
+}
+
+/* Тонки ползуники */
+.settings-list input[type="range"]{
+  width: 100%;
+  min-width: 0;
+  height: 3px; /* тонкий трек */
+}
+
+/* Адаптация настроек: на узких экранах -> 1 колонка */
+@media (max-width: 420px) {
+
+  /* сама карточка чуть компактнее */
+  .settings-card{
+    padding: 22px 18px;
+    max-width: 92vw;
+  }
+
+  /* грид становится одноколоночным */
+  .settings-list{
+    grid-template-columns: 1fr;
+    gap: 10px;
+    width: 100%;
+  }
+
+  /* и label, и controls занимают всю ширину */
+  .settings-list li{
+    width: 100%;
+  }
+
+  /* controls (чётные li) выравниваем влево и разрешаем перенос */
+	.settings-list li:nth-child(even){
+	justify-content: start;   /* controls слева */
+	width: 100%;
+	white-space: nowrap;      /* запрещаем перенос элементов управления */
+	}
+}
+
+
+/*ТЕМА*/
+body{
+  background: linear-gradient(135deg, var(--bg1), var(--bg2));
+}
+
+
+body.dark{
+  /* можно ничего не менять, т.к. :root уже тёмный.
+     Но оставляем блок как “якорь” и на будущее. */
+  color-scheme: dark;
+}
+
+/* 2) Принудительная светлая тема */
+body.light_theme{
+  --bg1: #eeecf6;
+  --bg2: #3e41d3;
+
+  /* Блоки */
+  --card: rgba(250, 252, 253, 0.92);
+  --glass: rgba(255, 255, 255, 0.55);
+
+    /* Рамки (нежный фиолетовый) */
+  --border-soft: rgba(101, 115, 194, 0.55);
+
+  /* Текст — тёмный, читаемый */
+  --text:  #1a1b22;     /* slate-800 */
+  --muted: #4b4f5f;   /* slate-600 */
+
+  /* Акценты */
+  --accent: #1e293b;
+  --accent2: #7aa2b8;  /* нежный голубовато-серый */
+
+  /* Тени — очень мягкие */
+  --shadow: 0 10px 26px rgba(32, 20, 64, 0.14);
+
+  color-scheme: light;
+  
+}
+
+/* Делает весь текст тёмным в светлой теме и авто */
+body.light_theme :is(h1,h2,h3,h4,h5,h6,p,span,div,label,li,small,strong,em){
+  color: var(--text);
+}
+
+/* Все кнопки получают аккуратный вид */
+body.light_theme :is(button, .btn, [role="button"]){
+  color: var(--text);
+  border: 1px solid var(--border-soft);
+  box-shadow: 0 10px 22px rgba(3, 13, 31, 0.28);
+}
+
+/* Крестик (закрыть) становится видимым серым */
+body.light_theme :is(.close, .close-btn, .modal-close, button.close){
+  color: #6b7280;
+}
+body.light_theme :is(.close:hover, .close-btn:hover, .modal-close:hover, button.close:hover){
+  color: #374151;
+}
+
+body.auto{ 
+	color-scheme: dark; 
+}
+
+/* AUTO + системная светлая */
+@media (prefers-color-scheme: light){
+  body.auto{
+    --bg1: #eeecf6;
+    --bg2: #3e41d3;
+
+    /* Блоки */
+    --card: rgba(250, 252, 253, 0.92);
+    --glass: rgba(255, 255, 255, 0.55);
+
+    /* Рамки (нежный фиолетовый) */
+    --border-soft: rgba(101, 115, 194, 0.55);
+
+    /* Текст — тёмный, читаемый */
+    --text:  #1a1b22;     /* slate-800 */
+    --muted: #4b4f5f;     /* slate-600 */
+
+    /* Акценты */
+    --accent: #1e293b;
+    --accent2: #7aa2b8;   /* нежный голубовато-серый */
+
+    /* Тени — очень мягкие */
+    --shadow: 0 10px 26px rgba(32, 20, 64, 0.14);
+
+    color-scheme: light;
+  }
+
+  /* Служебные правки — только когда авто = системная светлая */
+  body.auto :is(h1,h2,h3,h4,h5,h6,p,span,div,label,li,small,strong,em){
+    color: var(--text);
+  }
+  body.auto :is(button, .btn, [role="button"]){
+    color: var(--text);
+    border: 1px solid var(--border-soft);
+    box-shadow: 0 10px 22px rgba(3, 13, 31, 0.28);
+  }
+  body.auto :is(.close, .close-btn, .modal-close, button.close){
+    color: #6b7280;
+  }
+  body.auto :is(.close:hover, .close-btn:hover, .modal-close:hover, button.close:hover){
+    color: #374151;
+  }
+
+  /* стиль главной кнопки как в светлой теме */
+  body.auto .primary-btn{
+    background: linear-gradient(135deg, #ffffff, #1097cc57);
+    color: #0b1b4a;
+    box-shadow: 0 10px 22px rgba(3, 13, 31, 0.28);
+  }
+  body.auto .primary-btn:hover{
+    transform: scale(1.02);
+    box-shadow: 0 14px 34px rgba(70, 78, 92, 0.34);
+    transition: all 0.3s ease;
+  }
+  body.auto .secondary-btn:hover{
+    transform: scale(1.02);
+    box-shadow: 0 14px 34px rgba(0, 0, 0, 0.34);
+    transition: all 0.3s ease;
+  }
+}
+
+
+/*ИЗМЕНЕНИЕ СТИЛЯ ГЛАВНОЙ КНОПКИ*/
+/* переопределение только для светлой темы */
+body.light_theme .primary-btn{
+	background: linear-gradient(135deg, #ffffff, #1097cc57);
+	color: #0b1b4a;
+	box-shadow: 0 10px 22px rgba(3, 13, 31, 0.28);
+	
+}
+
+body.light_theme .primary-btn:hover{
+	transform: scale(1.02);
+	box-shadow: 0 14px 34px rgba(70, 78, 92, 0.34);
+	transition: all 0.3s ease;
+}
+
+body.light_theme .secondary-btn:hover {
+	transform: scale(1.02);
+	box-shadow: 0 14px 34px rgba(0, 0, 0, 0.34);
+	transition: all 0.3s ease;
+}
+
+
+/*НАЖАТИЕ НА РОБОТА*/
+#click-object {
+	cursor: pointer;
+	user-select: none;
+	transition: transform 0.08s ease;
+
+	/* улучшение для мобильных */
+	touch-action: manipulation;
+	-webkit-tap-highlight-color: transparent;
+}
+
+#click-object:active {
+	transform: scale(0.95);
+}
+
+/* Общий контейнер плавающей цифры */
+.floating-number{
+  position: absolute; /* относительно #game */
+  pointer-events: none;
+  font-weight: 900;
+  font-size: 24px;
+  color: #fff;
+  text-shadow: 0 6px 18px rgba(0,0,0,0.6);
+  animation: floatUp .9s ease-out forwards;
+  z-index: 1200;
+  will-change: transform, opacity;
+}
+
+@keyframes floatUp{
+  0%   { transform: translateY(0) scale(1); opacity: 1; }
+  100% { transform: translateY(-90px) scale(1.08); opacity: 0; }
 }
