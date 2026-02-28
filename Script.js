@@ -50,6 +50,14 @@ document.addEventListener('DOMContentLoaded', () => {
 	let robotIncomePerSecond = 0;
 	let robotTimer = null;
 
+	// Звук
+	const VOLUME_KEY = 'globalVolume';
+	const volumeSlider =
+		document.getElementById('volume-slider') ||
+		document.querySelector('#settings input[type="range"]:not(#brightness-range)');
+
+	let globalVolume = 1; // 0..1
+
 	// Яркость
 	const BRIGHTNESS_KEY = 'brightness';
 	const BR_MIN = 20;
@@ -99,53 +107,7 @@ document.addEventListener('DOMContentLoaded', () => {
 		}
 	}
 
-	// Game Start
-	function startGame() {
-		if (!menuScreen) return;
-		menuScreen.classList.add('hidden');
-	}
-
-	// Функция возврата в меню
-	function goToMenu() {
-		saveGame();
-		if (!menuScreen) return;
-		menuScreen.classList.remove('hidden');
-	}
-
-	if (startBtn) {
-		startBtn.addEventListener('click', startGame); // Слушаем клики по кнопкам
-	}
-
-	if (backBtn) {
-		backBtn.addEventListener('click', goToMenu); // меню
-	}
-
-	if (aboutBtn && aboutScreen) {
-		aboutBtn.onclick = () => {
-			aboutScreen.classList.remove('hidden'); // об игре
-		};
-	}
-
-	if (closeAbout && aboutScreen) {
-		closeAbout.onclick = () => {
-			aboutScreen.classList.add('hidden'); // крестик об игре
-		};
-	}
-
-	if (settingsBtn && settingsScreen) {
-		settingsBtn.onclick = () => {
-			settingsScreen.classList.remove('hidden'); // Настройки
-		};
-	}
-
-	if (closeSetting && settingsScreen) {
-		closeSetting.onclick = () => {
-			settingsScreen.classList.add('hidden'); // Закрыть настройки
-		};
-	}
-
 	// ТЕМА =========================
-
 	function normalizeTheme(value) {
 		const v = String(value || '').toLowerCase().trim();
 		if (v === 'light') return 'light';
@@ -195,7 +157,106 @@ document.addEventListener('DOMContentLoaded', () => {
 		});
 	}
 
-	// Яркость
+	// ЗВУК =========================
+	function clamp01(value) {
+		const num = toFiniteNumber(value, 1);
+		return Math.max(0, Math.min(1, num));
+	}
+
+	function createGameSound(primarySrc, fallbackSrc = '') {
+		const audio = new Audio();
+		let fallbackUsed = false;
+
+		if (fallbackSrc) {
+			audio.addEventListener(
+				'error',
+				() => {
+					if (fallbackUsed) return;
+					fallbackUsed = true;
+					audio.src = fallbackSrc;
+					audio.load();
+				},
+				{ once: true }
+			);
+		}
+
+		audio.preload = 'auto';
+		audio.volume = globalVolume;
+		audio.src = primarySrc;
+		return audio;
+	}
+
+	const sounds = {
+		click: createGameSound('sounds/click.wav', 'click.wav'),
+		start: createGameSound('sounds/start.wav', 'start.wav'),
+		menu: createGameSound('sounds/menu.wav', 'menu.wav'),
+	};
+
+	function applyGlobalVolume(value) {
+		globalVolume = clamp01(value);
+
+		Object.values(sounds).forEach((audio) => {
+			audio.volume = globalVolume;
+		});
+
+		if (volumeSlider) {
+			volumeSlider.value = String(Math.round(globalVolume * 100));
+		}
+	}
+
+	function playSound(name) {
+		const audio = sounds[name];
+		if (!audio || globalVolume <= 0) return;
+
+		try {
+			audio.pause();
+			audio.currentTime = 0;
+			audio.volume = globalVolume;
+		} catch {
+			// Некоторые браузеры могут бросить исключение,
+			// если аудио ещё не готово — просто игнорируем.
+		}
+
+		const playPromise = audio.play();
+
+		if (playPromise && typeof playPromise.catch === 'function') {
+			playPromise.catch(() => {
+				// Игнорируем NotAllowedError / AbortError,
+				// если браузер временно не дал воспроизвести звук.
+			});
+		}
+	}
+
+	function initVolumeControl() {
+		if (volumeSlider) {
+			volumeSlider.min = '0';
+			volumeSlider.max = '100';
+			volumeSlider.step = '1';
+		}
+
+		const savedVolume = getStorageItem(VOLUME_KEY);
+
+		if (savedVolume !== null) {
+			applyGlobalVolume(savedVolume);
+		} else if (volumeSlider) {
+			applyGlobalVolume(Number(volumeSlider.value || 100) / 100);
+		} else {
+			applyGlobalVolume(1);
+		}
+
+		if (!volumeSlider) return;
+
+		volumeSlider.addEventListener('input', () => {
+			applyGlobalVolume(Number(volumeSlider.value) / 100);
+			setStorageItem(VOLUME_KEY, globalVolume);
+		});
+
+		volumeSlider.addEventListener('change', () => {
+			setStorageItem(VOLUME_KEY, globalVolume);
+		});
+	}
+
+	// Яркость =========================
 	function clamp(n, min, max) {
 		const num = toFiniteNumber(n, min);
 		return Math.max(min, Math.min(max, num));
@@ -216,8 +277,92 @@ document.addEventListener('DOMContentLoaded', () => {
 		});
 	}
 
-	//---------------КЛИКЕР-------------------------------------
+	// Game Start
+	function startGame() {
+		if (!menuScreen) return;
+		menuScreen.classList.add('hidden');
+	}
 
+	// Функция возврата в меню
+	function goToMenu() {
+		saveGame();
+		if (!menuScreen) return;
+		menuScreen.classList.remove('hidden');
+	}
+
+	if (startBtn) {
+		startBtn.addEventListener('click', () => {
+			playSound('start');
+			startGame();
+		});
+	}
+
+	if (backBtn) {
+		backBtn.addEventListener('click', () => {
+			goToMenu();
+		});
+	}
+
+	if (aboutBtn && aboutScreen) {
+		aboutBtn.onclick = () => {
+			aboutScreen.classList.remove('hidden'); // об игре
+		};
+	}
+
+	if (closeAbout && aboutScreen) {
+		closeAbout.onclick = () => {
+			aboutScreen.classList.add('hidden'); // крестик об игре
+		};
+	}
+
+	if (settingsBtn && settingsScreen) {
+		settingsBtn.onclick = () => {
+			settingsScreen.classList.remove('hidden'); // Настройки
+		};
+	}
+
+	if (closeSetting && settingsScreen) {
+		closeSetting.onclick = () => {
+			settingsScreen.classList.add('hidden'); // Закрыть настройки
+		};
+	}
+
+	function isSpecialSoundButton(button) {
+		if (!button) return true;
+		if (button.disabled) return true;
+
+		// У кнопки "Начать играть" свой отдельный звук
+		if (startBtn && button === startBtn) return true;
+
+		// У объекта клика (робота) свой отдельный звук,
+		// даже если он когда-нибудь станет кнопкой или окажется внутри кнопки
+		if (clickObject) {
+			if (button === clickObject) return true;
+			if (button.contains(clickObject)) return true;
+			if (clickObject.contains(button)) return true;
+		}
+
+		return false;
+	}
+
+	function bindGenericButtonSound() {
+		document.addEventListener('click', (e) => {
+			const target = e.target;
+			if (!(target instanceof Element)) return;
+
+			const button = target.closest(
+				'button, input[type="button"], input[type="submit"], input[type="reset"], [role="button"]'
+			);
+
+			if (!button) return;
+			if (!document.contains(button)) return;
+			if (isSpecialSoundButton(button)) return;
+
+			playSound('menu');
+		});
+	}
+
+	//---------------КЛИКЕР-------------------------------------
 	function startRobotIncomeTimer() {
 		if (robotTimer || robotIncomePerSecond <= 0) return;
 
@@ -253,6 +398,7 @@ document.addEventListener('DOMContentLoaded', () => {
 		setStorageItem(ROBOT_COUNT_KEY, Math.max(0, Math.floor(toFiniteNumber(robotCount, 0))));
 		setStorageItem(ROBOT_INCOME_KEY, Math.max(0, Math.floor(toFiniteNumber(robotIncomePerSecond, 0))));
 		setStorageItem(BRIGHTNESS_KEY, clamp(brightness, BR_MIN, BR_MAX));
+		setStorageItem(VOLUME_KEY, clamp01(globalVolume));
 		setStorageItem(LEVEL_KEY, Math.max(0, Math.floor(toFiniteNumber(level, 0))));
 		setStorageItem(LEVEL_CLICKS_KEY, Math.max(0, Math.floor(toFiniteNumber(levelClicks, 0))));
 	}
@@ -266,6 +412,7 @@ document.addEventListener('DOMContentLoaded', () => {
 		const savedRobotCount = getStorageItem(ROBOT_COUNT_KEY);
 		const savedRobotIncome = getStorageItem(ROBOT_INCOME_KEY);
 		const savedBrightness = getStorageItem(BRIGHTNESS_KEY);
+		const savedVolume = getStorageItem(VOLUME_KEY);
 		const savedLevel = getStorageItem(LEVEL_KEY);
 		const savedLevelClicks = getStorageItem(LEVEL_CLICKS_KEY);
 
@@ -298,6 +445,10 @@ document.addEventListener('DOMContentLoaded', () => {
 			brightness = 70;
 		}
 
+		if (savedVolume !== null) {
+			applyGlobalVolume(savedVolume);
+		}
+
 		if (savedLevel !== null) {
 			level = Math.max(0, Math.floor(toFiniteNumber(savedLevel, 0)));
 		}
@@ -310,6 +461,7 @@ document.addEventListener('DOMContentLoaded', () => {
 	if (clickObject) {
 		clickObject.addEventListener('pointerdown', (e) => {
 			e.preventDefault();
+			playSound('click');
 			coins += clickPower;
 
 			// прогресс уровня по кликам
@@ -327,6 +479,8 @@ document.addEventListener('DOMContentLoaded', () => {
 		});
 	}
 
+	bindGenericButtonSound();
+	initVolumeControl();
 	loadGame(); // 1. загружаем сохранение
 	if (robotIncomePerSecond > 0) {
 		startRobotIncomeTimer();
@@ -336,6 +490,7 @@ document.addEventListener('DOMContentLoaded', () => {
 	updateUI(); // 2. показываем данные на экране
 	applyBrightness(brightness);
 	if (brightnessRange) brightnessRange.value = String(clamp(brightness, BR_MIN, BR_MAX));
+	if (volumeSlider) volumeSlider.value = String(Math.round(clamp01(globalVolume) * 100));
 
 	// Сохранение при перезагрузке/закрытии и при уходе со страницы
 	window.addEventListener('beforeunload', saveGame);
