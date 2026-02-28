@@ -1,4 +1,3 @@
-
 /* =========================================================
    1) RESET + VARIABLES
    ========================================================= */
@@ -59,7 +58,7 @@ body{
 	display:flex;
 	justify-content:center;
 	align-items:center;
-	max-height:95%;
+	max-height:100%;
 }
 
 #game{
@@ -457,6 +456,14 @@ body{
 	font-weight:900;
 	line-height:1.15;
 	letter-spacing:.2px;
+}
+
+.upgrade-btn__subtitle{
+	display:block;
+	margin-top:3px;
+	font-size:12px;
+	font-weight:600;
+	color:rgba(255,255,255,0.75);
 }
 
 .upgrade-btn .price{

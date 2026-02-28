@@ -34,6 +34,22 @@ document.addEventListener('DOMContentLoaded', () => {
 	const upgradeClickBtn = document.getElementById('btn-upgrade-click');
 	const upgradeClickPriceEl = upgradeClickBtn ? upgradeClickBtn.querySelector('.price') : null;
 
+	// === Робот (автодоход) ===
+	const ROBOT_PRICE_KEY = 'robotPrice';
+	const ROBOT_COUNT_KEY = 'robotCount';
+	const ROBOT_INCOME_KEY = 'robotIncomePerSecond';
+	const ROBOT_BASE_PRICE = 200;
+
+	const autoBotBtn = document.getElementById('btn-auto-bot');
+	const autoBotPriceEl = autoBotBtn ? autoBotBtn.querySelector('.price') : null;
+	const robotInfoEl = document.getElementById('robot-info');
+	const moneyCounterEl = document.getElementById('money-counter');
+
+	let robotPrice = ROBOT_BASE_PRICE;
+	let robotCount = 0;
+	let robotIncomePerSecond = 0;
+	let robotTimer = null;
+
 	// Яркость
 	const BRIGHTNESS_KEY = 'brightness';
 	const BR_MIN = 20;
@@ -202,12 +218,30 @@ document.addEventListener('DOMContentLoaded', () => {
 
 	//---------------КЛИКЕР-------------------------------------
 
+	function startRobotIncomeTimer() {
+		if (robotTimer || robotIncomePerSecond <= 0) return;
+
+		robotTimer = setInterval(() => {
+			coins += robotIncomePerSecond;
+			updateUI();
+			saveGame();
+		}, 1000);
+	}
+
+	function stopRobotIncomeTimer() {
+		if (!robotTimer) return;
+		clearInterval(robotTimer);
+		robotTimer = null;
+	}
+
 	// Обновляет числа на экране
 	function updateUI() {
 		if (scoreEl) scoreEl.textContent = String(coins);
+		if (moneyCounterEl) moneyCounterEl.textContent = String(coins);
 		if (clickPowerEl) clickPowerEl.textContent = String(clickPower);
 		updateLevelUI();
 		updateClickUpgradeUI();
+		updateRobotUpgradeUI();
 	}
 
 	// Сохраняем данные в localStorage
@@ -215,6 +249,9 @@ document.addEventListener('DOMContentLoaded', () => {
 		setStorageItem('coins', Math.max(0, toFiniteNumber(coins, 0)));
 		setStorageItem('clickPower', Math.max(1, toFiniteNumber(clickPower, 1)));
 		setStorageItem(CLICK_UPGRADE_PRICE_KEY, Math.max(1, toFiniteNumber(upgradePrice, 85)));
+		setStorageItem(ROBOT_PRICE_KEY, Math.max(ROBOT_BASE_PRICE, toFiniteNumber(robotPrice, ROBOT_BASE_PRICE)));
+		setStorageItem(ROBOT_COUNT_KEY, Math.max(0, Math.floor(toFiniteNumber(robotCount, 0))));
+		setStorageItem(ROBOT_INCOME_KEY, Math.max(0, Math.floor(toFiniteNumber(robotIncomePerSecond, 0))));
 		setStorageItem(BRIGHTNESS_KEY, clamp(brightness, BR_MIN, BR_MAX));
 		setStorageItem(LEVEL_KEY, Math.max(0, Math.floor(toFiniteNumber(level, 0))));
 		setStorageItem(LEVEL_CLICKS_KEY, Math.max(0, Math.floor(toFiniteNumber(levelClicks, 0))));
@@ -225,6 +262,9 @@ document.addEventListener('DOMContentLoaded', () => {
 		const savedCoins = getStorageItem('coins');
 		const savedClickPower = getStorageItem('clickPower');
 		const savedUpgradePrice = getStorageItem(CLICK_UPGRADE_PRICE_KEY);
+		const savedRobotPrice = getStorageItem(ROBOT_PRICE_KEY);
+		const savedRobotCount = getStorageItem(ROBOT_COUNT_KEY);
+		const savedRobotIncome = getStorageItem(ROBOT_INCOME_KEY);
 		const savedBrightness = getStorageItem(BRIGHTNESS_KEY);
 		const savedLevel = getStorageItem(LEVEL_KEY);
 		const savedLevelClicks = getStorageItem(LEVEL_CLICKS_KEY);
@@ -237,6 +277,17 @@ document.addEventListener('DOMContentLoaded', () => {
 		}
 		if (savedUpgradePrice !== null) {
 			upgradePrice = Math.max(1, toFiniteNumber(savedUpgradePrice, 85));
+		}
+		if (savedRobotPrice !== null) {
+			robotPrice = Math.max(ROBOT_BASE_PRICE, toFiniteNumber(savedRobotPrice, ROBOT_BASE_PRICE));
+		}
+		if (savedRobotCount !== null) {
+			robotCount = Math.max(0, Math.floor(toFiniteNumber(savedRobotCount, 0)));
+		}
+		if (savedRobotIncome !== null) {
+			robotIncomePerSecond = Math.max(0, Math.floor(toFiniteNumber(savedRobotIncome, 0)));
+		} else {
+			robotIncomePerSecond = robotCount;
 		}
 
 		if (savedBrightness !== null) {
@@ -277,6 +328,11 @@ document.addEventListener('DOMContentLoaded', () => {
 	}
 
 	loadGame(); // 1. загружаем сохранение
+	if (robotIncomePerSecond > 0) {
+		startRobotIncomeTimer();
+	} else {
+		stopRobotIncomeTimer();
+	}
 	updateUI(); // 2. показываем данные на экране
 	applyBrightness(brightness);
 	if (brightnessRange) brightnessRange.value = String(clamp(brightness, BR_MIN, BR_MAX));
@@ -355,6 +411,35 @@ document.addEventListener('DOMContentLoaded', () => {
 		}
 	}
 
+	function updateRobotUpgradeUI() {
+		if (autoBotPriceEl) {
+			autoBotPriceEl.textContent = `${robotPrice} 💰`;
+		}
+
+		if (robotInfoEl) {
+			robotInfoEl.textContent = `+${robotIncomePerSecond}/сек • ${robotCount} куплено`;
+		}
+
+		if (autoBotBtn) {
+			const disabled = coins < robotPrice;
+			autoBotBtn.disabled = disabled;
+			autoBotBtn.classList.toggle('disabled', disabled);
+		}
+	}
+
+	function buyAutoBot() {
+		if (coins < robotPrice) return;
+
+		coins -= robotPrice;
+		robotCount += 1;
+		robotIncomePerSecond += 1;
+		robotPrice *= 2;
+
+		startRobotIncomeTimer();
+		updateUI();
+		saveGame();
+	}
+
 	// Покупка улучшения клика
 	function buyClickUpgrade() {
 		if (coins < upgradePrice) return;
@@ -372,5 +457,10 @@ document.addEventListener('DOMContentLoaded', () => {
 	// Кнопка "Улучшить клик"
 	if (upgradeClickBtn) {
 		upgradeClickBtn.addEventListener('click', buyClickUpgrade);
+	}
+
+	// Кнопка "Робот"
+	if (autoBotBtn) {
+		autoBotBtn.addEventListener('click', buyAutoBot);
 	}
 });
