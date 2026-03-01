@@ -84,7 +84,10 @@
 				</main>
 				<aside class="settings-footer">
 					<div class="settings-restart">
-						<p data-lang="restart">Сбросить весь прогресс!</p>
+						<button id="reset-progress-btn" class="settings-restart-btn" type="button" aria-label="Сбросить весь прогресс">
+							<span class="settings-restart-progress" aria-hidden="true"></span>
+							<span class="settings-restart-label" data-lang="restart">Сбросить весь прогресс</span>
+						</button>
 					</div>
 				</aside>
 				<button id="close-settings" class="close-btn">✕</button>

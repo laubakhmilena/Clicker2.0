@@ -14,6 +14,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
 	const settingsBtn = document.getElementById('settings-btn'); // настройки
 	const closeSetting = document.getElementById('close-settings');
+	const resetProgressBtn = document.getElementById('reset-progress-btn');
+	const resetProgressLabel = resetProgressBtn ? resetProgressBtn.querySelector('.settings-restart-label') : null;
+	const resetProgressOverlay = resetProgressBtn ? resetProgressBtn.querySelector('.settings-restart-progress') : null;
 
 	const THEME_KEY = 'theme'; // тема
 	const themeSelect = document.querySelector('.theme-select');
@@ -327,6 +330,184 @@ document.addEventListener('DOMContentLoaded', () => {
 		};
 	}
 
+	const RESET_BUTTON_IDLE_TEXT = 'Сбросить весь прогресс';
+	const RESET_BUTTON_ARMED_TEXT = 'Держите 3 секунды';
+	const RESET_HOLD_DURATION_MS = 3000;
+	const RESET_ARM_TIMEOUT_MS = 30000;
+
+	let resetArmTimeout = null;
+	let resetHoldRaf = null;
+	let resetHoldStart = 0;
+	let resetArmed = false;
+	let resetHolding = false;
+
+	function clearResetArmTimeout() {
+		if (!resetArmTimeout) return;
+		clearTimeout(resetArmTimeout);
+		resetArmTimeout = null;
+	}
+
+	function setResetLabel(text) {
+		if (resetProgressLabel) {
+			resetProgressLabel.textContent = text;
+		}
+	}
+
+	function setResetProgress(progress) {
+		if (!resetProgressOverlay) return;
+		const safeProgress = Math.max(0, Math.min(1, toFiniteNumber(progress, 0)));
+		resetProgressOverlay.style.transform = `scaleX(${safeProgress})`;
+	}
+
+	function resetButtonToIdleState() {
+		clearResetArmTimeout();
+		if (resetHoldRaf) {
+			cancelAnimationFrame(resetHoldRaf);
+			resetHoldRaf = null;
+		}
+
+		resetArmed = false;
+		resetHolding = false;
+		if (resetProgressBtn) {
+			resetProgressBtn.classList.remove('is-armed', 'is-holding');
+		}
+		setResetLabel(RESET_BUTTON_IDLE_TEXT);
+		setResetProgress(0);
+	}
+
+	function armResetButton() {
+		if (!resetProgressBtn) return;
+		clearResetArmTimeout();
+		resetArmed = true;
+		resetProgressBtn.classList.add('is-armed');
+		setResetLabel(RESET_BUTTON_ARMED_TEXT);
+
+		resetArmTimeout = setTimeout(() => {
+			resetButtonToIdleState();
+		}, RESET_ARM_TIMEOUT_MS);
+	}
+
+	function resetGameProgress() {
+		stopRobotIncomeTimer();
+		try {
+			localStorage.clear();
+		} catch {
+			// localStorage может быть недоступен
+		}
+
+		coins = 0;
+		clickPower = 1;
+		upgradePrice = 85;
+		robotPrice = ROBOT_BASE_PRICE;
+		robotCount = 0;
+		robotIncomePerSecond = 0;
+		level = 0;
+		levelClicks = 0;
+		brightness = 70;
+		applyBrightness(brightness);
+		if (brightnessRange) {
+			brightnessRange.value = String(brightness);
+		}
+
+		applyGlobalVolume(1);
+		if (volumeSlider) {
+			volumeSlider.value = '100';
+		}
+
+		applyTheme('dark');
+		setSelectToTheme('dark');
+
+		updateUI();
+		resetButtonToIdleState();
+		if (settingsScreen) settingsScreen.classList.add('hidden');
+		if (menuScreen) menuScreen.classList.remove('hidden');
+	}
+
+	function finishResetHold() {
+		setResetProgress(1);
+		resetGameProgress();
+	}
+
+	function tickResetHold(timestamp) {
+		if (!resetHolding) return;
+		const elapsed = timestamp - resetHoldStart;
+		const progress = elapsed / RESET_HOLD_DURATION_MS;
+		setResetProgress(progress);
+
+		if (progress >= 1) {
+			resetHolding = false;
+			if (resetProgressBtn) {
+				resetProgressBtn.classList.remove('is-holding');
+			}
+			finishResetHold();
+			return;
+		}
+
+		resetHoldRaf = requestAnimationFrame(tickResetHold);
+	}
+
+	function startResetHold() {
+		if (!resetProgressBtn || !resetArmed || resetHolding) return;
+		clearResetArmTimeout();
+		resetHolding = true;
+		resetProgressBtn.classList.add('is-holding');
+		resetHoldStart = performance.now();
+		setResetProgress(0);
+		resetHoldRaf = requestAnimationFrame(tickResetHold);
+	}
+
+	function cancelResetHold() {
+		if (!resetHolding) return;
+		resetButtonToIdleState();
+	}
+
+	function triggerResetClickPulse() {
+		if (!resetProgressBtn) return;
+		resetProgressBtn.classList.remove('is-click-pulse');
+		void resetProgressBtn.offsetWidth;
+		resetProgressBtn.classList.add('is-click-pulse');
+	}
+
+	function initResetProgressButton() {
+		if (!resetProgressBtn) return;
+		resetButtonToIdleState();
+
+		resetProgressBtn.addEventListener('pointerdown', (event) => {
+			if (event.pointerType === 'mouse' && event.button !== 0) return;
+			triggerResetClickPulse();
+		});
+
+		resetProgressBtn.addEventListener('click', () => {
+			if (!resetArmed && !resetHolding) {
+				armResetButton();
+			}
+		});
+
+		resetProgressBtn.addEventListener('animationend', (event) => {
+			if (event.animationName === 'restartTapPulse') {
+				resetProgressBtn.classList.remove('is-click-pulse');
+			}
+		});
+
+		const onPressStart = (event) => {
+			if (!resetArmed || resetHolding) return;
+			if (event.type === 'mousedown' && event.button !== 0) return;
+			startResetHold();
+		};
+
+		const onPressCancel = () => {
+			cancelResetHold();
+		};
+
+		resetProgressBtn.addEventListener('mousedown', onPressStart);
+		resetProgressBtn.addEventListener('touchstart', onPressStart, { passive: true });
+		resetProgressBtn.addEventListener('mouseup', onPressCancel);
+		resetProgressBtn.addEventListener('mouseleave', onPressCancel);
+		resetProgressBtn.addEventListener('touchend', onPressCancel);
+		resetProgressBtn.addEventListener('touchcancel', onPressCancel);
+		resetProgressBtn.addEventListener('pointercancel', onPressCancel);
+	}
+
 	function isSpecialSoundButton(button) {
 		if (!button) return true;
 		if (button.disabled) return true;
@@ -480,6 +661,7 @@ document.addEventListener('DOMContentLoaded', () => {
 	}
 
 	bindGenericButtonSound();
+	initResetProgressButton();
 	initVolumeControl();
 	loadGame(); // 1. загружаем сохранение
 	if (robotIncomePerSecond > 0) {

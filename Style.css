@@ -762,25 +762,137 @@ body{
 }
 
 .settings-restart{
-	border:1px solid #b9e564;
-	border-radius:20px;
-	padding:3px 9px;
-	background: var(--card);
+	width:auto;
+	display:flex;
+	justify-content:center;
+}
+
+.settings-restart-btn{
+	--restart-bg: linear-gradient(135deg,
+		color-mix(in srgb, var(--card) 78%, rgba(255,255,255,0.06) 22%),
+		color-mix(in srgb, var(--bg2) 62%, rgba(124,205,206,0.18) 38%)
+	);
+	--restart-text: color-mix(in srgb, var(--text) 84%, white 16%);
+	--restart-progress: rgba(108, 236, 140, 0.78);
+	--restart-border: color-mix(in srgb, var(--accent2) 32%, rgba(255,255,255,0.10) 68%);
+	position:relative;
+	display:inline-flex;
+	align-items:center;
+	justify-content:center;
+	width:auto;
+	min-width:min(100%, 232px);
+	max-width:100%;
+	min-height:44px;
+	padding:10px 16px;
+	border:1px solid var(--restart-border);
+	border-radius:14px;
+	font-size:14px;
+	font-weight:800;
+	letter-spacing:0.15px;
+	line-height:1;
+	background:var(--restart-bg);
+	color:var(--restart-text);
 	cursor:pointer;
-	transition: background .2s ease, border-color .2s ease;
+	overflow:hidden;
+	isolation:isolate;
+	user-select:none;
+	touch-action:manipulation;
+	-webkit-tap-highlight-color: transparent;
+	transition: transform .18s ease, filter .25s ease, box-shadow .25s ease, border-color .25s ease;
+	box-shadow:
+		0 8px 18px rgba(2,6,23,0.28),
+		inset 0 1px 0 rgba(255,255,255,0.08);
 }
-.settings-restart p{
-	color:#b9e564;
-	font-size:15px;
-	font-weight:700;
-	letter-spacing:0.3px;
+
+@media (hover:hover){
+	.settings-restart-btn:hover{
+		transform:translateY(-1px) scale(1.04);
+		filter:brightness(1.06);
+		border-color: color-mix(in srgb, var(--accent2) 54%, white 46%);
+		box-shadow:
+			0 0 16px rgba(124,205,206,0.18),
+			0 12px 24px rgba(2,6,23,0.34),
+			inset 0 1px 0 rgba(255,255,255,0.10);
+	}
+}
+
+.settings-restart-btn:active{
+	transform:scale(0.98);
+}
+
+.settings-restart-btn.is-click-pulse{
+	animation:restartTapPulse .34s ease;
+}
+
+.settings-restart-btn:focus-visible{
+	outline:none;
+	box-shadow:
+		0 0 0 3px color-mix(in srgb, var(--accent2) 30%, white 70%),
+		0 8px 18px rgba(2,6,23,0.28),
+		inset 0 1px 0 rgba(255,255,255,0.08);
+}
+
+.settings-restart-btn.is-armed{
+	filter:saturate(1.22) brightness(1.12);
+	border-color: color-mix(in srgb, var(--accent2) 62%, white 38%);
+	box-shadow:
+		0 0 18px rgba(124,205,206,0.18),
+		0 12px 24px rgba(2,6,23,0.34),
+		inset 0 1px 0 rgba(255,255,255,0.10);
+}
+
+.settings-restart-progress{
+	position:absolute;
+	inset:0;
+	z-index:0;
+	background:
+		linear-gradient(90deg, color-mix(in srgb, var(--restart-progress) 86%, white 14%), var(--restart-progress));
+	border-radius:inherit;
+	transform-origin:left center;
+	transform:scaleX(0);
+	opacity:0;
+	pointer-events:none;
+	transition:opacity .2s ease;
+}
+
+.settings-restart-btn.is-holding .settings-restart-progress{
+	opacity:1;
+	box-shadow: inset 0 0 24px rgba(255,255,255,0.22), 0 0 12px rgba(120,255,160,0.24);
+	animation:restartPulse .9s ease-in-out infinite alternate;
+}
+
+.settings-restart-label{
+	position:relative;
+	z-index:1;
+	display:inline-flex;
+	align-items:center;
+	justify-content:center;
 	text-align:center;
+	text-shadow:0 1px 3px rgba(0,0,0,.28);
 }
-.settings-restart:hover{
-	background: rgba(255,107,107,0.12);
-	border-color:#ff6b6b;
+
+body.light_theme .settings-restart-btn,
+body.auto .settings-restart-btn{
+	--restart-bg: linear-gradient(135deg,
+		color-mix(in srgb, var(--card) 90%, white 10%),
+		color-mix(in srgb, #dfe7f2 64%, var(--accent2) 36%)
+	);
+	--restart-text: color-mix(in srgb, var(--text) 92%, #131313 8%);
+	--restart-progress: rgba(85, 200, 125, 0.76);
+	--restart-border: color-mix(in srgb, var(--accent2) 46%, rgba(18,26,40,0.14) 54%);
 }
-.settings-restart:hover p{ color:#fff; }
+
+@keyframes restartPulse{
+	from { filter:saturate(1) brightness(1); }
+	to { filter:saturate(1.12) brightness(1.08); }
+}
+
+@keyframes restartTapPulse{
+	0% { transform:scale(1); }
+	35% { transform:scale(1.06); }
+	70% { transform:scale(0.97); }
+	100% { transform:scale(1); }
+}
 
 /* =========================================================
    12) THEMES (dark / light / auto)
