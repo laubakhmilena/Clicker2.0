@@ -390,6 +390,7 @@ document.addEventListener('DOMContentLoaded', () => {
 				text: '✓ Надето',
 				className: 'is-equipped',
 				disabled: true,
+				title: 'Скин уже надет',
 			};
 		}
 
@@ -398,13 +399,17 @@ document.addEventListener('DOMContentLoaded', () => {
 				text: 'Куплено',
 				className: 'is-owned',
 				disabled: false,
+				title: 'Нажмите, чтобы надеть скин',
 			};
 		}
 
+		const isLocked = coins < skin.price;
+
 		return {
 			text: `Купить за ${skin.price} 💰`,
-			className: '',
-			disabled: coins < skin.price,
+			className: isLocked ? 'is-locked' : '',
+			disabled: isLocked,
+			title: isLocked ? 'Недостаточно монет для покупки' : 'Нажмите, чтобы купить скин',
 		};
 	}
 
@@ -416,9 +421,12 @@ document.addEventListener('DOMContentLoaded', () => {
 				const buttonState = getSkinButtonState(skin);
 				const rarityLabel = getRarityLabel(skin.rarity);
 				const buttonClass = buttonState.className ? `skin-card__action ${buttonState.className}` : 'skin-card__action';
+				const cardClass = buttonState.className === 'is-locked'
+					? `skin-card skin-card--${skin.rarity} skin-card--locked`
+					: `skin-card skin-card--${skin.rarity}`;
 
 				return `
-					<article class="skin-card skin-card--${skin.rarity}">
+					<article class="${cardClass}">
 						<div class="skin-card__icon" aria-hidden="true">${skin.icon}</div>
 						<h3 class="skin-card__name">${skin.name}</h3>
 						<span class="skin-card__rarity">${rarityLabel}</span>
@@ -426,6 +434,8 @@ document.addEventListener('DOMContentLoaded', () => {
 							type="button"
 							class="${buttonClass}"
 							data-skin-id="${skin.id}"
+							title="${buttonState.title}"
+							aria-label="${buttonState.title}"
 							${buttonState.disabled ? 'disabled' : ''}
 						>
 							${buttonState.text}
