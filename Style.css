@@ -1458,7 +1458,10 @@ body.light_theme .primary-btn{
 	box-shadow: 0 0 12px rgba(116,255,168,0.2), 0 10px 22px rgba(2,6,23,0.35);
 }
 
-.skin-card__action:disabled{ opacity:1; }
+.skin-card__action:disabled{
+	opacity:1;
+	cursor:not-allowed;
+}
 
 @media (min-width: 720px){
 	.skins-grid{ grid-template-columns: repeat(3, minmax(0, 1fr)); }
