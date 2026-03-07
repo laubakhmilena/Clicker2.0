@@ -169,8 +169,8 @@
 
 
 
-	<!-- Скины -->
-	<section id="skins-modal" class="menu skins-modal hidden">
+		<!-- Скины -->
+		<section id="skins-modal" class="menu skins-modal hidden">
 		<div class="menu-frame">
 			<div class="skins-card">
 				<header class="skins-header">
@@ -182,8 +182,28 @@
 				<button id="close-skins" class="close-btn" type="button" aria-label="Закрыть окно скинов">✕</button>
 			</div>
 		</div>
-	</section>
+		</section>
 
-	<script src="Script.js"></script>
-</body>
+		<!-- Бусты -->
+		<section id="boosts-modal" class="menu boosts-modal hidden">
+			<div class="menu-frame">
+				<div class="boosts-card">
+					<header class="boosts-header">
+						<h2 class="menu-title boosts-title">БУСТЫ</h2>
+					</header>
+					<nav id="boosts-tabs" class="boosts-tabs" aria-label="Категории бустов"></nav>
+					<section class="boosts-active" aria-label="Активные бусты">
+						<h3>Активные бусты</h3>
+						<div id="boosts-active-list"></div>
+					</section>
+					<main class="boosts-grid">
+						<div id="boosts-grid" aria-label="Список бустов"></div>
+					</main>
+					<button id="close-boosts" class="close-btn" type="button" aria-label="Закрыть окно бустов">✕</button>
+				</div>
+			</div>
+		</section>
+
+		<script src="Script.js"></script>
+	</body>
 </html>
