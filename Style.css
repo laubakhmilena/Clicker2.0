@@ -26,6 +26,7 @@ html, body{
 	height:100%;
 	width:100%;
 	overflow:hidden;
+	-webkit-tap-highlight-color: transparent;
 }
 
 body{
@@ -39,7 +40,37 @@ body{
 	filter: brightness(var(--screen-brightness, 1));
 	transition: filter 0.12s linear;
 
+
 	background: linear-gradient(135deg, var(--bg1), var(--bg2));
+	perspective: 1000px;
+}
+
+button,
+[role="button"],
+#click-object{
+	-webkit-tap-highlight-color: transparent;
+	user-select: none;
+	-webkit-user-select: none;
+	backface-visibility: hidden;
+	-webkit-backface-visibility: hidden;
+	transform: translateZ(0);
+	outline: none;
+}
+
+button:focus,
+button:active,
+[role="button"]:focus,
+[role="button"]:active,
+#click-object:focus,
+#click-object:active{
+	outline: none;
+}
+
+button:focus-visible,
+[role="button"]:focus-visible,
+#click-object:focus-visible{
+	outline: 2px solid rgba(124,205,206,0.55);
+	outline-offset: 2px;
 }
 
 /* Utility */
@@ -416,7 +447,7 @@ body{
 
 	border-radius:18px;
 	border:1px solid rgba(255,255,255,0.18);
-	background: rgba(255,255,255,0.08);
+	background: linear-gradient(135deg, rgba(255,255,255,0.10), rgba(255,255,255,0.05));
 
 	backdrop-filter: blur(10px);
 	-webkit-backdrop-filter: blur(10px);
@@ -429,7 +460,7 @@ body{
 	-webkit-tap-highlight-color: transparent;
 	touch-action: manipulation;
 
-	transition: transform .18s ease, box-shadow .22s ease, border-color .22s ease, background .22s ease;
+	transition: transform .18s ease, box-shadow .22s ease, border-color .22s ease, background-color .22s ease;
 }
 
 .upgrade-btn__icon{
@@ -490,7 +521,7 @@ body{
 		transform:translateY(-1px);
 		border-color: rgba(124,205,206,0.45);
 		box-shadow: 0 0 18px rgba(124,205,206,0.28), 0 14px 34px rgba(2,6,23,0.45);
-		background: rgba(255,255,255,0.10);
+		background-color: rgba(255,255,255,0.12);
 	}
 }
 @media (hover:none){
@@ -498,7 +529,7 @@ body{
 		transform:scale(0.99);
 		border-color: rgba(124,205,206,0.45);
 		box-shadow: 0 0 18px rgba(124,205,206,0.25), 0 14px 34px rgba(2,6,23,0.45);
-		background: rgba(255,255,255,0.10);
+		background-color: rgba(255,255,255,0.12);
 	}
 }
 
