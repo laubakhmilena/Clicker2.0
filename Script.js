@@ -389,6 +389,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			return {
 				text: '✓ Надето',
 				className: 'is-equipped',
+				title: 'Скин уже надет',
 				disabled: true,
 			};
 		}
@@ -397,14 +398,18 @@ document.addEventListener('DOMContentLoaded', () => {
 			return {
 				text: 'Куплено',
 				className: 'is-owned',
+				title: 'Нажмите, чтобы надеть',
 				disabled: false,
 			};
 		}
 
+		const isLocked = coins < skin.price;
+
 		return {
 			text: `Купить за ${skin.price} 💰`,
 			className: '',
-			disabled: coins < skin.price,
+			title: isLocked ? 'Заблокировано: недостаточно золота' : 'Нажмите, чтобы купить',
+			disabled: isLocked,
 		};
 	}
 
@@ -426,6 +431,7 @@ document.addEventListener('DOMContentLoaded', () => {
 							type="button"
 							class="${buttonClass}"
 							data-skin-id="${skin.id}"
+							title="${buttonState.title}"
 							${buttonState.disabled ? 'disabled' : ''}
 						>
 							${buttonState.text}
@@ -970,6 +976,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			const disabled = coins < upgradePrice;
 			upgradeClickBtn.disabled = disabled;
 			upgradeClickBtn.classList.toggle('disabled', disabled);
+			upgradeClickBtn.title = disabled ? 'Заблокировано: недостаточно золота' : 'Нажмите, чтобы улучшить клик';
 		}
 	}
 
@@ -986,6 +993,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			const disabled = coins < robotPrice;
 			autoBotBtn.disabled = disabled;
 			autoBotBtn.classList.toggle('disabled', disabled);
+			autoBotBtn.title = disabled ? 'Заблокировано: недостаточно золота' : 'Нажмите, чтобы купить робота';
 		}
 	}
 
