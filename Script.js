@@ -5,6 +5,7 @@ document.addEventListener('DOMContentLoaded', () => {
 	const menuScreen = document.getElementById('menu'); // Ссылки на наши экраны
 	const aboutScreen = document.getElementById('about-modal');
 	const settingsScreen = document.getElementById('settings');
+	const skinsModal = document.getElementById('skins-modal');
 
 	const startBtn = document.getElementById('start-btn'); // Кнопки начать игру
 	const backBtn = document.getElementById('back-menu-btn'); // В меню
@@ -14,6 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 	const settingsBtn = document.getElementById('settings-btn'); // настройки
 	const closeSetting = document.getElementById('close-settings');
+	const closeSkinsBtn = document.getElementById('close-skins');
 	const resetProgressBtn = document.getElementById('reset-progress-btn');
 	const resetProgressLabel = resetProgressBtn ? resetProgressBtn.querySelector('.settings-restart-label') : null;
 	const resetProgressOverlay = resetProgressBtn ? resetProgressBtn.querySelector('.settings-restart-progress') : null;
@@ -26,6 +28,13 @@ document.addEventListener('DOMContentLoaded', () => {
 	const clickPowerEl = document.getElementById('click-power-val');
 	const clickObject = document.getElementById('click-object');
 	const gameEl = document.getElementById('game');
+
+	// Кнопки панели разделов
+	const skinsBtn = document.getElementById('btn-skins');
+	const boostsBtn = document.getElementById('btn-boosts');
+	const achievementsBtn = document.getElementById('btn-achievements');
+	const statsBtn = document.getElementById('btn-stats');
+	const skinsGrid = document.getElementById('skins-grid');
 
 	let coins = 0;
 	let clickPower = 1;
@@ -88,6 +97,35 @@ document.addEventListener('DOMContentLoaded', () => {
 	// Сложность: LVL 0 -> 1 = 150 кликов, дальше умножаем на 2.1 каждый уровень
 	const LEVEL_FIRST_CLICKS = 150; // требование для перехода с LVL 0 на LVL 1
 	const LEVEL_MULTIPLIER = 2.1; // множитель роста сложности
+
+
+		// === СКИНЫ ===
+	const SKINS_OWNED_KEY = 'skinsOwned';
+	const SKINS_SELECTED_KEY = 'skinSelected';
+	const skins = [
+		{ id: 1, name: 'Классический Робот', icon: '🤖', price: 0, rarity: 'common' },
+		{ id: 2, name: 'Рабочий Механик', icon: '🔧', price: 800, rarity: 'common' },
+		{ id: 3, name: 'Стальной Защитник', icon: '🛡️', price: 1600, rarity: 'common' },
+		{ id: 4, name: 'Лунный Разведчик', icon: '🪐', price: 3500, rarity: 'common' },
+		{ id: 5, name: 'Неоновый Курьер', icon: '🌟', price: 6000, rarity: 'uncommon' },
+		{ id: 6, name: 'Огненный Прототип', icon: '🔥', price: 8500, rarity: 'uncommon' },
+		{ id: 7, name: 'Ледяной Страж', icon: '❄️', price: 11000, rarity: 'uncommon' },
+		{ id: 8, name: 'Камуфляжный Тактик', icon: '🪖', price: 14000, rarity: 'uncommon' },
+		{ id: 9, name: 'Кибер-Ниндзя', icon: '🥷', price: 22000, rarity: 'rare' },
+		{ id: 10, name: 'Электро-Воин', icon: '⚡', price: 29000, rarity: 'rare' },
+		{ id: 11, name: 'Космический Рейдер', icon: '🌌', price: 39000, rarity: 'rare' },
+		{ id: 12, name: 'Хромовый Фантом', icon: '💎', price: 49000, rarity: 'rare' },
+		{ id: 13, name: 'Драконий Мех', icon: '🐉', price: 78000, rarity: 'ultra' },
+		{ id: 14, name: 'Галактический Император', icon: '👑', price: 115000, rarity: 'ultra' },
+		{ id: 15, name: 'Призрачный Протокол', icon: '👻', price: 155000, rarity: 'ultra' },
+		{ id: 16, name: 'Абсолютный Омега', icon: '☄️', price: 780000, rarity: 'ultra' },
+	];
+
+	const DEFAULT_SKIN_ID = 1;
+	const skinById = new Map(skins.map((skin) => [skin.id, skin]));
+	let ownedSkinIds = new Set([DEFAULT_SKIN_ID]);
+	let selectedSkinId = DEFAULT_SKIN_ID;
+
 
 	function toFiniteNumber(value, fallback = 0) {
 		const n = Number(value);
@@ -330,6 +368,155 @@ document.addEventListener('DOMContentLoaded', () => {
 		};
 	}
 
+	
+	// --- СКИНЫ: модалка, покупка, выбор и рендер карточек ---
+	function getRarityLabel(rarity) {
+		if (rarity === 'uncommon') return 'Uncommon';
+		if (rarity === 'rare') return 'Rare';
+		if (rarity === 'ultra') return 'Ultra';
+		return 'Common';
+	}
+
+	function updateClickObjectSkin() {
+		if (!clickObject) return;
+		const currentSkin = skinById.get(selectedSkinId) || skinById.get(DEFAULT_SKIN_ID);
+		clickObject.textContent = currentSkin ? currentSkin.icon : '🤖';
+	}
+
+	function getSkinButtonState(skin) {
+		const isOwned = ownedSkinIds.has(skin.id) || skin.price === 0;
+		if (skin.id === selectedSkinId) {
+			return {
+				text: '✓ Надето',
+				className: 'is-equipped',
+				disabled: true,
+			};
+		}
+
+		if (isOwned) {
+			return {
+				text: 'Куплено',
+				className: 'is-owned',
+				disabled: false,
+			};
+		}
+
+		return {
+			text: `Купить за ${skin.price} 💰`,
+			className: '',
+			disabled: coins < skin.price,
+		};
+	}
+
+	function renderSkinsGrid() {
+		if (!skinsGrid) return;
+
+		skinsGrid.innerHTML = skins
+			.map((skin) => {
+				const buttonState = getSkinButtonState(skin);
+				const rarityLabel = getRarityLabel(skin.rarity);
+				const buttonClass = buttonState.className ? `skin-card__action ${buttonState.className}` : 'skin-card__action';
+
+				return `
+					<article class="skin-card skin-card--${skin.rarity}">
+						<div class="skin-card__icon" aria-hidden="true">${skin.icon}</div>
+						<h3 class="skin-card__name">${skin.name}</h3>
+						<span class="skin-card__rarity">${rarityLabel}</span>
+						<button
+							type="button"
+							class="${buttonClass}"
+							data-skin-id="${skin.id}"
+							${buttonState.disabled ? 'disabled' : ''}
+						>
+							${buttonState.text}
+						</button>
+					</article>
+				`;
+			})
+			.join('');
+	}
+
+	function openSkinsModal() {
+		if (!skinsModal) return;
+		renderSkinsGrid();
+		skinsModal.classList.remove('hidden');
+	}
+
+	function closeSkinsModal() {
+		if (!skinsModal) return;
+		skinsModal.classList.add('hidden');
+	}
+
+	if (skinsBtn) {
+		skinsBtn.addEventListener('click', () => {
+			openSkinsModal();
+		});
+	}
+
+	if (closeSkinsBtn) {
+		closeSkinsBtn.addEventListener('click', () => {
+			closeSkinsModal();
+		});
+	}
+
+	if (skinsModal) {
+		skinsModal.addEventListener('click', (event) => {
+			if (event.target === skinsModal) {
+				closeSkinsModal();
+			}
+		});
+	}
+
+	if (skinsGrid) {
+		skinsGrid.addEventListener('click', (event) => {
+			const target = event.target;
+			if (!(target instanceof HTMLElement)) return;
+
+			const actionBtn = target.closest('.skin-card__action');
+			if (!actionBtn) return;
+
+			const skinId = Number(actionBtn.dataset.skinId);
+			const skin = skinById.get(skinId);
+			if (!skin) return;
+
+			const isOwned = ownedSkinIds.has(skin.id) || skin.price === 0;
+
+			if (!isOwned) {
+				if (coins < skin.price) return;
+				coins -= skin.price;
+				ownedSkinIds.add(skin.id);
+				selectedSkinId = skin.id;
+			} else {
+				selectedSkinId = skin.id;
+			}
+
+			updateClickObjectSkin();
+			updateUI();
+			saveGame();
+			renderSkinsGrid();
+		});
+	}
+
+	// Временные кликабельные обработчики для остальных кнопок панели
+	if (boostsBtn) {
+		boostsBtn.addEventListener('click', () => {
+			console.log('Нажата кнопка: Бусты');
+		});
+	}
+
+	if (achievementsBtn) {
+		achievementsBtn.addEventListener('click', () => {
+			console.log('Нажата кнопка: Достижения');
+		});
+	}
+
+	if (statsBtn) {
+		statsBtn.addEventListener('click', () => {
+			console.log('Нажата кнопка: Статистика');
+		});
+	}
+
+
 	const RESET_BUTTON_IDLE_TEXT = 'Сбросить весь прогресс';
 	const RESET_BUTTON_ARMED_TEXT = 'Держите 3 секунды';
 	const RESET_HOLD_DURATION_MS = 3000;
@@ -403,6 +590,8 @@ document.addEventListener('DOMContentLoaded', () => {
 		robotIncomePerSecond = 0;
 		level = 0;
 		levelClicks = 0;
+		ownedSkinIds = new Set([DEFAULT_SKIN_ID]);
+		selectedSkinId = DEFAULT_SKIN_ID;
 		brightness = 70;
 		applyBrightness(brightness);
 		if (brightnessRange) {
@@ -417,11 +606,15 @@ document.addEventListener('DOMContentLoaded', () => {
 		applyTheme('dark');
 		setSelectToTheme('dark');
 
+		updateClickObjectSkin();
+		renderSkinsGrid();
 		updateUI();
 		resetButtonToIdleState();
 		if (settingsScreen) settingsScreen.classList.add('hidden');
+		closeSkinsModal();
 		if (menuScreen) menuScreen.classList.remove('hidden');
 	}
+
 
 	function finishResetHold() {
 		setResetProgress(1);
@@ -568,6 +761,7 @@ document.addEventListener('DOMContentLoaded', () => {
 		updateLevelUI();
 		updateClickUpgradeUI();
 		updateRobotUpgradeUI();
+		renderSkinsGrid();
 	}
 
 	// Сохраняем данные в localStorage
@@ -582,6 +776,8 @@ document.addEventListener('DOMContentLoaded', () => {
 		setStorageItem(VOLUME_KEY, clamp01(globalVolume));
 		setStorageItem(LEVEL_KEY, Math.max(0, Math.floor(toFiniteNumber(level, 0))));
 		setStorageItem(LEVEL_CLICKS_KEY, Math.max(0, Math.floor(toFiniteNumber(levelClicks, 0))));
+		setStorageItem(SKINS_OWNED_KEY, JSON.stringify(Array.from(ownedSkinIds)));
+		setStorageItem(SKINS_SELECTED_KEY, Math.max(DEFAULT_SKIN_ID, Math.floor(toFiniteNumber(selectedSkinId, DEFAULT_SKIN_ID))));
 	}
 
 	// Загружаем данные из localStorage
@@ -596,6 +792,8 @@ document.addEventListener('DOMContentLoaded', () => {
 		const savedVolume = getStorageItem(VOLUME_KEY);
 		const savedLevel = getStorageItem(LEVEL_KEY);
 		const savedLevelClicks = getStorageItem(LEVEL_CLICKS_KEY);
+		const savedOwnedSkins = getStorageItem(SKINS_OWNED_KEY);
+		const savedSelectedSkin = getStorageItem(SKINS_SELECTED_KEY);
 
 		if (savedCoins !== null) {
 			coins = Math.max(0, toFiniteNumber(savedCoins, 0));
@@ -636,6 +834,31 @@ document.addEventListener('DOMContentLoaded', () => {
 		if (savedLevelClicks !== null) {
 			levelClicks = Math.max(0, Math.floor(toFiniteNumber(savedLevelClicks, 0)));
 		}
+		if (savedOwnedSkins) {
+			try {
+				const parsed = JSON.parse(savedOwnedSkins);
+				if (Array.isArray(parsed)) {
+					ownedSkinIds = new Set(
+						parsed
+							.map((value) => Math.floor(toFiniteNumber(value, -1)))
+							.filter((id) => skinById.has(id))
+					);
+				}
+			} catch {
+				ownedSkinIds = new Set([DEFAULT_SKIN_ID]);
+			}
+		}
+
+		ownedSkinIds.add(DEFAULT_SKIN_ID);
+
+		if (savedSelectedSkin !== null) {
+			const parsedSelected = Math.floor(toFiniteNumber(savedSelectedSkin, DEFAULT_SKIN_ID));
+			if (skinById.has(parsedSelected) && ownedSkinIds.has(parsedSelected)) {
+				selectedSkinId = parsedSelected;
+			} else {
+				selectedSkinId = DEFAULT_SKIN_ID;
+			}
+		}
 	}
 
 	// Клик по роботу
@@ -664,6 +887,8 @@ document.addEventListener('DOMContentLoaded', () => {
 	initResetProgressButton();
 	initVolumeControl();
 	loadGame(); // 1. загружаем сохранение
+	updateClickObjectSkin();
+	renderSkinsGrid();
 	if (robotIncomePerSecond > 0) {
 		startRobotIncomeTimer();
 	} else {

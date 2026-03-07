@@ -5,11 +5,9 @@
 	<meta charset="utf-8" />
 	<meta name="viewport" content="width=device-width,initial-scale=1" />
 	<title>Robo Clicker</title>
-	<link rel="stylesheet" href="Style.css" />
-</head>
+	<link rel="stylesheet" href="Style.css" /> </head>
 
 <body>
-
 	<!-- Об игре-->
 	<section id="about-modal" class="menu about-modal hidden">
 		<div class="menu-frame">
@@ -41,7 +39,6 @@
 			</div>
 		</div>
 	</section>
-
 	<!-- Настройки -->
 	<section id="settings" class="menu settings-modal hidden">
 		<div class="menu-frame">
@@ -60,17 +57,11 @@
 								</select>
 							</li>
 							<li data-lang="sound">🔊 Звук</li>
-							<li>
-								<span>🔇</span>
-								<input id="volume-slider" type="range" min="0" max="100" value="100" step="1" aria-label="Громкость звука">
-								<span>🔊</span>
-							</li>
+							<li> <span>🔇</span>
+								<input id="volume-slider" type="range" min="0" max="100" value="100" step="1" aria-label="Громкость звука"> <span>🔊</span> </li>
 							<li data-lang="brightness">☀️ Яркость</li>
-							<li>
-								<span>🌑</span>
-								<input id="brightness-range" type="range" min="0" max="100" value="70" step="1">
-								<span>🌕</span>
-							</li>
+							<li> <span>🌑</span>
+								<input id="brightness-range" type="range" min="0" max="100" value="70" step="1"> <span>🌕</span> </li>
 							<li data-lang="theme">🌗 Тема</li>
 							<li>
 								<select class="theme-select">
@@ -84,17 +75,13 @@
 				</main>
 				<aside class="settings-footer">
 					<div class="settings-restart">
-						<button id="reset-progress-btn" class="settings-restart-btn" type="button" aria-label="Сбросить весь прогресс">
-							<span class="settings-restart-progress" aria-hidden="true"></span>
-							<span class="settings-restart-label" data-lang="restart">Сбросить весь прогресс</span>
-						</button>
+						<button id="reset-progress-btn" class="settings-restart-btn" type="button" aria-label="Сбросить весь прогресс"> <span class="settings-restart-progress" aria-hidden="true"></span> <span class="settings-restart-label" data-lang="restart">Сбросить весь прогресс</span> </button>
 					</div>
 				</aside>
 				<button id="close-settings" class="close-btn">✕</button>
 			</div>
 		</div>
 	</section>
-
 	<!-- Главное меню-->
 	<section id="menu" class="menu">
 		<div class="menu-card">
@@ -111,39 +98,24 @@
 			</nav>
 		</div>
 	</section>
-
 	<!-- Главный экран-->
 	<section id="game" class="">
 		<header class="game-topbar">
 			<div class="game-stats-row" aria-label="Игровая статистика">
-				<div class="stat-badge stat-badge--compact">
-					<span class="stat-badge__label" id="score-label" data-lang="gold">Золото</span>
-					<span class="stat-badge__value"><span id="score">0</span> 💰</span>
+				<div class="stat-badge stat-badge--compact"> <span class="stat-badge__label" id="score-label" data-lang="gold">Золото</span> <span class="stat-badge__value"><span id="score">0</span> 💰</span>
 				</div>
-
-				<div class="stat-badge stat-badge--compact">
-					<span class="stat-badge__label" id="power-label" data-lang="power-label">Сила клика</span>
-					<span class="stat-badge__value"><span id="click-power-val">1</span> ⚡</span>
+				<div class="stat-badge stat-badge--compact"> <span class="stat-badge__label" id="power-label" data-lang="power-label">Сила клика</span> <span class="stat-badge__value"><span id="click-power-val">1</span> ⚡</span>
 				</div>
 			</div>
 		</header>
-
 		<div class="level-row" aria-label="Уровень игрока">
-			<div id="level-bar" class="level-bar" role="progressbar"
-				aria-label="Прогресс уровня"
-				aria-valuemin="0"
-				aria-valuenow="0"
-				aria-valuemax="150">
+			<div id="level-bar" class="level-bar" role="progressbar" aria-label="Прогресс уровня" aria-valuemin="0" aria-valuenow="0" aria-valuemax="150">
 				<div id="level-fill" class="level-fill"></div>
-				<div id="level-text" class="level-text" data-lang="level" data-lang-template="LVL {n}"> 
-					LVL 0
-				</div>
+				<div id="level-text" class="level-text" data-lang="level" data-lang-template="LVL {n}"> LVL 0 </div>
 			</div>
 		</div>
-
 		<div class="shop-panel">
 			<h2 class="shop-panel__title">МАГАЗИН</h2>
-
 			<section class="game-upgrades" aria-label="Улучшения">
 				<button id="btn-upgrade-click" class="upgrade-btn upgrade-btn--click" type="button">
 					<span class="upgrade-btn__icon" aria-hidden="true">⚡</span>
@@ -164,6 +136,28 @@
 			</section>
 		</div>
 
+		<div class="feature-panel" aria-label="Игровые разделы">
+			<button id="btn-skins" class="feature-btn" type="button">
+				<span class="feature-btn__icon" aria-hidden="true">👕</span>
+				<span class="feature-btn__text">Скины</span>
+			</button>
+
+			<button id="btn-boosts" class="feature-btn" type="button">
+				<span class="feature-btn__icon" aria-hidden="true">🚀</span>
+				<span class="feature-btn__text">Бусты</span>
+			</button>
+
+			<button id="btn-achievements" class="feature-btn locked" type="button">
+				<span class="feature-btn__icon" aria-hidden="true">🏆</span>
+				<span class="feature-btn__text">Достижения</span>
+			</button>
+
+			<button id="btn-stats" class="feature-btn" type="button">
+				<span class="feature-btn__icon" aria-hidden="true">📊</span>
+				<span class="feature-btn__text">Статистика</span>
+			</button>
+		</div>
+
 		<main class="game-arena">
 			<div id="click-object">🤖</div>
 		</main>
@@ -171,6 +165,23 @@
 		<aside class="game-shop">
 			<button id="back-menu-btn" class="exit-btn" data-lang="back-menu-btn">В меню</button>
 		</aside>
+	</section>
+
+
+
+	<!-- Скины -->
+	<section id="skins-modal" class="menu skins-modal hidden">
+		<div class="menu-frame">
+			<div class="skins-card">
+				<header class="skins-header">
+					<h2 class="menu-title skins-title">СКИНЫ</h2>
+				</header>
+				<main class="skins-content">
+					<div id="skins-grid" class="skins-grid" aria-label="Список скинов"></div>
+				</main>
+				<button id="close-skins" class="close-btn" type="button" aria-label="Закрыть окно скинов">✕</button>
+			</div>
+		</div>
 	</section>
 
 	<script src="Script.js"></script>
