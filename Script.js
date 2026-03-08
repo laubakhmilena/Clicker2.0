@@ -79,26 +79,51 @@ document.addEventListener('DOMContentLoaded', () => {
 		return String(raw).replace(/\{(\w+)\}/g, (_, token) => (params[token] ?? `{${token}}`));
 	}
 
-	// Универсальная локализация динамических русских строк (fallback для данных из массивов).
-	function localizeDynamicText(text) {
-		const value = String(text ?? '');
-		if (currentLanguage === 'ru') return value;
-		const dict = {
-			'монет': 'coins', 'монета': 'coin', 'монеты': 'coins', 'клик': 'click', 'кликов': 'clicks', 'клика': 'click',
-			'роботов': 'robots', 'робота': 'robot', 'робот': 'robot', 'уровня': 'level', 'уровень': 'level', 'секунд': 'seconds',
-			'сек': 'sec', 'куплено': 'bought', 'недостаточно монет': 'Not enough coins', 'активен': 'Active', 'лимит': 'Limit',
-			'в процессе': 'In progress', 'выполнено': 'Completed', 'недоступно': 'Locked', 'получено': 'Claimed', 'скин': 'skin'
+	// Получение имени скина на активном языке.
+	function getSkinNameById(skinId, fallbackName = '') {
+		const enNames = {
+			1: 'Classic Robot', 2: 'Workshop Mechanic', 3: 'Steel Guardian', 4: 'Moon Scout',
+			5: 'Neon Courier', 6: 'Fire Prototype', 7: 'Frost Guardian', 8: 'Camouflage Tactician',
+			9: 'Cyber Ninja', 10: 'Electro Warrior', 11: 'Space Raider', 12: 'Chrome Phantom',
+			13: 'Dragon Mech', 14: 'Galactic Emperor', 15: 'Ghost Protocol', 16: 'Absolute Omega',
 		};
-		let out = value;
-		Object.entries(dict).forEach(([ruWord, enWord]) => {
-			out = out.replace(new RegExp(ruWord, 'gi'), enWord);
-		});
-		const translit = {а:'a',б:'b',в:'v',г:'g',д:'d',е:'e',ё:'e',ж:'zh',з:'z',и:'i',й:'y',к:'k',л:'l',м:'m',н:'n',о:'o',п:'p',р:'r',с:'s',т:'t',у:'u',ф:'f',х:'h',ц:'ts',ч:'ch',ш:'sh',щ:'sch',ъ:'',ы:'y',ь:'',э:'e',ю:'yu',я:'ya'};
-		return out.replace(/[А-Яа-яЁё]/g, (ch) => {
-			const lower = ch.toLowerCase();
-			const rep = translit[lower] || '';
-			return ch === lower ? rep : (rep ? rep[0].toUpperCase() + rep.slice(1) : '');
-		});
+		if (currentLanguage !== 'en') return fallbackName;
+		return enNames[skinId] || fallbackName;
+	}
+
+	// Получение названия/описания буста на активном языке строго по утверждённому словарю.
+	function getBoostText(boost, field) {
+		if (currentLanguage !== 'en') return boost[field] || '';
+		const en = {
+			neon_overdrive: { name: 'Neon Overdrive', desc: 'x3 click power for 45 seconds' },
+			rocket_pulse: { name: 'Rocket Pulse', desc: 'x2.5 click power and +20% robot income' },
+			drone_army: { name: 'Drone Army', desc: 'x3 robot income for 90 seconds' },
+			golden_storm: { name: 'Golden Storm', desc: '+150% coins per click for 40 seconds' },
+			coin_burst: { name: 'Coin Burst', desc: 'Instantly gain 500 coins' },
+			super_click: { name: 'Super Click', desc: 'Your next click is x25' },
+			discount_protocol: { name: 'Discount Protocol', desc: 'Your next upgrade purchase costs 50% less' },
+			offline_bonus: { name: 'Offline Bonus', desc: 'Grants 50% of offline income' },
+			processor_plus: { name: 'Enhanced Processor', desc: '+1 click power' },
+			eternal_generator: { name: 'Eternal Generator', desc: '+0.5 robot income' },
+			evolution_module: { name: 'Evolution Module', desc: '+5% click power per level' },
+			space_amplifier: { name: 'Space Amplifier', desc: '+10% to all income' },
+			critical_overload: { name: 'Critical Overload', desc: '30% chance for x10 click power' },
+			time_freeze: { name: 'Time Freeze', desc: 'Timers run at x0.5 speed for 30 seconds' },
+			galactic_breakthrough: { name: 'Galactic Breakthrough', desc: 'Clicks x10 and robots x5' },
+			omega_mode: { name: 'Omega Mode', desc: 'Clicks x20 for 20 seconds' },
+		};
+		return en[boost.id]?.[field] || boost[field] || '';
+	}
+
+	// Получение локализованного текста достижения строго по списку переводов.
+	function getAchievementText(achievement, field) {
+		if (currentLanguage !== 'en') return achievement[field] ?? '';
+		const en = ACHIEVEMENT_EN_BY_ID[achievement.id];
+		if (!en) return achievement[field] ?? '';
+		if (field === 'name') return en.name;
+		if (field === 'desc') return en.desc;
+		if (field === 'bonus') return en.bonus ?? achievement.bonus ?? '';
+		return achievement[field] ?? '';
 	}
 
 	function updateLocalizedUI() {
@@ -126,6 +151,38 @@ document.addEventListener('DOMContentLoaded', () => {
 		Object.entries(staticMap).forEach(([selector, labels]) => {
 			const el = document.querySelector(selector);
 			if (el) el.textContent = labels[currentLanguage] || labels.ru;
+		});
+
+		const statsFieldLabels = [
+			{ ru: 'Монеты сейчас', en: 'Coins Now' },
+			{ ru: 'Всего заработано монет', en: 'Total Coins Earned' },
+			{ ru: 'Всего кликов', en: 'Total Clicks' },
+			{ ru: 'Базовая сила клика', en: 'Base Click Power' },
+			{ ru: 'Эффективная сила клика', en: 'Effective Click Power' },
+			{ ru: 'Текущий уровень', en: 'Current Level' },
+			{ ru: 'Прогресс уровня', en: 'Level Progress' },
+			{ ru: 'До следующего уровня', en: 'Remaining to Next Level' },
+			{ ru: 'Куплено улучшений клика', en: 'Click Upgrades Purchased' },
+			{ ru: 'Роботов куплено', en: 'Robots Purchased' },
+			{ ru: 'Базовый доход роботов в секунду', en: 'Base Robot Income' },
+			{ ru: 'Эффективный доход роботов в секунду', en: 'Effective Robot Income' },
+			{ ru: 'Куплено скинов', en: 'Skins Purchased' },
+			{ ru: 'Открыто скинов', en: 'Skins Unlocked' },
+			{ ru: 'Выбранный скин', en: 'Selected Skin' },
+			{ ru: 'Улучшено бустов', en: 'Boosts Upgraded' },
+			{ ru: 'Всего использовано бустов', en: 'Boosts Used' },
+			{ ru: 'Разных типов использовано', en: 'Boost Types Used' },
+			{ ru: 'Активно сейчас', en: 'Active Boosts' },
+			{ ru: 'Лучшее комбо бустов', en: 'Best Boost Combo' },
+			{ ru: 'Суммарное время бустов (сек)', en: 'Total Boost Time' },
+			{ ru: 'Открыто достижений', en: 'Achievements Unlocked' },
+			{ ru: 'Получено наград', en: 'Rewards Claimed' },
+			{ ru: 'Система достижений', en: 'Achievement System Unlocked' },
+		];
+		document.querySelectorAll('.stats-item__label').forEach((el, index) => {
+			const pair = statsFieldLabels[index];
+			if (!pair) return;
+			el.textContent = pair[currentLanguage] || pair.ru;
 		});
 
 		if (languageSelect) languageSelect.value = currentLanguage;
@@ -432,6 +489,90 @@ document.addEventListener('DOMContentLoaded', () => {
   { id: 80, name: "Абсолютная легенда", icon: "🏆", desc: "500 млн монет + все выше", type: "totalCoins", goal: 500000000, reward: 200000, bonus: "секретный ультра-скин", unlocked: false, claimed: false }
 ];
 
+		// Готовые утверждённые английские переводы достижений.
+		const ACHIEVEMENT_EN_BY_ID = {
+			1: { name: 'First Contact', desc: 'Make 1 click' },
+			2: { name: "I’m Coming Alive!", desc: 'Buy 1 robot' },
+			3: { name: 'First Upgrade', desc: 'Upgrade click once' },
+			4: { name: 'Welcome Aboard', desc: 'Reach level 3' },
+			5: { name: 'First Signal', desc: 'Earn 100 coins' },
+			6: { name: 'Assembly Begins', desc: 'Buy 3 robots' },
+			7: { name: 'Basic Calibration', desc: 'Upgrade click 5 times' },
+			8: { name: 'First Data', desc: 'Reach 500 clicks' },
+			9: { name: 'Into Orbit', desc: 'Reach level 5' },
+			10: { name: 'Protocol Launch', desc: 'Earn 1,000 coins' },
+			11: { name: 'Click Rookie', desc: '500 clicks' },
+			12: { name: 'Click Machine', desc: '2,500 clicks' },
+			13: { name: 'Click Maniac', desc: '10,000 clicks' },
+			14: { name: 'Click Storm', desc: '25,000 clicks' },
+			15: { name: 'Click God', desc: '50,000 clicks' },
+			16: { name: 'Galactic Clicker', desc: '100,000 clicks' },
+			17: { name: 'Meteor Shower', desc: '250,000 clicks', bonus: 'skin' },
+			18: { name: 'Explosive Click', desc: '500,000 clicks' },
+			19: { name: 'Ultimate Clicker', desc: '1,000,000 clicks' },
+			20: { name: 'King of Clicks', desc: '2,500,000 clicks', bonus: '+2% forever' },
+			21: { name: 'First Millionaire', desc: '10,000 total coins' },
+			22: { name: 'Space Banker', desc: '50,000 coins' },
+			23: { name: 'Galactic Oligarch', desc: '250,000 coins' },
+			24: { name: 'Trillionaire', desc: '1,000,000 coins' },
+			25: { name: 'Diamond Reserve', desc: '5,000,000 coins' },
+			26: { name: 'Planetary Capital', desc: '10,000,000 coins' },
+			27: { name: 'Star Tycoon', desc: '25,000,000 coins', bonus: '+3% forever' },
+			28: { name: 'Meteor Shower of Wealth', desc: '50,000,000 coins' },
+			29: { name: 'Emperor of Wealth', desc: '100,000,000 coins' },
+			30: { name: 'Ultimate Trillionaire', desc: '250,000,000 coins', bonus: 'secret skin' },
+			31: { name: 'The Army Begins', desc: '10 robots' },
+			32: { name: 'Robot Factory', desc: '25 robots' },
+			33: { name: 'Robot Empire', desc: '50 robots' },
+			34: { name: 'Space Fleet', desc: '100 robots' },
+			35: { name: 'Galactic Armada', desc: '200 robots' },
+			36: { name: 'Planetary Garrison', desc: '300 robots' },
+			37: { name: 'Mechanical Horde', desc: '500 robots' },
+			38: { name: 'Automated Civilization', desc: '750 robots' },
+			39: { name: 'Robot Emperor', desc: '1,000 robots' },
+			40: { name: 'Lord of Machines', desc: '2,000 robots', bonus: '+5% robot income' },
+			41: { name: 'Upgrade Master', desc: '20 click upgrades' },
+			42: { name: 'Level 2 Processor', desc: 'Click power = 20' },
+			43: { name: 'Maximum Power', desc: 'Click power = 50' },
+			44: { name: 'System Overheat', desc: 'Click power = 100' },
+			45: { name: 'Superconductor', desc: '100 click upgrades' },
+			46: { name: 'Genetic Tuning', desc: 'Click power = 200' },
+			47: { name: 'Chrome Maximum', desc: 'Click power = 300' },
+			48: { name: 'Ultimate Processor', desc: 'Click power = 500' },
+			49: { name: 'Imperial Chip', desc: '250 click upgrades' },
+			50: { name: 'Legend of Upgrades', desc: 'Click power = 1,000', bonus: '+4% forever' },
+			51: { name: 'First Style', desc: 'Buy 1 skin' },
+			52: { name: 'Fashion Engineer', desc: '4 skins' },
+			53: { name: 'Mid-Tier Collector', desc: '8 skins' },
+			54: { name: 'Rare Collector', desc: '12 skins' },
+			55: { name: 'Chrome Collector', desc: 'All 16 skins', bonus: 'secret skin' },
+			56: { name: 'Galactic Wardrobe', desc: '10 different skins at once' },
+			57: { name: 'Emperor of Style', desc: 'All ultra-rare skins' },
+			58: { name: 'Fashion Legend', desc: 'Buy 50 skins' },
+			59: { name: 'Fiery Wardrobe', desc: 'Equip 5 rare skins in a row' },
+			60: { name: 'Ultimate Collector', desc: 'All 16 skins + all achievements', bonus: 'permanent bonus' },
+			61: { name: 'Boost Rookie', desc: 'Activate 5 boosts' },
+			62: { name: 'Boost Enthusiast', desc: '25 boosts' },
+			63: { name: 'Boost King', desc: '100 boosts' },
+			64: { name: 'Combo Master', desc: 'Activate 3 boosts at once' },
+			65: { name: 'Time God', desc: '300+ total boost seconds' },
+			66: { name: 'Critical Boost', desc: 'Use 10 rare boosts' },
+			67: { name: 'Explosive Booster', desc: '500 boosts' },
+			68: { name: 'Emperor of Boosts', desc: 'Use every boost type at least once' },
+			69: { name: 'Speed Legend', desc: '1,000 boosts' },
+			70: { name: 'Ultimate Boost Master', desc: '2,500 boosts + 10 combos', bonus: '+5% forever' },
+			71: { name: 'Legendary Engineer', desc: 'Reach level 20' },
+			72: { name: 'Galactic Hero', desc: 'Level 30' },
+			73: { name: 'Emperor of the Lab', desc: 'Level 40' },
+			74: { name: 'Absolute Omega', desc: 'Level 50', bonus: '+5% forever' },
+			75: { name: 'Robo Clicker Legend', desc: 'Unlock every achievement except this one' },
+			76: { name: 'Perpetual Engine', desc: '10M coins + 500 robots' },
+			77: { name: 'Evolution Complete', desc: 'Click power 500 + level 45' },
+			78: { name: 'Star Engineer', desc: 'All skins + level 35' },
+			79: { name: 'System Overload', desc: '5M clicks + 1,000 robots' },
+			80: { name: 'Ultimate Legend', desc: '500M coins + everything above', bonus: 'secret ultra skin' },
+		};
+
 		let totalClicks = 0;
 		let totalCoinsEarned = 0;
 		let clickUpgradesCount = 0;
@@ -616,18 +757,18 @@ document.addEventListener('DOMContentLoaded', () => {
 					statusText = currentLanguage === 'en' ? 'Completed' : 'Выполнено';
 					statusClass = 'achievement-card__status--done';
 				} else if (current > 0) {
-					statusText = currentLanguage === 'en' ? 'In progress' : 'В процессе';
+					statusText = currentLanguage === 'en' ? 'In Progress' : 'В процессе';
 					statusClass = 'achievement-card__status--progress';
 				}
 
-				const claimButtonText = item.claimed ? (currentLanguage === 'en' ? 'Claimed' : 'Получено') : (currentLanguage === 'en' ? 'Claim reward' : 'Забрать награду');
+				const claimButtonText = item.claimed ? (currentLanguage === 'en' ? 'Claimed' : 'Получено') : (currentLanguage === 'en' ? 'Claim Reward' : 'Забрать награду');
 				const claimDisabled = item.claimed || !item.unlocked;
 				const claimClass = item.claimed
 					? 'achievement-card__claim-btn is-claimed'
 					: item.unlocked
 						? 'achievement-card__claim-btn is-ready'
 						: 'achievement-card__claim-btn is-locked';
-				const rewardText = currentLanguage === 'en' ? `+${item.reward} coins${item.bonus ? ` + ${localizeDynamicText(item.bonus)}` : ''}` : `+${item.reward} монет${item.bonus ? ` + ${item.bonus}` : ''}`;
+				const rewardText = currentLanguage === 'en' ? `+${item.reward} coins${item.bonus ? ` + ${getAchievementText(item, 'bonus')}` : ''}` : `+${item.reward} монет${item.bonus ? ` + ${item.bonus}` : ''}`;
 
 				const card = document.createElement('article');
 				card.className = `achievement-card ${item.unlocked ? 'achievement-card--done' : current > 0 ? '' : 'achievement-card--locked'}`;
@@ -644,7 +785,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 				const nameEl = document.createElement('h3');
 				nameEl.className = 'achievement-card__name';
-				nameEl.textContent = `${currentLanguage === 'en' ? `Achievement #${item.id}` : item.name} — `;
+				nameEl.textContent = `${getAchievementText(item, 'name')} — `;
 
 				const statusEl = document.createElement('span');
 				statusEl.className = `achievement-card__status ${statusClass}`;
@@ -673,7 +814,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 				const descEl = document.createElement('p');
 				descEl.className = 'achievement-card__desc';
-				descEl.textContent = localizeDynamicText(item.desc);
+				descEl.textContent = getAchievementText(item, 'desc');
 
 				const progressEl = document.createElement('div');
 				progressEl.className = 'achievement-card__progress';
@@ -974,7 +1115,7 @@ document.addEventListener('DOMContentLoaded', () => {
 	function getRarityLabel(rarity) {
 		if (rarity === 'uncommon') return currentLanguage === 'en' ? 'Uncommon' : 'Uncommon';
 		if (rarity === 'rare') return currentLanguage === 'en' ? 'Rare' : 'Rare';
-		if (rarity === 'ultra') return currentLanguage === 'en' ? 'Ultra' : 'Ultra';
+		if (rarity === 'ultra') return currentLanguage === 'en' ? 'Ultra Rare' : 'Ultra';
 		return currentLanguage === 'en' ? 'Common' : 'Common';
 	}
 
@@ -1029,7 +1170,7 @@ document.addEventListener('DOMContentLoaded', () => {
 				return `
 					<article class="${cardClass}">
 						<div class="skin-card__icon" aria-hidden="true">${skin.icon}</div>
-						<h3 class="skin-card__name">${localizeDynamicText(skin.name)}</h3>
+						<h3 class="skin-card__name">${getSkinNameById(skin.id, skin.name)}</h3>
 						<span class="skin-card__rarity">${rarityLabel}</span>
 						<button
 							type="button"
@@ -1203,7 +1344,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 	function getSelectedSkinName() {
 		const selectedSkin = skinById.get(selectedSkinId) || skinById.get(DEFAULT_SKIN_ID);
-		return selectedSkin ? localizeDynamicText(selectedSkin.name) : (currentLanguage === 'en' ? 'Not selected' : 'Не выбран');
+		return selectedSkin ? getSkinNameById(selectedSkin.id, selectedSkin.name) : (currentLanguage === 'en' ? 'Not selected' : 'Не выбран');
 	}
 
 	function renderStatistics() {
@@ -1400,7 +1541,7 @@ document.addEventListener('DOMContentLoaded', () => {
 					<div class="boost-active-item">
 						<div class="boost-active-item__icon">${boost.icon}</div>
 						<div>
-							<div class="boost-active-item__name">${localizeDynamicText(boost.name)} — ${seconds}${currentLanguage === 'en' ? 's' : 'с'}</div>
+							<div class="boost-active-item__name">${getBoostText(boost, 'name')} — ${seconds}${currentLanguage === 'en' ? 's' : 'с'}</div>
 							<div class="boost-active-item__time">${currentLanguage === 'en' ? 'Left' : 'Осталось'} ${seconds}${currentLanguage === 'en' ? 's' : 'с'}</div>
 						</div>
 						<div class="boost-progress"><div class="boost-progress__fill" style="width:${Math.max(0, Math.min(100, progress)).toFixed(1)}%"></div></div>
@@ -1420,8 +1561,8 @@ document.addEventListener('DOMContentLoaded', () => {
 			return `
 				<article class="${rarityClass}">
 					<div class="boost-card__icon">${boost.icon}</div>
-					<h3 class="boost-card__name">${localizeDynamicText(boost.name)}</h3>
-					<p class="boost-card__desc">${localizeDynamicText(boost.desc)}</p>
+					<h3 class="boost-card__name">${getBoostText(boost, 'name')}</h3>
+					<p class="boost-card__desc">${getBoostText(boost, 'desc')}</p>
 					<div class="boost-card__price">${action.meta}</div>
 					<div class="boost-card__meta">${boost.category === 'temporary' || boost.category === 'super' ? (currentLanguage === 'en' ? `Duration: ${boost.duration}s` : `Длительность: ${boost.duration}с`) : (currentLanguage === 'en' ? 'Permanent effect / instant' : 'Постоянный эффект / моментально')}</div>
 					<button class="boost-card__action" type="button" data-boost-id="${boost.id}" ${action.disabled ? 'disabled' : ''}>${action.text}</button>
