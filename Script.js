@@ -21,7 +21,9 @@ document.addEventListener('DOMContentLoaded', () => {
 	const resetProgressOverlay = resetProgressBtn ? resetProgressBtn.querySelector('.settings-restart-progress') : null;
 
 	const THEME_KEY = 'theme'; // тема
+	const LANGUAGE_KEY = 'language'; // язык интерфейса
 	const themeSelect = document.querySelector('.theme-select');
+	const languageSelect = document.getElementById('language-select');
 
 	// Кликер
 	const scoreEl = document.getElementById('score');
@@ -147,22 +149,22 @@ document.addEventListener('DOMContentLoaded', () => {
 	const SKINS_OWNED_KEY = 'skinsOwned';
 	const SKINS_SELECTED_KEY = 'skinSelected';
 	const skins = [
-		{ id: 1, name: 'Классический Робот', icon: '🤖', price: 0, rarity: 'common' },
-		{ id: 2, name: 'Рабочий Механик', icon: '🔧', price: 800, rarity: 'common' },
-		{ id: 3, name: 'Стальной Защитник', icon: '🛡️', price: 1600, rarity: 'common' },
-		{ id: 4, name: 'Лунный Разведчик', icon: '🪐', price: 3500, rarity: 'common' },
-		{ id: 5, name: 'Неоновый Курьер', icon: '🌟', price: 6000, rarity: 'uncommon' },
-		{ id: 6, name: 'Огненный Прототип', icon: '🔥', price: 8500, rarity: 'uncommon' },
-		{ id: 7, name: 'Ледяной Страж', icon: '❄️', price: 11000, rarity: 'uncommon' },
-		{ id: 8, name: 'Камуфляжный Тактик', icon: '🪖', price: 14000, rarity: 'uncommon' },
-		{ id: 9, name: 'Кибер-Ниндзя', icon: '🥷', price: 22000, rarity: 'rare' },
-		{ id: 10, name: 'Электро-Воин', icon: '⚡', price: 29000, rarity: 'rare' },
-		{ id: 11, name: 'Космический Рейдер', icon: '🌌', price: 39000, rarity: 'rare' },
-		{ id: 12, name: 'Хромовый Фантом', icon: '💎', price: 49000, rarity: 'rare' },
-		{ id: 13, name: 'Драконий Мех', icon: '🐉', price: 78000, rarity: 'ultra' },
-		{ id: 14, name: 'Галактический Император', icon: '👑', price: 115000, rarity: 'ultra' },
-		{ id: 15, name: 'Призрачный Протокол', icon: '👻', price: 155000, rarity: 'ultra' },
-		{ id: 16, name: 'Абсолютный Омега', icon: '☄️', price: 780000, rarity: 'ultra' },
+		{ id: 1, nameKey: 'skins.names.1', icon: '🤖', price: 0, rarity: 'common' },
+		{ id: 2, nameKey: 'skins.names.2', icon: '🔧', price: 800, rarity: 'common' },
+		{ id: 3, nameKey: 'skins.names.3', icon: '🛡️', price: 1600, rarity: 'common' },
+		{ id: 4, nameKey: 'skins.names.4', icon: '🪐', price: 3500, rarity: 'common' },
+		{ id: 5, nameKey: 'skins.names.5', icon: '🌟', price: 6000, rarity: 'uncommon' },
+		{ id: 6, nameKey: 'skins.names.6', icon: '🔥', price: 8500, rarity: 'uncommon' },
+		{ id: 7, nameKey: 'skins.names.7', icon: '❄️', price: 11000, rarity: 'uncommon' },
+		{ id: 8, nameKey: 'skins.names.8', icon: '🪖', price: 14000, rarity: 'uncommon' },
+		{ id: 9, nameKey: 'skins.names.9', icon: '🥷', price: 22000, rarity: 'rare' },
+		{ id: 10, nameKey: 'skins.names.10', icon: '⚡', price: 29000, rarity: 'rare' },
+		{ id: 11, nameKey: 'skins.names.11', icon: '🌌', price: 39000, rarity: 'rare' },
+		{ id: 12, nameKey: 'skins.names.12', icon: '💎', price: 49000, rarity: 'rare' },
+		{ id: 13, nameKey: 'skins.names.13', icon: '🐉', price: 78000, rarity: 'ultra' },
+		{ id: 14, nameKey: 'skins.names.14', icon: '👑', price: 115000, rarity: 'ultra' },
+		{ id: 15, nameKey: 'skins.names.15', icon: '👻', price: 155000, rarity: 'ultra' },
+		{ id: 16, nameKey: 'skins.names.16', icon: '☄️', price: 780000, rarity: 'ultra' },
 	];
 
 	const DEFAULT_SKIN_ID = 1;
@@ -188,128 +190,207 @@ document.addEventListener('DOMContentLoaded', () => {
 	let critBoostActive = false;
 
 	const boostCategories = [
-		{ id: 'temporary', label: 'Временные' },
-		{ id: 'instant', label: 'Мгновенные' },
-		{ id: 'permanent', label: 'Постоянные' },
-		{ id: 'super', label: 'Супер' },
+		{ id: 'temporary', labelKey: 'boosts.categories.temporary' },
+		{ id: 'instant', labelKey: 'boosts.categories.instant' },
+		{ id: 'permanent', labelKey: 'boosts.categories.permanent' },
+		{ id: 'super', labelKey: 'boosts.categories.super' },
 	];
 
 	const boosts = [
-		{ id: 'neon_overdrive', category: 'temporary', rarity: 'rare', icon: '⚡', name: 'Неоновый разгон', desc: 'x3 к силе клика на 45 секунд', price: 900, duration: 45 },
-		{ id: 'rocket_pulse', category: 'temporary', rarity: 'rare', icon: '🚀', name: 'Ракетный импульс', desc: 'x2.5 к клику и +20% дохода роботов', price: 1400, duration: 60 },
-		{ id: 'drone_army', category: 'temporary', rarity: 'epic', icon: '🤖', name: 'Армия дронов', desc: 'x3 доход роботов на 90 секунд', price: 1800, duration: 90 },
-		{ id: 'golden_storm', category: 'temporary', rarity: 'rare', icon: '🌟', name: 'Золотой шторм', desc: '+150% монет за клик на 40 секунд', price: 1200, duration: 40 },
-		{ id: 'coin_burst', category: 'instant', rarity: 'common', icon: '💰', name: 'Монетный взрыв', desc: 'Сразу +500 монет', price: 400, priceGrowth: 1.28 },
-		{ id: 'super_click', category: 'instant', rarity: 'rare', icon: '🔨', name: 'Супер клик', desc: 'Следующий клик x25', price: 750, priceGrowth: 1.3 },
-		{ id: 'discount_protocol', category: 'instant', rarity: 'common', icon: '🛒', name: 'Скидочный протокол', desc: 'Следующая покупка апгрейда -50%', price: 600, priceGrowth: 1.25 },
-		{ id: 'offline_bonus', category: 'instant', rarity: 'rare', icon: '⏳', name: 'Офлайн бонус', desc: 'Начисляет 50% офлайн дохода', price: 850, priceGrowth: 1.35 },
-		{ id: 'processor_plus', category: 'permanent', rarity: 'rare', icon: '📈', name: 'Улучшенный процессор', desc: '+1 к силе клика', price: 3000, priceGrowth: 1.35 },
-		{ id: 'eternal_generator', category: 'permanent', rarity: 'epic', icon: '🔋', name: 'Вечный генератор', desc: '+0.5 дохода роботов', price: 5000, priceGrowth: 1.35 },
-		{ id: 'evolution_module', category: 'permanent', rarity: 'epic', icon: '🧬', name: 'Модуль эволюции', desc: '+5% к силе клика за уровень', price: 12000, oneTime: true },
-		{ id: 'space_amplifier', category: 'permanent', rarity: 'epic', icon: '🌌', name: 'Космический усилитель', desc: '+10% ко всем доходам', price: 25000, oneTime: true },
-		{ id: 'critical_overload', category: 'super', rarity: 'epic', icon: '💥', name: 'Критический перегруз', desc: '30% шанс x10 за клик', price: 1700, duration: 75 },
-		{ id: 'time_freeze', category: 'super', rarity: 'rare', icon: '❄', name: 'Заморозка времени', desc: 'Таймеры x0.5 на 30 секунд', price: 1500, duration: 30 },
-		{ id: 'galactic_breakthrough', category: 'super', rarity: 'epic', icon: '🌠', name: 'Галактический прорыв', desc: 'Клики x10 и роботы x5', price: 8000, duration: 15 },
-		{ id: 'omega_mode', category: 'super', rarity: 'epic', icon: '🌀', name: 'Омега режим', desc: 'Клики x20 на 20 секунд', price: 12000, duration: 20 },
+		{ id: 'neon_overdrive', category: 'temporary', rarity: 'rare', icon: '⚡', nameKey: 'boosts.names.neon_overdrive', descKey: 'boosts.desc.neon_overdrive', price: 900, duration: 45 },
+		{ id: 'rocket_pulse', category: 'temporary', rarity: 'rare', icon: '🚀', nameKey: 'boosts.names.rocket_pulse', descKey: 'boosts.desc.rocket_pulse', price: 1400, duration: 60 },
+		{ id: 'drone_army', category: 'temporary', rarity: 'epic', icon: '🤖', nameKey: 'boosts.names.drone_army', descKey: 'boosts.desc.drone_army', price: 1800, duration: 90 },
+		{ id: 'golden_storm', category: 'temporary', rarity: 'rare', icon: '🌟', nameKey: 'boosts.names.golden_storm', descKey: 'boosts.desc.golden_storm', price: 1200, duration: 40 },
+		{ id: 'coin_burst', category: 'instant', rarity: 'common', icon: '💰', nameKey: 'boosts.names.coin_burst', descKey: 'boosts.desc.coin_burst', price: 400, priceGrowth: 1.28 },
+		{ id: 'super_click', category: 'instant', rarity: 'rare', icon: '🔨', nameKey: 'boosts.names.super_click', descKey: 'boosts.desc.super_click', price: 750, priceGrowth: 1.3 },
+		{ id: 'discount_protocol', category: 'instant', rarity: 'common', icon: '🛒', nameKey: 'boosts.names.discount_protocol', descKey: 'boosts.desc.discount_protocol', price: 600, priceGrowth: 1.25 },
+		{ id: 'offline_bonus', category: 'instant', rarity: 'rare', icon: '⏳', nameKey: 'boosts.names.offline_bonus', descKey: 'boosts.desc.offline_bonus', price: 850, priceGrowth: 1.35 },
+		{ id: 'processor_plus', category: 'permanent', rarity: 'rare', icon: '📈', nameKey: 'boosts.names.processor_plus', descKey: 'boosts.desc.processor_plus', price: 3000, priceGrowth: 1.35 },
+		{ id: 'eternal_generator', category: 'permanent', rarity: 'epic', icon: '🔋', nameKey: 'boosts.names.eternal_generator', descKey: 'boosts.desc.eternal_generator', price: 5000, priceGrowth: 1.35 },
+		{ id: 'evolution_module', category: 'permanent', rarity: 'epic', icon: '🧬', nameKey: 'boosts.names.evolution_module', descKey: 'boosts.desc.evolution_module', price: 12000, oneTime: true },
+		{ id: 'space_amplifier', category: 'permanent', rarity: 'epic', icon: '🌌', nameKey: 'boosts.names.space_amplifier', descKey: 'boosts.desc.space_amplifier', price: 25000, oneTime: true },
+		{ id: 'critical_overload', category: 'super', rarity: 'epic', icon: '💥', nameKey: 'boosts.names.critical_overload', descKey: 'boosts.desc.critical_overload', price: 1700, duration: 75 },
+		{ id: 'time_freeze', category: 'super', rarity: 'rare', icon: '❄', nameKey: 'boosts.names.time_freeze', descKey: 'boosts.desc.time_freeze', price: 1500, duration: 30 },
+		{ id: 'galactic_breakthrough', category: 'super', rarity: 'epic', icon: '🌠', nameKey: 'boosts.names.galactic_breakthrough', descKey: 'boosts.desc.galactic_breakthrough', price: 8000, duration: 15 },
+		{ id: 'omega_mode', category: 'super', rarity: 'epic', icon: '🌀', nameKey: 'boosts.names.omega_mode', descKey: 'boosts.desc.omega_mode', price: 12000, duration: 20 },
 	];
 		const boostById = new Map(boosts.map((boost) => [boost.id, boost]));
 
 		const ACHIEVEMENTS_STATE_KEY = 'achievementsState';
 		const ACHIEVEMENTS_BUTTON_UNLOCKED_KEY = 'achievementsButtonUnlocked';
 		const ACHIEVEMENTS_COUNTERS_KEY = 'achievementsCounters';
+
+	// Локализация. Единый источник истинны по языку и всем строкам интерфейса.
+	const TRANSLATIONS = {
+		ru: {
+			gamename: 'Robo Clicker',
+			'about-title': ' — это космическое приключение!',
+			inginer: 'Ты — главный инженер секретной лаборатории будущего!',
+			klik: '✨Кликай: Зарабатывай золото своими руками!',
+			Upgrade: '⚙️Прокачивай: Увеличивай силу клика и покупай автоматических роботов.',
+			Skin: '🎭Скины: Открывай новых уникальных героев за достижения.',
+			Level: '🏆Уровни: Докажи, что ты лучший, повышая свой уровень инженера.',
+			young: 'Создано специально для юных изобретателей!',
+			Go: 'ПОЕХАЛИ!',
+			settings: 'Настройки', language: '🌍 Язык', sound: '🔊 Звук', brightness: '☀️ Яркость', theme: '🌗 Тема',
+			welcome: 'Кликай, улучшай и собирай скины!', 'start-btn': 'Начать игру', 'about-btn': 'Об игре', 'settings-btn': 'Настройки',
+			gold: 'Золото', 'power-label': 'Сила клика', 'back-menu-btn': 'В меню', restart: 'Сбросить весь прогресс',
+			'shop-title':'МАГАЗИН','upgrade-click':'Улучшить клик','robot-title':'Робот',skins:'Скины',boosts:'Бусты',achievements:'Достижения',stats:'Статистика','active-boosts':'Активные бусты',
+			'level-template':'LVL {n}','robot-info':'+{income}/сек • {count} куплено','buy-for':'Купить за {price} 💰','done-summary':'Выполнено {done} / {total} • {percent}%',
+			'skins.button.equipped':'✓ Надето','skins.button.owned':'Куплено','skins.title.equipped':'Скин уже надет','skins.title.wear':'Нажмите, чтобы надеть скин','skins.title.no-coins':'Недостаточно монет для покупки','skins.title.buy':'Нажмите, чтобы купить скин',
+			'rarity.common':'Common','rarity.uncommon':'Uncommon','rarity.rare':'Rare','rarity.ultra':'Ultra',
+			'boosts.categories.temporary':'Временные','boosts.categories.instant':'Мгновенные','boosts.categories.permanent':'Постоянные','boosts.categories.super':'Супер',
+			'boost.active':'Активен','boost.active.timer':'Активен (таймер)','boost.limit':'Лимит','boost.remaining':'Осталось: {left}/20','boost.not-enough':'Недостаточно монет','boost.purchased':'Куплено','boost.one-time':'Одноразовый буст','boost.price':'Цена: {price} 💰','boost.level':'Уровень: {level}','boost.duration':'Длительность: {seconds}с','boost.permanent':'Постоянный эффект / моментально','boost.none':'Нет активных бустов','boost.left':'Осталось {seconds}с',
+			'ach.status.locked':'Недоступно','ach.status.done':'Выполнено','ach.status.progress':'В процессе','ach.claimed':'Получено','ach.claim':'Забрать награду','ach.reward':'+{reward} монет{bonus}',
+			'stats.none':'Нет','stats.yes':'Да','stats.section.basic':'Основное','stats.section.upgrades':'Прокачка','stats.section.robots':'Роботы','stats.section.skins':'Скины','stats.section.boosts':'Бусты','stats.section.achievements':'Достижения',
+			'theme.dark':'Темная','theme.light':'Светлая','theme.auto':'Авто','reset-hold':'Держите 3 секунды',
+			'stats.coins-current':'Монеты сейчас','stats.total-coins':'Всего заработано монет','stats.total-clicks':'Всего кликов','stats.click-base':'Базовая сила клика','stats.click-effective':'Эффективная сила клика','stats.level':'Текущий уровень','stats.level-progress':'Прогресс уровня','stats.level-remaining':'До следующего уровня','stats.click-upgrades':'Куплено улучшений клика','stats.robots-count':'Роботов куплено','stats.robots-base':'Базовый доход роботов в секунду','stats.robots-effective':'Эффективный доход роботов в секунду','stats.skins-bought':'Куплено скинов','stats.skins-owned':'Открыто скинов','stats.skins-selected':'Выбранный скин','stats.boosts-upgraded':'Улучшено бустов','stats.boosts-used':'Всего использовано бустов','stats.boosts-types':'Разных типов использовано','stats.boosts-active':'Активно сейчас','stats.boosts-combo':'Лучшее комбо бустов','stats.boosts-time':'Суммарное время бустов (сек)','stats.ach-unlocked':'Открыто достижений','stats.ach-claimed':'Получено наград','stats.ach-system':'Система достижений'
+		},
+		en: {
+			gamename: 'Robo Clicker','about-title':' — a space adventure!','inginer':'You are the chief engineer of a secret lab of the future!',
+			klik:'✨Click: earn gold with your own hands!','Upgrade':'⚙️Upgrade: increase click power and buy automatic robots.','Skin':'🎭Skins: unlock unique heroes for achievements.','Level':'🏆Levels: prove you are the best by raising your engineer level.',
+			young:'Created specially for young inventors!','Go':'LET\'S GO!',settings:'Settings',language:'🌍 Language',sound:'🔊 Sound',brightness:'☀️ Brightness',theme:'🌗 Theme',
+			welcome:'Click, upgrade and collect skins!','start-btn':'Start game','about-btn':'About','settings-btn':'Settings',gold:'Gold','power-label':'Click power','back-menu-btn':'Back to menu',restart:'Reset all progress',
+			'shop-title':'SHOP','upgrade-click':'Upgrade click','robot-title':'Robot',skins:'Skins',boosts:'Boosts',achievements:'Achievements',stats:'Statistics','active-boosts':'Active boosts',
+			'level-template':'LVL {n}','robot-info':'+{income}/sec • {count} bought','buy-for':'Buy for {price} 💰','done-summary':'Completed {done} / {total} • {percent}%',
+			'skins.button.equipped':'✓ Equipped','skins.button.owned':'Owned','skins.title.equipped':'Skin is already equipped','skins.title.wear':'Click to equip skin','skins.title.no-coins':'Not enough coins to buy','skins.title.buy':'Click to buy skin',
+			'rarity.common':'Common','rarity.uncommon':'Uncommon','rarity.rare':'Rare','rarity.ultra':'Ultra',
+			'boosts.categories.temporary':'Temporary','boosts.categories.instant':'Instant','boosts.categories.permanent':'Permanent','boosts.categories.super':'Super',
+			'boost.active':'Active','boost.active.timer':'Active (timer)','boost.limit':'Limit','boost.remaining':'Left: {left}/20','boost.not-enough':'Not enough coins','boost.purchased':'Bought','boost.one-time':'One-time boost','boost.price':'Price: {price} 💰','boost.level':'Level: {level}','boost.duration':'Duration: {seconds}s','boost.permanent':'Permanent effect / instant','boost.none':'No active boosts','boost.left':'{seconds}s left',
+			'ach.status.locked':'Locked','ach.status.done':'Done','ach.status.progress':'In progress','ach.claimed':'Claimed','ach.claim':'Claim reward','ach.reward':'+{reward} coins{bonus}',
+			'stats.none':'No','stats.yes':'Yes','stats.section.basic':'Basics','stats.section.upgrades':'Upgrades','stats.section.robots':'Robots','stats.section.skins':'Skins','stats.section.boosts':'Boosts','stats.section.achievements':'Achievements',
+			'theme.dark':'Dark','theme.light':'Light','theme.auto':'Auto','reset-hold':'Hold for 3 seconds',
+			'stats.coins-current':'Coins now','stats.total-coins':'Total coins earned','stats.total-clicks':'Total clicks','stats.click-base':'Base click power','stats.click-effective':'Effective click power','stats.level':'Current level','stats.level-progress':'Level progress','stats.level-remaining':'To next level','stats.click-upgrades':'Click upgrades bought','stats.robots-count':'Robots bought','stats.robots-base':'Base robot income per second','stats.robots-effective':'Effective robot income per second','stats.skins-bought':'Skins bought','stats.skins-owned':'Skins unlocked','stats.skins-selected':'Selected skin','stats.boosts-upgraded':'Boosts upgraded','stats.boosts-used':'Total boosts used','stats.boosts-types':'Different types used','stats.boosts-active':'Active now','stats.boosts-combo':'Best boost combo','stats.boosts-time':'Total boost time (sec)','stats.ach-unlocked':'Achievements unlocked','stats.ach-claimed':'Rewards claimed','stats.ach-system':'Achievement system'
+		}
+	};
+
+	// Переводы для карточек и больших массивов данных (скины/бусты/достижения).
+	skins.forEach((skin) => {
+		TRANSLATIONS.ru[skin.nameKey] = {
+			1:'Классический Робот',2:'Рабочий Механик',3:'Стальной Защитник',4:'Лунный Разведчик',5:'Неоновый Курьер',6:'Огненный Прототип',7:'Ледяной Страж',8:'Камуфляжный Тактик',9:'Кибер-Ниндзя',10:'Электро-Воин',11:'Космический Рейдер',12:'Хромовый Фантом',13:'Драконий Мех',14:'Галактический Император',15:'Призрачный Протокол',16:'Абсолютный Омега'}[skin.id];
+		TRANSLATIONS.en[skin.nameKey] = {
+			1:'Classic Robot',2:'Worker Mechanic',3:'Steel Defender',4:'Moon Scout',5:'Neon Courier',6:'Fire Prototype',7:'Ice Guardian',8:'Camouflage Tactician',9:'Cyber Ninja',10:'Electro Warrior',11:'Space Raider',12:'Chrome Phantom',13:'Dragon Mech',14:'Galactic Emperor',15:'Ghost Protocol',16:'Absolute Omega'}[skin.id];
+	});
+
+	const boostRu = {
+		neon_overdrive:['Неоновый разгон','x3 к силе клика на 45 секунд'],rocket_pulse:['Ракетный импульс','x2.5 к клику и +20% дохода роботов'],drone_army:['Армия дронов','x3 доход роботов на 90 секунд'],golden_storm:['Золотой шторм','+150% монет за клик на 40 секунд'],coin_burst:['Монетный взрыв','Сразу +500 монет'],super_click:['Супер клик','Следующий клик x25'],discount_protocol:['Скидочный протокол','Следующая покупка апгрейда -50%'],offline_bonus:['Офлайн бонус','Начисляет 50% офлайн дохода'],processor_plus:['Улучшенный процессор','+1 к силе клика'],eternal_generator:['Вечный генератор','+0.5 дохода роботов'],evolution_module:['Модуль эволюции','+5% к силе клика за уровень'],space_amplifier:['Космический усилитель','+10% ко всем доходам'],critical_overload:['Критический перегруз','30% шанс x10 за клик'],time_freeze:['Заморозка времени','Таймеры x0.5 на 30 секунд'],galactic_breakthrough:['Галактический прорыв','Клики x10 и роботы x5'],omega_mode:['Омега режим','Клики x20 на 20 секунд']
+	};
+	const boostEn = {
+		neon_overdrive:['Neon Overdrive','x3 click power for 45 seconds'],rocket_pulse:['Rocket Pulse','x2.5 click and +20% robot income'],drone_army:['Drone Army','x3 robot income for 90 seconds'],golden_storm:['Golden Storm','+150% coins per click for 40 seconds'],coin_burst:['Coin Burst','Instantly +500 coins'],super_click:['Super Click','Next click x25'],discount_protocol:['Discount Protocol','Next upgrade purchase -50%'],offline_bonus:['Offline Bonus','Grants 50% offline income'],processor_plus:['Enhanced Processor','+1 click power'],eternal_generator:['Eternal Generator','+0.5 robot income'],evolution_module:['Evolution Module','+5% click power per level'],space_amplifier:['Space Amplifier','+10% to all income'],critical_overload:['Critical Overload','30% chance for x10 click'],time_freeze:['Time Freeze','Timers x0.5 for 30 seconds'],galactic_breakthrough:['Galactic Breakthrough','Clicks x10 and robots x5'],omega_mode:['Omega Mode','Clicks x20 for 20 seconds']
+	};
+	boosts.forEach((boost) => {
+		const ru = boostRu[boost.id];
+		const en = boostEn[boost.id];
+		if (ru) { TRANSLATIONS.ru[boost.nameKey] = ru[0]; TRANSLATIONS.ru[boost.descKey] = ru[1]; }
+		if (en) { TRANSLATIONS.en[boost.nameKey] = en[0]; TRANSLATIONS.en[boost.descKey] = en[1]; }
+	});
+
+	let currentLanguage = 'ru';
+	function normalizeLanguage(language) {
+		const lang = String(language || '').toLowerCase().trim();
+		return lang === 'en' ? 'en' : 'ru';
+	}
+
+	function t(key, params = {}) {
+		const langPack = TRANSLATIONS[currentLanguage] || TRANSLATIONS.ru;
+		const fallbackPack = TRANSLATIONS.ru;
+		const raw = (langPack && langPack[key]) ?? fallbackPack[key] ?? key;
+		return String(raw).replace(/\{(\w+)\}/g, (_, token) => (params[token] ?? `{${token}}`));
+	}
+
 		const TOTAL_CLICKS_KEY = 'totalClicks';
 		const TOTAL_COINS_EARNED_KEY = 'totalCoinsEarned';
 		const CLICK_UPGRADES_COUNT_KEY = 'clickUpgradesCount';
 		const SKINS_BOUGHT_COUNT_KEY = 'skinsBoughtCount';
 
 		const achievements = [
-  { id: 1, name: "Первый контакт", icon: "👋", desc: "Сделай 1 клик", type: "clicks", goal: 1, reward: 50, bonus: null, unlocked: false, claimed: false },
-  { id: 2, name: "Я оживаю!", icon: "🤖", desc: "Купи 1 робота", type: "robots", goal: 1, reward: 150, bonus: null, unlocked: false, claimed: false },
-  { id: 3, name: "Первый тюнинг", icon: "⚙️", desc: "Улучши клик 1 раз", type: "clickUpgrades", goal: 1, reward: 100, bonus: null, unlocked: false, claimed: false },
-  { id: 4, name: "Добро пожаловать на борт", icon: "🌟", desc: "Достигни уровня 3", type: "level", goal: 3, reward: 300, bonus: null, unlocked: false, claimed: false },
-  { id: 5, name: "Первый сигнал", icon: "📡", desc: "Заработай 100 монет", type: "totalCoins", goal: 100, reward: 200, bonus: null, unlocked: false, claimed: false },
-  { id: 6, name: "Сборка начинается", icon: "🔧", desc: "Купи 3 робота", type: "robots", goal: 3, reward: 400, bonus: null, unlocked: false, claimed: false },
-  { id: 7, name: "Базовая калибровка", icon: "🛠️", desc: "Улучши клик 5 раз", type: "clickUpgrades", goal: 5, reward: 250, bonus: null, unlocked: false, claimed: false },
-  { id: 8, name: "Первые данные", icon: "📊", desc: "Набери 500 кликов", type: "clicks", goal: 500, reward: 350, bonus: null, unlocked: false, claimed: false },
-  { id: 9, name: "Выход на орбиту", icon: "🪐", desc: "Достигни уровня 5", type: "level", goal: 5, reward: 500, bonus: null, unlocked: false, claimed: false },
-  { id: 10, name: "Запуск протокола", icon: "🚀", desc: "Заработай 1000 монет", type: "totalCoins", goal: 1000, reward: 600, bonus: null, unlocked: false, claimed: false },
+  { id: 1, nameKey: 'achievements.names.1', icon: "👋", descKey: 'achievements.desc.1', type: "clicks", goal: 1, reward: 50, bonus: null, unlocked: false, claimed: false },
+  { id: 2, nameKey: 'achievements.names.2', icon: "🤖", descKey: 'achievements.desc.2', type: "robots", goal: 1, reward: 150, bonus: null, unlocked: false, claimed: false },
+  { id: 3, nameKey: 'achievements.names.3', icon: "⚙️", descKey: 'achievements.desc.3', type: "clickUpgrades", goal: 1, reward: 100, bonus: null, unlocked: false, claimed: false },
+  { id: 4, nameKey: 'achievements.names.4', icon: "🌟", descKey: 'achievements.desc.4', type: "level", goal: 3, reward: 300, bonus: null, unlocked: false, claimed: false },
+  { id: 5, nameKey: 'achievements.names.5', icon: "📡", descKey: 'achievements.desc.5', type: "totalCoins", goal: 100, reward: 200, bonus: null, unlocked: false, claimed: false },
+  { id: 6, nameKey: 'achievements.names.6', icon: "🔧", descKey: 'achievements.desc.6', type: "robots", goal: 3, reward: 400, bonus: null, unlocked: false, claimed: false },
+  { id: 7, nameKey: 'achievements.names.7', icon: "🛠️", descKey: 'achievements.desc.7', type: "clickUpgrades", goal: 5, reward: 250, bonus: null, unlocked: false, claimed: false },
+  { id: 8, nameKey: 'achievements.names.8', icon: "📊", descKey: 'achievements.desc.8', type: "clicks", goal: 500, reward: 350, bonus: null, unlocked: false, claimed: false },
+  { id: 9, nameKey: 'achievements.names.9', icon: "🪐", descKey: 'achievements.desc.9', type: "level", goal: 5, reward: 500, bonus: null, unlocked: false, claimed: false },
+  { id: 10, nameKey: 'achievements.names.10', icon: "🚀", descKey: 'achievements.desc.10', type: "totalCoins", goal: 1000, reward: 600, bonus: null, unlocked: false, claimed: false },
 
-  { id: 11, name: "Клик-новичок", icon: "👆", desc: "500 кликов", type: "clicks", goal: 500, reward: 400, bonus: null, unlocked: false, claimed: false },
-  { id: 12, name: "Клик-машина", icon: "💥", desc: "2500 кликов", type: "clicks", goal: 2500, reward: 900, bonus: null, unlocked: false, claimed: false },
-  { id: 13, name: "Клик-маньяк", icon: "🔥", desc: "10000 кликов", type: "clicks", goal: 10000, reward: 2000, bonus: null, unlocked: false, claimed: false },
-  { id: 14, name: "Клик-шторм", icon: "⚡", desc: "25000 кликов", type: "clicks", goal: 25000, reward: 4500, bonus: null, unlocked: false, claimed: false },
-  { id: 15, name: "Клик-бог", icon: "🏆", desc: "50000 кликов", type: "clicks", goal: 50000, reward: 8000, bonus: null, unlocked: false, claimed: false },
-  { id: 16, name: "Галактический кликер", icon: "🌌", desc: "100000 кликов", type: "clicks", goal: 100000, reward: 15000, bonus: null, unlocked: false, claimed: false },
-  { id: 17, name: "Метеоритный дождь", icon: "☄️", desc: "250000 кликов", type: "clicks", goal: 250000, reward: 25000, bonus: "скин", unlocked: false, claimed: false },
-  { id: 18, name: "Взрывной клик", icon: "💣", desc: "500000 кликов", type: "clicks", goal: 500000, reward: 40000, bonus: null, unlocked: false, claimed: false },
-  { id: 19, name: "Абсолютный кликер", icon: "🧨", desc: "1000000 кликов", type: "clicks", goal: 1000000, reward: 70000, bonus: null, unlocked: false, claimed: false },
-  { id: 20, name: "Король кликов", icon: "👑", desc: "2500000 кликов", type: "clicks", goal: 2500000, reward: 120000, bonus: "+2% навсегда", unlocked: false, claimed: false },
+  { id: 11, nameKey: 'achievements.names.11', icon: "👆", descKey: 'achievements.desc.11', type: "clicks", goal: 500, reward: 400, bonus: null, unlocked: false, claimed: false },
+  { id: 12, nameKey: 'achievements.names.12', icon: "💥", descKey: 'achievements.desc.12', type: "clicks", goal: 2500, reward: 900, bonus: null, unlocked: false, claimed: false },
+  { id: 13, nameKey: 'achievements.names.13', icon: "🔥", descKey: 'achievements.desc.13', type: "clicks", goal: 10000, reward: 2000, bonus: null, unlocked: false, claimed: false },
+  { id: 14, nameKey: 'achievements.names.14', icon: "⚡", descKey: 'achievements.desc.14', type: "clicks", goal: 25000, reward: 4500, bonus: null, unlocked: false, claimed: false },
+  { id: 15, nameKey: 'achievements.names.15', icon: "🏆", descKey: 'achievements.desc.15', type: "clicks", goal: 50000, reward: 8000, bonus: null, unlocked: false, claimed: false },
+  { id: 16, nameKey: 'achievements.names.16', icon: "🌌", descKey: 'achievements.desc.16', type: "clicks", goal: 100000, reward: 15000, bonus: null, unlocked: false, claimed: false },
+  { id: 17, nameKey: 'achievements.names.17', icon: "☄️", descKey: 'achievements.desc.17', type: "clicks", goal: 250000, reward: 25000, bonus: "скин", unlocked: false, claimed: false },
+  { id: 18, nameKey: 'achievements.names.18', icon: "💣", descKey: 'achievements.desc.18', type: "clicks", goal: 500000, reward: 40000, bonus: null, unlocked: false, claimed: false },
+  { id: 19, nameKey: 'achievements.names.19', icon: "🧨", descKey: 'achievements.desc.19', type: "clicks", goal: 1000000, reward: 70000, bonus: null, unlocked: false, claimed: false },
+  { id: 20, nameKey: 'achievements.names.20', icon: "👑", descKey: 'achievements.desc.20', type: "clicks", goal: 2500000, reward: 120000, bonus: "+2% навсегда", unlocked: false, claimed: false },
 
-  { id: 21, name: "Первый миллионер", icon: "💰", desc: "10000 монет всего", type: "totalCoins", goal: 10000, reward: 800, bonus: null, unlocked: false, claimed: false },
-  { id: 22, name: "Космический банкир", icon: "🪙", desc: "50000 монет", type: "totalCoins", goal: 50000, reward: 2000, bonus: null, unlocked: false, claimed: false },
-  { id: 23, name: "Галактический олигарх", icon: "🏦", desc: "250000 монет", type: "totalCoins", goal: 250000, reward: 5000, bonus: null, unlocked: false, claimed: false },
-  { id: 24, name: "Триллионер", icon: "🌠", desc: "1000000 монет", type: "totalCoins", goal: 1000000, reward: 12000, bonus: null, unlocked: false, claimed: false },
-  { id: 25, name: "Алмазный запас", icon: "💎", desc: "5000000 монет", type: "totalCoins", goal: 5000000, reward: 25000, bonus: null, unlocked: false, claimed: false },
-  { id: 26, name: "Планетарный капитал", icon: "🪐", desc: "10000000 монет", type: "totalCoins", goal: 10000000, reward: 40000, bonus: null, unlocked: false, claimed: false },
-  { id: 27, name: "Звёздный магнат", icon: "🌌", desc: "25000000 монет", type: "totalCoins", goal: 25000000, reward: 70000, bonus: "+3% навсегда", unlocked: false, claimed: false },
-  { id: 28, name: "Метеоритный дождь богатства", icon: "☄️", desc: "50000000 монет", type: "totalCoins", goal: 50000000, reward: 100000, bonus: null, unlocked: false, claimed: false },
-  { id: 29, name: "Император богатства", icon: "👑", desc: "100000000 монет", type: "totalCoins", goal: 100000000, reward: 150000, bonus: null, unlocked: false, claimed: false },
-  { id: 30, name: "Абсолютный триллионер", icon: "🏆", desc: "250000000 монет", type: "totalCoins", goal: 250000000, reward: 250000, bonus: "секретный скин", unlocked: false, claimed: false },
+  { id: 21, nameKey: 'achievements.names.21', icon: "💰", descKey: 'achievements.desc.21', type: "totalCoins", goal: 10000, reward: 800, bonus: null, unlocked: false, claimed: false },
+  { id: 22, nameKey: 'achievements.names.22', icon: "🪙", descKey: 'achievements.desc.22', type: "totalCoins", goal: 50000, reward: 2000, bonus: null, unlocked: false, claimed: false },
+  { id: 23, nameKey: 'achievements.names.23', icon: "🏦", descKey: 'achievements.desc.23', type: "totalCoins", goal: 250000, reward: 5000, bonus: null, unlocked: false, claimed: false },
+  { id: 24, nameKey: 'achievements.names.24', icon: "🌠", descKey: 'achievements.desc.24', type: "totalCoins", goal: 1000000, reward: 12000, bonus: null, unlocked: false, claimed: false },
+  { id: 25, nameKey: 'achievements.names.25', icon: "💎", descKey: 'achievements.desc.25', type: "totalCoins", goal: 5000000, reward: 25000, bonus: null, unlocked: false, claimed: false },
+  { id: 26, nameKey: 'achievements.names.26', icon: "🪐", descKey: 'achievements.desc.26', type: "totalCoins", goal: 10000000, reward: 40000, bonus: null, unlocked: false, claimed: false },
+  { id: 27, nameKey: 'achievements.names.27', icon: "🌌", descKey: 'achievements.desc.27', type: "totalCoins", goal: 25000000, reward: 70000, bonus: "+3% навсегда", unlocked: false, claimed: false },
+  { id: 28, nameKey: 'achievements.names.28', icon: "☄️", descKey: 'achievements.desc.28', type: "totalCoins", goal: 50000000, reward: 100000, bonus: null, unlocked: false, claimed: false },
+  { id: 29, nameKey: 'achievements.names.29', icon: "👑", descKey: 'achievements.desc.29', type: "totalCoins", goal: 100000000, reward: 150000, bonus: null, unlocked: false, claimed: false },
+  { id: 30, nameKey: 'achievements.names.30', icon: "🏆", descKey: 'achievements.desc.30', type: "totalCoins", goal: 250000000, reward: 250000, bonus: "секретный скин", unlocked: false, claimed: false },
 
-  { id: 31, name: "Армия начинается", icon: "🛠️", desc: "10 роботов", type: "robots", goal: 10, reward: 600, bonus: null, unlocked: false, claimed: false },
-  { id: 32, name: "Робот-фабрика", icon: "🤖", desc: "25 роботов", type: "robots", goal: 25, reward: 1500, bonus: null, unlocked: false, claimed: false },
-  { id: 33, name: "Робот-империя", icon: "🏭", desc: "50 роботов", type: "robots", goal: 50, reward: 3500, bonus: null, unlocked: false, claimed: false },
-  { id: 34, name: "Космический флот", icon: "🚀", desc: "100 роботов", type: "robots", goal: 100, reward: 7000, bonus: null, unlocked: false, claimed: false },
-  { id: 35, name: "Галактическая армада", icon: "🌌", desc: "200 роботов", type: "robots", goal: 200, reward: 15000, bonus: null, unlocked: false, claimed: false },
-  { id: 36, name: "Планетарный гарнизон", icon: "🪐", desc: "300 роботов", type: "robots", goal: 300, reward: 25000, bonus: null, unlocked: false, claimed: false },
-  { id: 37, name: "Механическая орда", icon: "👾", desc: "500 роботов", type: "robots", goal: 500, reward: 40000, bonus: null, unlocked: false, claimed: false },
-  { id: 38, name: "Автоматическая цивилизация", icon: "⚙️", desc: "750 роботов", type: "robots", goal: 750, reward: 60000, bonus: null, unlocked: false, claimed: false },
-  { id: 39, name: "Робот-император", icon: "🏆", desc: "1000 роботов", type: "robots", goal: 1000, reward: 90000, bonus: null, unlocked: false, claimed: false },
-  { id: 40, name: "Владыка машин", icon: "👑", desc: "2000 роботов", type: "robots", goal: 2000, reward: 150000, bonus: "+5% роботы", unlocked: false, claimed: false },
+  { id: 31, nameKey: 'achievements.names.31', icon: "🛠️", descKey: 'achievements.desc.31', type: "robots", goal: 10, reward: 600, bonus: null, unlocked: false, claimed: false },
+  { id: 32, nameKey: 'achievements.names.32', icon: "🤖", descKey: 'achievements.desc.32', type: "robots", goal: 25, reward: 1500, bonus: null, unlocked: false, claimed: false },
+  { id: 33, nameKey: 'achievements.names.33', icon: "🏭", descKey: 'achievements.desc.33', type: "robots", goal: 50, reward: 3500, bonus: null, unlocked: false, claimed: false },
+  { id: 34, nameKey: 'achievements.names.34', icon: "🚀", descKey: 'achievements.desc.34', type: "robots", goal: 100, reward: 7000, bonus: null, unlocked: false, claimed: false },
+  { id: 35, nameKey: 'achievements.names.35', icon: "🌌", descKey: 'achievements.desc.35', type: "robots", goal: 200, reward: 15000, bonus: null, unlocked: false, claimed: false },
+  { id: 36, nameKey: 'achievements.names.36', icon: "🪐", descKey: 'achievements.desc.36', type: "robots", goal: 300, reward: 25000, bonus: null, unlocked: false, claimed: false },
+  { id: 37, nameKey: 'achievements.names.37', icon: "👾", descKey: 'achievements.desc.37', type: "robots", goal: 500, reward: 40000, bonus: null, unlocked: false, claimed: false },
+  { id: 38, nameKey: 'achievements.names.38', icon: "⚙️", descKey: 'achievements.desc.38', type: "robots", goal: 750, reward: 60000, bonus: null, unlocked: false, claimed: false },
+  { id: 39, nameKey: 'achievements.names.39', icon: "🏆", descKey: 'achievements.desc.39', type: "robots", goal: 1000, reward: 90000, bonus: null, unlocked: false, claimed: false },
+  { id: 40, nameKey: 'achievements.names.40', icon: "👑", descKey: 'achievements.desc.40', type: "robots", goal: 2000, reward: 150000, bonus: "+5% роботы", unlocked: false, claimed: false },
 
-  { id: 41, name: "Мастер апгрейдов", icon: "📈", desc: "20 улучшений клика", type: "clickUpgrades", goal: 20, reward: 800, bonus: null, unlocked: false, claimed: false },
-  { id: 42, name: "Процессор уровня 2", icon: "🔧", desc: "Сила клика = 20", type: "clickPower", goal: 20, reward: 1200, bonus: null, unlocked: false, claimed: false },
-  { id: 43, name: "Максимальная мощность", icon: "⚡", desc: "Сила клика = 50", type: "clickPower", goal: 50, reward: 3000, bonus: null, unlocked: false, claimed: false },
-  { id: 44, name: "Перегрев системы", icon: "🔥", desc: "Сила клика = 100", type: "clickPower", goal: 100, reward: 6000, bonus: null, unlocked: false, claimed: false },
-  { id: 45, name: "Сверхпроводник", icon: "🌟", desc: "100 улучшений клика", type: "clickUpgrades", goal: 100, reward: 12000, bonus: null, unlocked: false, claimed: false },
-  { id: 46, name: "Генетический тюнинг", icon: "🧬", desc: "Сила клика = 200", type: "clickPower", goal: 200, reward: 20000, bonus: null, unlocked: false, claimed: false },
-  { id: 47, name: "Хромовый максимум", icon: "💎", desc: "Сила клика = 300", type: "clickPower", goal: 300, reward: 35000, bonus: null, unlocked: false, claimed: false },
-  { id: 48, name: "Абсолютный процессор", icon: "☄️", desc: "Сила клика = 500", type: "clickPower", goal: 500, reward: 55000, bonus: null, unlocked: false, claimed: false },
-  { id: 49, name: "Императорский чип", icon: "👑", desc: "250 улучшений клика", type: "clickUpgrades", goal: 250, reward: 80000, bonus: null, unlocked: false, claimed: false },
-  { id: 50, name: "Легенда улучшений", icon: "🏆", desc: "Сила клика = 1000", type: "clickPower", goal: 1000, reward: 120000, bonus: "+4% навсегда", unlocked: false, claimed: false },
+  { id: 41, nameKey: 'achievements.names.41', icon: "📈", descKey: 'achievements.desc.41', type: "clickUpgrades", goal: 20, reward: 800, bonus: null, unlocked: false, claimed: false },
+  { id: 42, nameKey: 'achievements.names.42', icon: "🔧", descKey: 'achievements.desc.42', type: "clickPower", goal: 20, reward: 1200, bonus: null, unlocked: false, claimed: false },
+  { id: 43, nameKey: 'achievements.names.43', icon: "⚡", descKey: 'achievements.desc.43', type: "clickPower", goal: 50, reward: 3000, bonus: null, unlocked: false, claimed: false },
+  { id: 44, nameKey: 'achievements.names.44', icon: "🔥", descKey: 'achievements.desc.44', type: "clickPower", goal: 100, reward: 6000, bonus: null, unlocked: false, claimed: false },
+  { id: 45, nameKey: 'achievements.names.45', icon: "🌟", descKey: 'achievements.desc.45', type: "clickUpgrades", goal: 100, reward: 12000, bonus: null, unlocked: false, claimed: false },
+  { id: 46, nameKey: 'achievements.names.46', icon: "🧬", descKey: 'achievements.desc.46', type: "clickPower", goal: 200, reward: 20000, bonus: null, unlocked: false, claimed: false },
+  { id: 47, nameKey: 'achievements.names.47', icon: "💎", descKey: 'achievements.desc.47', type: "clickPower", goal: 300, reward: 35000, bonus: null, unlocked: false, claimed: false },
+  { id: 48, nameKey: 'achievements.names.48', icon: "☄️", descKey: 'achievements.desc.48', type: "clickPower", goal: 500, reward: 55000, bonus: null, unlocked: false, claimed: false },
+  { id: 49, nameKey: 'achievements.names.49', icon: "👑", descKey: 'achievements.desc.49', type: "clickUpgrades", goal: 250, reward: 80000, bonus: null, unlocked: false, claimed: false },
+  { id: 50, nameKey: 'achievements.names.50', icon: "🏆", descKey: 'achievements.desc.50', type: "clickPower", goal: 1000, reward: 120000, bonus: "+4% навсегда", unlocked: false, claimed: false },
 
-  { id: 51, name: "Первый стиль", icon: "👕", desc: "Купи 1 скин", type: "skins", goal: 1, reward: 300, bonus: null, unlocked: false, claimed: false },
-  { id: 52, name: "Модный инженер", icon: "🎨", desc: "4 скина", type: "skins", goal: 4, reward: 1000, bonus: null, unlocked: false, claimed: false },
-  { id: 53, name: "Коллекционер среднего уровня", icon: "🌟", desc: "8 скинов", type: "skins", goal: 8, reward: 3000, bonus: null, unlocked: false, claimed: false },
-  { id: 54, name: "Редкий собиратель", icon: "🥷", desc: "12 скинов", type: "skins", goal: 12, reward: 7000, bonus: null, unlocked: false, claimed: false },
-  { id: 55, name: "Хромовый коллекционер", icon: "💎", desc: "Все 16 скинов", type: "skins", goal: 16, reward: 25000, bonus: "секретный скин", unlocked: false, claimed: false },
-  { id: 56, name: "Галактический гардероб", icon: "🌌", desc: "10 разных скинов одновременно", type: "skinsEquipped", goal: 10, reward: 12000, bonus: null, unlocked: false, claimed: false },
-  { id: 57, name: "Император стиля", icon: "👑", desc: "Все ультра-редкие скины", type: "skins", goal: 4, reward: 40000, bonus: null, unlocked: false, claimed: false },
-  { id: 58, name: "Легенда моды", icon: "🏆", desc: "Купи 50 скинов", type: "skinsBought", goal: 50, reward: 18000, bonus: null, unlocked: false, claimed: false },
-  { id: 59, name: "Огненный гардероб", icon: "🔥", desc: "Надень 5 редких скинов подряд", type: "skinsEquipped", goal: 5, reward: 8000, bonus: null, unlocked: false, claimed: false },
-  { id: 60, name: "Абсолютный коллекционер", icon: "☄️", desc: "Все 16 скинов + все достижения", type: "skins", goal: 16, reward: 100000, bonus: "вечный бонус", unlocked: false, claimed: false },
+  { id: 51, nameKey: 'achievements.names.51', icon: "👕", descKey: 'achievements.desc.51', type: "skins", goal: 1, reward: 300, bonus: null, unlocked: false, claimed: false },
+  { id: 52, nameKey: 'achievements.names.52', icon: "🎨", descKey: 'achievements.desc.52', type: "skins", goal: 4, reward: 1000, bonus: null, unlocked: false, claimed: false },
+  { id: 53, nameKey: 'achievements.names.53', icon: "🌟", descKey: 'achievements.desc.53', type: "skins", goal: 8, reward: 3000, bonus: null, unlocked: false, claimed: false },
+  { id: 54, nameKey: 'achievements.names.54', icon: "🥷", descKey: 'achievements.desc.54', type: "skins", goal: 12, reward: 7000, bonus: null, unlocked: false, claimed: false },
+  { id: 55, nameKey: 'achievements.names.55', icon: "💎", descKey: 'achievements.desc.55', type: "skins", goal: 16, reward: 25000, bonus: "секретный скин", unlocked: false, claimed: false },
+  { id: 56, nameKey: 'achievements.names.56', icon: "🌌", descKey: 'achievements.desc.56', type: "skinsEquipped", goal: 10, reward: 12000, bonus: null, unlocked: false, claimed: false },
+  { id: 57, nameKey: 'achievements.names.57', icon: "👑", descKey: 'achievements.desc.57', type: "skins", goal: 4, reward: 40000, bonus: null, unlocked: false, claimed: false },
+  { id: 58, nameKey: 'achievements.names.58', icon: "🏆", descKey: 'achievements.desc.58', type: "skinsBought", goal: 50, reward: 18000, bonus: null, unlocked: false, claimed: false },
+  { id: 59, nameKey: 'achievements.names.59', icon: "🔥", descKey: 'achievements.desc.59', type: "skinsEquipped", goal: 5, reward: 8000, bonus: null, unlocked: false, claimed: false },
+  { id: 60, nameKey: 'achievements.names.60', icon: "☄️", descKey: 'achievements.desc.60', type: "skins", goal: 16, reward: 100000, bonus: "вечный бонус", unlocked: false, claimed: false },
 
-  { id: 61, name: "Буст-новичок", icon: "⚡", desc: "Активируй 5 бустов", type: "boosts", goal: 5, reward: 500, bonus: null, unlocked: false, claimed: false },
-  { id: 62, name: "Буст-энтузиаст", icon: "🚀", desc: "25 бустов", type: "boosts", goal: 25, reward: 1500, bonus: null, unlocked: false, claimed: false },
-  { id: 63, name: "Буст-король", icon: "💥", desc: "100 бустов", type: "boosts", goal: 100, reward: 4000, bonus: null, unlocked: false, claimed: false },
-  { id: 64, name: "Мастер комбо", icon: "🌟", desc: "3 буста одновременно", type: "boostCombo", goal: 3, reward: 2500, bonus: null, unlocked: false, claimed: false },
-  { id: 65, name: "Временной бог", icon: "⏳", desc: "300+ секунд бустов суммарно", type: "boostTime", goal: 300, reward: 6000, bonus: null, unlocked: false, claimed: false },
-  { id: 66, name: "Критический буст", icon: "🔥", desc: "10 редких бустов", type: "boosts", goal: 10, reward: 8000, bonus: null, unlocked: false, claimed: false },
-  { id: 67, name: "Взрывной бустер", icon: "🧨", desc: "500 бустов", type: "boosts", goal: 500, reward: 15000, bonus: null, unlocked: false, claimed: false },
-  { id: 68, name: "Император бустов", icon: "👑", desc: "Все типы бустов хотя бы раз", type: "boostTypes", goal: 3, reward: 10000, bonus: null, unlocked: false, claimed: false },
-  { id: 69, name: "Легенда ускорения", icon: "🏆", desc: "1000 бустов", type: "boosts", goal: 1000, reward: 25000, bonus: null, unlocked: false, claimed: false },
-  { id: 70, name: "Абсолютный буст-мастер", icon: "☄️", desc: "2500 бустов + 10 комбо", type: "boosts", goal: 2500, reward: 50000, bonus: "+5% навсегда", unlocked: false, claimed: false },
+  { id: 61, nameKey: 'achievements.names.61', icon: "⚡", descKey: 'achievements.desc.61', type: "boosts", goal: 5, reward: 500, bonus: null, unlocked: false, claimed: false },
+  { id: 62, nameKey: 'achievements.names.62', icon: "🚀", descKey: 'achievements.desc.62', type: "boosts", goal: 25, reward: 1500, bonus: null, unlocked: false, claimed: false },
+  { id: 63, nameKey: 'achievements.names.63', icon: "💥", descKey: 'achievements.desc.63', type: "boosts", goal: 100, reward: 4000, bonus: null, unlocked: false, claimed: false },
+  { id: 64, nameKey: 'achievements.names.64', icon: "🌟", descKey: 'achievements.desc.64', type: "boostCombo", goal: 3, reward: 2500, bonus: null, unlocked: false, claimed: false },
+  { id: 65, nameKey: 'achievements.names.65', icon: "⏳", descKey: 'achievements.desc.65', type: "boostTime", goal: 300, reward: 6000, bonus: null, unlocked: false, claimed: false },
+  { id: 66, nameKey: 'achievements.names.66', icon: "🔥", descKey: 'achievements.desc.66', type: "boosts", goal: 10, reward: 8000, bonus: null, unlocked: false, claimed: false },
+  { id: 67, nameKey: 'achievements.names.67', icon: "🧨", descKey: 'achievements.desc.67', type: "boosts", goal: 500, reward: 15000, bonus: null, unlocked: false, claimed: false },
+  { id: 68, nameKey: 'achievements.names.68', icon: "👑", descKey: 'achievements.desc.68', type: "boostTypes", goal: 3, reward: 10000, bonus: null, unlocked: false, claimed: false },
+  { id: 69, nameKey: 'achievements.names.69', icon: "🏆", descKey: 'achievements.desc.69', type: "boosts", goal: 1000, reward: 25000, bonus: null, unlocked: false, claimed: false },
+  { id: 70, nameKey: 'achievements.names.70', icon: "☄️", descKey: 'achievements.desc.70', type: "boosts", goal: 2500, reward: 50000, bonus: "+5% навсегда", unlocked: false, claimed: false },
 
-  { id: 71, name: "Инженер-легенда", icon: "🏅", desc: "Достигни уровня 20", type: "level", goal: 20, reward: 8000, bonus: null, unlocked: false, claimed: false },
-  { id: 72, name: "Галактический герой", icon: "🌌", desc: "Уровень 30", type: "level", goal: 30, reward: 15000, bonus: null, unlocked: false, claimed: false },
-  { id: 73, name: "Император лаборатории", icon: "👑", desc: "Уровень 40", type: "level", goal: 40, reward: 30000, bonus: null, unlocked: false, claimed: false },
-  { id: 74, name: "Абсолютный Омега", icon: "☄️", desc: "Уровень 50", type: "level", goal: 50, reward: 50000, bonus: "+5% навсегда", unlocked: false, claimed: false },
-  { id: 75, name: "Легенда Robo Clicker", icon: "🏆", desc: "Все достижения кроме этого", type: "achievements", goal: 79, reward: 100000, bonus: null, unlocked: false, claimed: false },
-  { id: 76, name: "Вечный двигатель", icon: "🔥", desc: "10 млн монет + 500 роботов", type: "totalCoins", goal: 10000000, reward: 40000, bonus: null, unlocked: false, claimed: false },
-  { id: 77, name: "Эволюция завершена", icon: "🧬", desc: "Сила клика 500 + уровень 45", type: "clickPower", goal: 500, reward: 60000, bonus: null, unlocked: false, claimed: false },
-  { id: 78, name: "Звёздный инженер", icon: "🌠", desc: "Все скины + уровень 35", type: "skins", goal: 16, reward: 35000, bonus: null, unlocked: false, claimed: false },
-  { id: 79, name: "Перегрузка системы", icon: "💥", desc: "5 млн кликов + 1000 роботов", type: "clicks", goal: 5000000, reward: 80000, bonus: null, unlocked: false, claimed: false },
-  { id: 80, name: "Абсолютная легенда", icon: "🏆", desc: "500 млн монет + все выше", type: "totalCoins", goal: 500000000, reward: 200000, bonus: "секретный ультра-скин", unlocked: false, claimed: false }
+  { id: 71, nameKey: 'achievements.names.71', icon: "🏅", descKey: 'achievements.desc.71', type: "level", goal: 20, reward: 8000, bonus: null, unlocked: false, claimed: false },
+  { id: 72, nameKey: 'achievements.names.72', icon: "🌌", descKey: 'achievements.desc.72', type: "level", goal: 30, reward: 15000, bonus: null, unlocked: false, claimed: false },
+  { id: 73, nameKey: 'achievements.names.73', icon: "👑", descKey: 'achievements.desc.73', type: "level", goal: 40, reward: 30000, bonus: null, unlocked: false, claimed: false },
+  { id: 74, nameKey: 'achievements.names.74', icon: "☄️", descKey: 'achievements.desc.74', type: "level", goal: 50, reward: 50000, bonus: "+5% навсегда", unlocked: false, claimed: false },
+  { id: 75, nameKey: 'achievements.names.75', icon: "🏆", descKey: 'achievements.desc.75', type: "achievements", goal: 79, reward: 100000, bonus: null, unlocked: false, claimed: false },
+  { id: 76, nameKey: 'achievements.names.76', icon: "🔥", descKey: 'achievements.desc.76', type: "totalCoins", goal: 10000000, reward: 40000, bonus: null, unlocked: false, claimed: false },
+  { id: 77, nameKey: 'achievements.names.77', icon: "🧬", descKey: 'achievements.desc.77', type: "clickPower", goal: 500, reward: 60000, bonus: null, unlocked: false, claimed: false },
+  { id: 78, nameKey: 'achievements.names.78', icon: "🌠", descKey: 'achievements.desc.78', type: "skins", goal: 16, reward: 35000, bonus: null, unlocked: false, claimed: false },
+  { id: 79, nameKey: 'achievements.names.79', icon: "💥", descKey: 'achievements.desc.79', type: "clicks", goal: 5000000, reward: 80000, bonus: null, unlocked: false, claimed: false },
+  { id: 80, nameKey: 'achievements.names.80', icon: "🏆", descKey: 'achievements.desc.80', type: "totalCoins", goal: 500000000, reward: 200000, bonus: "секретный ультра-скин", unlocked: false, claimed: false }
 ];
 
 		let totalClicks = 0;
@@ -394,7 +475,7 @@ document.addEventListener('DOMContentLoaded', () => {
 					const pct = toFiniteNumber(achievement.bonus.replace(/[^0-9.]/g, ''), 0);
 					if (pct > 0) permanentCoinBonusMultiplier *= (1 + (pct / 100));
 				}
-				if (achievement.bonus.includes('% роботы')) {
+				if (bonusText.includes('% роботы') || bonusText.includes('% robots')) {
 					const pct = toFiniteNumber(achievement.bonus.replace(/[^0-9.]/g, ''), 0);
 					if (pct > 0) permanentRobotBonusMultiplier *= (1 + (pct / 100));
 				}
@@ -471,7 +552,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			const doneCount = achievements.filter((item) => item.unlocked).length;
 			const percent = safePercent(doneCount, achievements.length);
 			if (achievementsSummary) {
-				achievementsSummary.textContent = `Выполнено ${doneCount} / 80 • ${percent.toFixed(1)}%`;
+				achievementsSummary.textContent = t('done-summary', { done: doneCount, total: achievements.length, percent: percent.toFixed(1) });
 			}
 			if (achievementsOverallFill) {
 				achievementsOverallFill.style.width = `${percent.toFixed(1)}%`;
@@ -490,24 +571,25 @@ document.addEventListener('DOMContentLoaded', () => {
 			achievementsList.textContent = '';
 
 			prepared.forEach(({ item, current, itemPercent }) => {
-				let statusText = 'Недоступно';
+				let statusText = t('ach.status.locked');
 				let statusClass = 'achievement-card__status--locked';
 				if (item.unlocked) {
-					statusText = 'Выполнено';
+					statusText = t('ach.status.done');
 					statusClass = 'achievement-card__status--done';
 				} else if (current > 0) {
-					statusText = 'В процессе';
+					statusText = t('ach.status.progress');
 					statusClass = 'achievement-card__status--progress';
 				}
 
-				const claimButtonText = item.claimed ? 'Получено' : 'Забрать награду';
+				const claimButtonText = item.claimed ? t('ach.claimed') : t('ach.claim');
 				const claimDisabled = item.claimed || !item.unlocked;
 				const claimClass = item.claimed
 					? 'achievement-card__claim-btn is-claimed'
 					: item.unlocked
 						? 'achievement-card__claim-btn is-ready'
 						: 'achievement-card__claim-btn is-locked';
-				const rewardText = `+${item.reward} монет${item.bonus ? ` + ${item.bonus}` : ''}`;
+				const bonusText = item.bonusKey ? t(item.bonusKey) : item.bonus;
+				const rewardText = t('ach.reward', { reward: item.reward, bonus: bonusText ? ` + ${bonusText}` : '' });
 
 				const card = document.createElement('article');
 				card.className = `achievement-card ${item.unlocked ? 'achievement-card--done' : current > 0 ? '' : 'achievement-card--locked'}`;
@@ -524,7 +606,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 				const nameEl = document.createElement('h3');
 				nameEl.className = 'achievement-card__name';
-				nameEl.textContent = `${item.name} — `;
+				nameEl.textContent = `${t(item.nameKey)} — `;
 
 				const statusEl = document.createElement('span');
 				statusEl.className = `achievement-card__status ${statusClass}`;
@@ -553,7 +635,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 				const descEl = document.createElement('p');
 				descEl.className = 'achievement-card__desc';
-				descEl.textContent = item.desc;
+				descEl.textContent = t(item.descKey);
 
 				const progressEl = document.createElement('div');
 				progressEl.className = 'achievement-card__progress';
@@ -641,6 +723,56 @@ document.addEventListener('DOMContentLoaded', () => {
 		if (opt) {
 			themeSelect.value = opt.value; // value у option без value = её текст
 		}
+	}
+
+
+	// Централизованное обновление всех текстов по текущему языку.
+	function updateLocalizedUI() {
+		document.querySelectorAll('[data-lang]').forEach((el) => {
+			const key = el.dataset.lang;
+			if (!key) return;
+			el.textContent = t(key);
+		});
+		if (levelTextEl) {
+			levelTextEl.dataset.langTemplate = t('level-template');
+		}
+		if (themeSelect) {
+			Array.from(themeSelect.options).forEach((opt) => {
+				const k = `theme.${normalizeTheme(opt.dataset.theme)}`;
+				opt.textContent = t(k);
+			});
+		}
+		const statTitles = {
+			'stats-basic-title':'stats.section.basic','stats-upgrade-title':'stats.section.upgrades','stats-robots-title':'stats.section.robots','stats-skins-title':'stats.section.skins','stats-boosts-title':'stats.section.boosts','stats-achievements-title':'stats.section.achievements'
+		};
+		Object.entries(statTitles).forEach(([id,key])=>{ const el=document.getElementById(id); if(el) el.textContent=t(key); });
+		const statsLabelKeys = ['stats.coins-current','stats.total-coins','stats.total-clicks','stats.click-base','stats.click-effective','stats.level','stats.level-progress','stats.level-remaining','stats.click-upgrades','stats.robots-count','stats.robots-base','stats.robots-effective','stats.skins-bought','stats.skins-owned','stats.skins-selected','stats.boosts-upgraded','stats.boosts-used','stats.boosts-types','stats.boosts-active','stats.boosts-combo','stats.boosts-time','stats.ach-unlocked','stats.ach-claimed','stats.ach-system'];
+		document.querySelectorAll('#stats-modal .stats-item__label').forEach((el, idx) => {
+			const key = statsLabelKeys[idx];
+			if (key) el.textContent = t(key);
+		});
+		renderSkinsGrid();
+		renderBoostsUI();
+		renderAchievements();
+		renderStatistics();
+		updateLevelUI();
+		updateClickUpgradeUI();
+		updateRobotUpgradeUI();
+		setResetLabel(resetArmed ? RESET_BUTTON_ARMED_TEXT : RESET_BUTTON_IDLE_TEXT);
+	}
+
+	function applyLanguage(language, options = {}) {
+		const { save = true } = options;
+		currentLanguage = normalizeLanguage(language);
+		if (languageSelect) languageSelect.value = currentLanguage;
+		if (save) setStorageItem(LANGUAGE_KEY, currentLanguage);
+		updateLocalizedUI();
+	}
+
+	if (languageSelect) {
+		languageSelect.addEventListener('change', () => {
+			applyLanguage(languageSelect.value, { save: true });
+		});
 	}
 
 	// 1) При загрузке — вспомнить тему или поставить тёмную по умолчанию
@@ -842,10 +974,7 @@ document.addEventListener('DOMContentLoaded', () => {
 	
 	// --- СКИНЫ: модалка, покупка, выбор и рендер карточек ---
 	function getRarityLabel(rarity) {
-		if (rarity === 'uncommon') return 'Uncommon';
-		if (rarity === 'rare') return 'Rare';
-		if (rarity === 'ultra') return 'Ultra';
-		return 'Common';
+		return t(`rarity.${rarity}`);
 	}
 
 	function updateClickObjectSkin() {
@@ -858,29 +987,29 @@ document.addEventListener('DOMContentLoaded', () => {
 		const isOwned = ownedSkinIds.has(skin.id) || skin.price === 0;
 		if (skin.id === selectedSkinId) {
 			return {
-				text: '✓ Надето',
+				text: t('skins.button.equipped'),
 				className: 'is-equipped',
 				disabled: true,
-				title: 'Скин уже надет',
+				title: t('skins.title.equipped'),
 			};
 		}
 
 		if (isOwned) {
 			return {
-				text: 'Куплено',
+				text: t('skins.button.owned'),
 				className: 'is-owned',
 				disabled: false,
-				title: 'Нажмите, чтобы надеть скин',
+				title: t('skins.title.wear'),
 			};
 		}
 
 		const isLocked = coins < skin.price;
 
 		return {
-			text: `Купить за ${skin.price} 💰`,
+			text: t('buy-for', { price: skin.price }),
 			className: isLocked ? 'is-locked' : '',
 			disabled: isLocked,
-			title: isLocked ? 'Недостаточно монет для покупки' : 'Нажмите, чтобы купить скин',
+			title: isLocked ? t('skins.title.no-coins') : t('skins.title.buy'),
 		};
 	}
 
@@ -899,7 +1028,7 @@ document.addEventListener('DOMContentLoaded', () => {
 				return `
 					<article class="${cardClass}">
 						<div class="skin-card__icon" aria-hidden="true">${skin.icon}</div>
-						<h3 class="skin-card__name">${skin.name}</h3>
+						<h3 class="skin-card__name">${t(skin.nameKey)}</h3>
 						<span class="skin-card__rarity">${rarityLabel}</span>
 						<button
 							type="button"
@@ -1073,7 +1202,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 	function getSelectedSkinName() {
 		const selectedSkin = skinById.get(selectedSkinId) || skinById.get(DEFAULT_SKIN_ID);
-		return selectedSkin ? selectedSkin.name : 'Не выбран';
+		return selectedSkin ? t(selectedSkin.nameKey) : '—';
 	}
 
 	function renderStatistics() {
@@ -1231,21 +1360,21 @@ document.addEventListener('DOMContentLoaded', () => {
 		const price = getBoostPrice(boost);
 		if (boost.category === 'temporary') {
 			const used = Math.max(0, Math.floor(toFiniteNumber(boostUsageCount[boost.id], 0)));
-			if (isBoostActive(boost.id)) return { disabled: true, text: 'Активен', meta: 'Активен (таймер)' };
-			if (used >= 20) return { disabled: true, text: 'Лимит', meta: 'Осталось: 0/20' };
-			if (coins < price) return { disabled: true, text: 'Недостаточно монет', meta: `Осталось: ${20 - used}/20` };
-			return { disabled: false, text: `Купить за ${price} 💰`, meta: `Осталось: ${20 - used}/20` };
+			if (isBoostActive(boost.id)) return { disabled: true, text: t('boost.active'), meta: t('boost.active.timer') };
+			if (used >= 20) return { disabled: true, text: t('boost.limit'), meta: t('boost.remaining', { left: 0 }) };
+			if (coins < price) return { disabled: true, text: t('boost.not-enough'), meta: t('boost.remaining', { left: 20 - used }) };
+			return { disabled: false, text: t('buy-for', { price }), meta: t('boost.remaining', { left: 20 - used }) };
 		}
-		if (boost.oneTime && getBoostLevel(boost.id) > 0) return { disabled: true, text: 'Куплено', meta: 'Одноразовый буст' };
-		if (boost.category === 'super' && isBoostActive(boost.id)) return { disabled: true, text: 'Активен', meta: 'Активен (таймер)' };
-		if (coins < price) return { disabled: true, text: 'Недостаточно монет', meta: `Цена: ${price} 💰` };
-		return { disabled: false, text: `Купить за ${price} 💰`, meta: boost.category === 'permanent' ? `Уровень: ${getBoostLevel(boost.id)}` : `Цена: ${price} 💰` };
+		if (boost.oneTime && getBoostLevel(boost.id) > 0) return { disabled: true, text: t('skins.button.owned'), meta: 'Одноразовый буст' };
+		if (boost.category === 'super' && isBoostActive(boost.id)) return { disabled: true, text: t('boost.active'), meta: t('boost.active.timer') };
+		if (coins < price) return { disabled: true, text: t('boost.not-enough'), meta: t('boost.price', { price }) };
+		return { disabled: false, text: t('buy-for', { price }), meta: boost.category === 'permanent' ? t('boost.level', { level: getBoostLevel(boost.id) }) : t('boost.price', { price }) };
 	}
 
 	function renderBoostTabs() {
 		if (!boostsTabs) return;
 		boostsTabs.innerHTML = boostCategories.map((cat) => `
-			<button type="button" class="boosts-tab ${cat.id === currentBoostCategory ? 'is-active' : ''}" data-boost-category="${cat.id}">${cat.label}</button>
+			<button type="button" class="boosts-tab ${cat.id === currentBoostCategory ? 'is-active' : ''}" data-boost-category="${cat.id}">${t(cat.labelKey)}</button>
 		`).join('');
 	}
 
@@ -1270,15 +1399,15 @@ document.addEventListener('DOMContentLoaded', () => {
 					<div class="boost-active-item">
 						<div class="boost-active-item__icon">${boost.icon}</div>
 						<div>
-							<div class="boost-active-item__name">${boost.name} — ${seconds}с</div>
-							<div class="boost-active-item__time">Осталось ${seconds}с</div>
+							<div class="boost-active-item__name">${t(boost.nameKey)} — ${seconds}${currentLanguage === 'en' ? 's' : 'с'}</div>
+							<div class="boost-active-item__time">${t('boost.left', { seconds })}</div>
 						</div>
 						<div class="boost-progress"><div class="boost-progress__fill" style="width:${Math.max(0, Math.min(100, progress)).toFixed(1)}%"></div></div>
 					</div>
 				`;
 			})
 			.filter(Boolean);
-		boostsActiveList.innerHTML = items.length ? items.join('') : '<div class="boost-active-item"><div class="boost-active-item__name">Нет активных бустов</div></div>';
+		boostsActiveList.innerHTML = items.length ? items.join('') : `<div class="boost-active-item"><div class="boost-active-item__name">${t('boost.none')}</div></div>`;
 	}
 
 	function renderBoostsGrid() {
@@ -1290,10 +1419,10 @@ document.addEventListener('DOMContentLoaded', () => {
 			return `
 				<article class="${rarityClass}">
 					<div class="boost-card__icon">${boost.icon}</div>
-					<h3 class="boost-card__name">${boost.name}</h3>
-					<p class="boost-card__desc">${boost.desc}</p>
+					<h3 class="boost-card__name">${t(boost.nameKey)}</h3>
+					<p class="boost-card__desc">${t(boost.descKey)}</p>
 					<div class="boost-card__price">${action.meta}</div>
-					<div class="boost-card__meta">${boost.category === 'temporary' || boost.category === 'super' ? `Длительность: ${boost.duration}с` : 'Постоянный эффект / моментально'}</div>
+					<div class="boost-card__meta">${boost.category === 'temporary' || boost.category === 'super' ? t('boost.duration', { seconds: boost.duration }) : t('boost.permanent')}</div>
 					<button class="boost-card__action" type="button" data-boost-id="${boost.id}" ${action.disabled ? 'disabled' : ''}>${action.text}</button>
 				</article>
 			`;
@@ -1327,21 +1456,21 @@ document.addEventListener('DOMContentLoaded', () => {
 			if (boost.id === 'coin_burst') {
 				coins += 500;
 				totalCoinsEarned += 500;
-				showBoostActivation('+500 МОНЕТ');
+				showBoostActivation(currentLanguage === 'en' ? '+500 COINS' : '+500 МОНЕТ');
 			}
 		if (boost.id === 'super_click') {
 			pendingSuperClick = true;
-			showBoostActivation('СУПЕР КЛИК x25');
+			showBoostActivation(currentLanguage === 'en' ? 'SUPER CLICK x25' : 'СУПЕР КЛИК x25');
 		}
 		if (boost.id === 'discount_protocol') {
 			pendingDiscount = true;
-			showBoostActivation('СКИДКА -50%');
+			showBoostActivation(currentLanguage === 'en' ? 'DISCOUNT -50%' : 'СКИДКА -50%');
 		}
 			if (boost.id === 'offline_bonus') {
 				const reward = getOfflineBonusReward();
 				coins += reward;
 				totalCoinsEarned += reward;
-				showBoostActivation(`ОФЛАЙН +${reward}`);
+				showBoostActivation(currentLanguage === 'en' ? `OFFLINE +${reward}` : `ОФЛАЙН +${reward}`);
 			}
 		}
 
@@ -1360,7 +1489,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			boostUsageCount[boost.id] = used + 1;
 			closeBoostsModal();
 			activateTimedBoost(boost);
-			showBoostActivation(boost.id === 'neon_overdrive' ? '×3 КЛИК' : boost.id === 'drone_army' ? 'ДРОНЫ АКТИВНЫ' : 'БУСТ АКТИВЕН');
+			showBoostActivation(boost.id === 'neon_overdrive' ? (currentLanguage === 'en' ? '×3 CLICK' : '×3 КЛИК') : boost.id === 'drone_army' ? (currentLanguage === 'en' ? 'DRONES ACTIVE' : 'ДРОНЫ АКТИВНЫ') : (currentLanguage === 'en' ? 'BOOST ACTIVE' : 'БУСТ АКТИВЕН'));
 		}
 
 		if (boost.category === 'super') {
@@ -1369,7 +1498,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			boostLevels[boost.id] = getBoostLevel(boost.id) + 1;
 			closeBoostsModal();
 			activateTimedBoost(boost);
-			showBoostActivation(boost.id === 'omega_mode' ? 'OMEGA MODE' : 'СУПЕР БУСТ');
+			showBoostActivation(boost.id === 'omega_mode' ? 'OMEGA MODE' : (currentLanguage === 'en' ? 'SUPER BOOST' : 'СУПЕР БУСТ'));
 		}
 
 		if (boost.category === 'instant') {
@@ -1382,7 +1511,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			if (boost.oneTime && getBoostLevel(boost.id) > 0) return;
 			coins -= price;
 			boostLevels[boost.id] = getBoostLevel(boost.id) + 1;
-			showBoostActivation('АПГРЕЙД УСТАНОВЛЕН');
+			showBoostActivation(currentLanguage === 'en' ? 'UPGRADE INSTALLED' : 'АПГРЕЙД УСТАНОВЛЕН');
 		}
 
 		updateBoostDerivedState();
@@ -1431,8 +1560,8 @@ document.addEventListener('DOMContentLoaded', () => {
 	}
 
 
-	const RESET_BUTTON_IDLE_TEXT = 'Сбросить весь прогресс';
-	const RESET_BUTTON_ARMED_TEXT = 'Держите 3 секунды';
+	const RESET_BUTTON_IDLE_TEXT = 'reset';
+	const RESET_BUTTON_ARMED_TEXT = 'reset-hold';
 	const RESET_HOLD_DURATION_MS = 3000;
 	const RESET_ARM_TIMEOUT_MS = 30000;
 
@@ -1472,7 +1601,7 @@ document.addEventListener('DOMContentLoaded', () => {
 		if (resetProgressBtn) {
 			resetProgressBtn.classList.remove('is-armed', 'is-holding');
 		}
-		setResetLabel(RESET_BUTTON_IDLE_TEXT);
+		setResetLabel(t(RESET_BUTTON_IDLE_TEXT));
 		setResetProgress(0);
 	}
 
@@ -1481,7 +1610,7 @@ document.addEventListener('DOMContentLoaded', () => {
 		clearResetArmTimeout();
 		resetArmed = true;
 		resetProgressBtn.classList.add('is-armed');
-		setResetLabel(RESET_BUTTON_ARMED_TEXT);
+		setResetLabel(t(RESET_BUTTON_ARMED_TEXT));
 
 		resetArmTimeout = setTimeout(() => {
 			resetButtonToIdleState();
@@ -1517,6 +1646,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			brightness: DEFAULT_BRIGHTNESS,
 			volume: DEFAULT_VOLUME,
 			theme: DEFAULT_THEME,
+			language: 'ru',
 		};
 	}
 
@@ -1573,6 +1703,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			brightnessValue = brightness,
 			volumeValue = globalVolume,
 			themeValue = DEFAULT_THEME,
+			languageValue = 'ru',
 			save = false,
 		} = options;
 
@@ -1580,11 +1711,13 @@ document.addEventListener('DOMContentLoaded', () => {
 		applyGlobalVolume(volumeValue);
 		applyTheme(themeValue);
 		setSelectToTheme(themeValue);
+		applyLanguage(languageValue, { save });
 
 		if (save) {
 			setStorageItem(BRIGHTNESS_KEY, brightness);
 			setStorageItem(VOLUME_KEY, globalVolume);
 			setStorageItem(THEME_KEY, normalizeTheme(themeValue));
+			setStorageItem(LANGUAGE_KEY, normalizeLanguage(languageValue));
 		}
 	}
 
@@ -1640,6 +1773,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			brightnessValue: initialState.brightness,
 			volumeValue: initialState.volume,
 			themeValue: initialState.theme,
+			languageValue: currentLanguage,
 			save: true,
 		});
 		updateBoostDerivedState();
@@ -1847,6 +1981,7 @@ document.addEventListener('DOMContentLoaded', () => {
 		const savedBrightness = getStorageItem(BRIGHTNESS_KEY);
 		const savedVolume = getStorageItem(VOLUME_KEY);
 		const savedTheme = getStorageItem(THEME_KEY);
+		const savedLanguage = getStorageItem(LANGUAGE_KEY);
 		const savedLevel = getStorageItem(LEVEL_KEY);
 		const savedLevelClicks = getStorageItem(LEVEL_CLICKS_KEY);
 		const savedOwnedSkins = getStorageItem(SKINS_OWNED_KEY);
@@ -1940,6 +2075,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			: initialState.brightness;
 		loadedState.volume = savedVolume !== null ? clamp01(savedVolume) : initialState.volume;
 		loadedState.theme = savedTheme !== null ? normalizeTheme(savedTheme) : initialState.theme;
+		loadedState.language = savedLanguage !== null ? normalizeLanguage(savedLanguage) : initialState.language;
 
 		stopAllTransientProcesses();
 		applyGameState(loadedState);
@@ -1947,6 +2083,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			brightnessValue: loadedState.brightness,
 			volumeValue: loadedState.volume,
 			themeValue: loadedState.theme,
+			languageValue: loadedState.language,
 			save: false,
 		});
 
@@ -1976,7 +2113,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			}
 			if (critBoostActive && Math.random() < 0.3) {
 				gainedCoins *= 10;
-				showBoostActivation('КРИТ x10');
+				showBoostActivation(currentLanguage === 'en' ? 'CRIT x10' : 'КРИТ x10');
 			}
 				coins += gainedCoins;
 				totalCoinsEarned += gainedCoins;
@@ -2019,6 +2156,7 @@ document.addEventListener('DOMContentLoaded', () => {
 		brightnessValue: brightness,
 		volumeValue: globalVolume,
 		themeValue: getStorageItem(THEME_KEY) || DEFAULT_THEME,
+		languageValue: getStorageItem(LANGUAGE_KEY) || 'ru',
 		save: false,
 	});
 
@@ -2064,7 +2202,7 @@ document.addEventListener('DOMContentLoaded', () => {
 		levelFillEl.style.width = `${(progress * 100).toFixed(2)}%`;
 
 		// Поддержка data-lang-template="LVL {n}"
-		const template = levelTextEl.dataset.langTemplate || 'LVL {n}';
+		const template = levelTextEl.dataset.langTemplate || t('level-template');
 		levelTextEl.textContent = template.replace('{n}', level);
 
 		if (levelBarEl) {
@@ -2104,7 +2242,7 @@ document.addEventListener('DOMContentLoaded', () => {
 		}
 
 		if (robotInfoEl) {
-			robotInfoEl.textContent = `+${robotIncomePerSecond}/сек • ${robotCount} куплено`;
+			robotInfoEl.textContent = t('robot-info', { income: robotIncomePerSecond, count: robotCount });
 		}
 
 		if (autoBotBtn) {
