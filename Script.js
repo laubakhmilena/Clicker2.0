@@ -758,7 +758,10 @@ document.addEventListener('DOMContentLoaded', () => {
 		updateLevelUI();
 		updateClickUpgradeUI();
 		updateRobotUpgradeUI();
-		setResetLabel(resetArmed ? RESET_BUTTON_ARMED_TEXT : RESET_BUTTON_IDLE_TEXT);
+		// Для кнопки сброса передаём уже локализованный текст,
+		// чтобы в RU оставалось русское название,
+		// а на EN менялось сразу после переключения языка.
+		setResetLabel(t(resetArmed ? RESET_BUTTON_ARMED_TEXT : RESET_BUTTON_IDLE_TEXT));
 	}
 
 	function applyLanguage(language, options = {}) {
