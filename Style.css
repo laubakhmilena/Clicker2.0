@@ -1965,3 +1965,97 @@ body.light_theme .primary-btn{
 	.achievement-card__claim-btn{ min-width:102px; font-size:10px; height:26px; padding:0 8px; }
 	.achievement-card__reward{ margin-top:2px; font-size:10px; line-height:1.25; }
 }
+/* =========================================================
+   19) STATS MODAL
+   ========================================================= */
+.stats-modal{
+	background: radial-gradient(circle at center, var(--bg2), var(--bg1));
+	padding:20px;
+	z-index:2400;
+}
+
+.stats-card{
+	background:var(--card);
+	border:1px solid var(--glass);
+	border-radius:var(--radius);
+	box-shadow:var(--shadow);
+	width:min(980px, 95vw);
+	height:min(90vh, 820px);
+	padding:22px 16px 16px;
+	position:relative;
+	display:flex;
+	flex-direction:column;
+	gap:12px;
+}
+
+.stats-header{ padding-right:24px; }
+
+.stats-title{
+	margin:0;
+	font-size:clamp(28px, 4vw, 36px);
+	text-align:center;
+}
+
+.stats-content{
+	flex:1 1 auto;
+	min-height:0;
+	overflow-y:auto;
+	display:grid;
+	gap:10px;
+	padding:2px;
+	scrollbar-width:thin;
+}
+
+.stats-section{
+	border:1px solid rgba(255,255,255,0.14);
+	border-radius:14px;
+	padding:10px;
+	background:linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03));
+}
+
+.stats-section__title{
+	margin:0 0 8px;
+	font-size:14px;
+	font-weight:900;
+	letter-spacing:.3px;
+}
+
+.stats-grid{
+	display:grid;
+	grid-template-columns:repeat(2, minmax(0, 1fr));
+	gap:8px;
+}
+
+.stats-item{
+	display:flex;
+	flex-direction:column;
+	gap:4px;
+	padding:8px;
+	border-radius:10px;
+	border:1px solid rgba(255,255,255,0.12);
+	background:rgba(255,255,255,0.04);
+}
+
+.stats-item__label{
+	font-size:11px;
+	opacity:.84;
+	line-height:1.2;
+}
+
+.stats-item__value{
+	font-size:14px;
+	font-weight:800;
+	line-height:1.2;
+	word-break:break-word;
+}
+
+@media (max-width: 700px){
+	.stats-grid{ grid-template-columns:1fr; }
+}
+
+@media (max-width: 520px){
+	.stats-card{ height:min(90vh, 860px); padding:18px 12px 12px; }
+	.stats-section{ padding:8px; }
+	.stats-item__label{ font-size:10px; }
+	.stats-item__value{ font-size:13px; }
+}
