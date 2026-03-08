@@ -23,6 +23,126 @@ document.addEventListener('DOMContentLoaded', () => {
 	const THEME_KEY = 'theme'; // тема
 	const themeSelect = document.querySelector('.theme-select');
 
+	const languageSelect = document.getElementById('language-select');
+	const LANGUAGE_KEY = 'language';
+	const SUPPORTED_LANGUAGES = ['ru', 'en'];
+	let currentLanguage = 'ru';
+
+	// Единый словарь локализации интерфейса.
+	// Русские значения сохранены как оригинальные формулировки проекта.
+	const TRANSLATIONS = {
+		ru: {
+			gamename: 'Robo Clicker',
+			'about-title': ' — это космическое приключение!',
+			inginer: 'Ты — главный инженер секретной лаборатории будущего!',
+			klik: '✨Кликай: Зарабатывай золото своими руками!',
+			Upgrade: '⚙️Прокачивай: Увеличивай силу клика и покупай автоматических роботов.',
+			Skin: '🎭Скины: Открывай новых уникальных героев за достижения.',
+			Level: '🏆Уровни: Докажи, что ты лучший, повышая свой уровень инженера.',
+			young: 'Создано специально для юных изобретателей!',
+			Go: 'ПОЕХАЛИ!',
+			settings: 'Настройки', language: '🌍 Язык', sound: '🔊 Звук', brightness: '☀️ Яркость', theme: '🌗 Тема',
+			restart: 'Сбросить весь прогресс', welcome: 'Кликай, улучшай и собирай скины!', 'start-btn': 'Начать игру',
+			'about-btn': 'Об игре', 'settings-btn': 'Настройки', gold: 'Золото', 'power-label': 'Сила клика', level: 'LVL {n}',
+			'back-menu-btn': 'В меню', 'shop-title': 'МАГАЗИН', 'upgrade-click': 'Улучшить клик', 'robot-btn': 'Робот',
+			'robot-info-default': '+1/сек • 0 куплено', 'skins-btn': 'Скины', 'boosts-btn': 'Бусты', 'achievements-btn': 'Достижения',
+			'stats-btn': 'Статистика', 'skins-title': 'СКИНЫ', 'boosts-title': 'БУСТЫ', 'active-boosts': 'Активные бусты',
+			'achievements-title': 'ДОСТИЖЕНИЯ', 'stats-title': 'СТАТИСТИКА', 'theme-dark': 'Темная', 'theme-light': 'Светлая', 'theme-auto': 'Авто',
+		},
+		en: {
+			gamename: 'Robo Clicker',
+			'about-title': ' is a space adventure!',
+			inginer: 'You are the chief engineer of a secret laboratory of the future!',
+			klik: '✨Click: Earn gold with your own hands!',
+			Upgrade: '⚙️Upgrade: Increase click power and buy automatic robots.',
+			Skin: '🎭Skins: Unlock unique heroes through achievements.',
+			Level: '🏆Levels: Prove you are the best by leveling up your engineer rank.',
+			young: 'Created especially for young inventors!',
+			Go: "LET'S GO!",
+			settings: 'Settings', language: '🌍 Language', sound: '🔊 Sound', brightness: '☀️ Brightness', theme: '🌗 Theme',
+			restart: 'Reset all progress', welcome: 'Click, upgrade, and collect skins!', 'start-btn': 'Start game',
+			'about-btn': 'About game', 'settings-btn': 'Settings', gold: 'Gold', 'power-label': 'Click power', level: 'LVL {n}',
+			'back-menu-btn': 'To menu', 'shop-title': 'SHOP', 'upgrade-click': 'Upgrade click', 'robot-btn': 'Robot',
+			'robot-info-default': '+1/sec • 0 bought', 'skins-btn': 'Skins', 'boosts-btn': 'Boosts', 'achievements-btn': 'Achievements',
+			'stats-btn': 'Statistics', 'skins-title': 'SKINS', 'boosts-title': 'BOOSTS', 'active-boosts': 'Active boosts',
+			'achievements-title': 'ACHIEVEMENTS', 'stats-title': 'STATISTICS', 'theme-dark': 'Dark', 'theme-light': 'Light', 'theme-auto': 'Auto',
+		}
+	};
+
+	function normalizeLanguage(language) {
+		return SUPPORTED_LANGUAGES.includes(language) ? language : 'ru';
+	}
+
+	function t(key, params = {}) {
+		const langPack = TRANSLATIONS[currentLanguage] || TRANSLATIONS.ru;
+		const raw = langPack[key] ?? TRANSLATIONS.ru[key] ?? key;
+		return String(raw).replace(/\{(\w+)\}/g, (_, token) => (params[token] ?? `{${token}}`));
+	}
+
+	// Универсальная локализация динамических русских строк (fallback для данных из массивов).
+	function localizeDynamicText(text) {
+		const value = String(text ?? '');
+		if (currentLanguage === 'ru') return value;
+		const dict = {
+			'монет': 'coins', 'монета': 'coin', 'монеты': 'coins', 'клик': 'click', 'кликов': 'clicks', 'клика': 'click',
+			'роботов': 'robots', 'робота': 'robot', 'робот': 'robot', 'уровня': 'level', 'уровень': 'level', 'секунд': 'seconds',
+			'сек': 'sec', 'куплено': 'bought', 'недостаточно монет': 'Not enough coins', 'активен': 'Active', 'лимит': 'Limit',
+			'в процессе': 'In progress', 'выполнено': 'Completed', 'недоступно': 'Locked', 'получено': 'Claimed', 'скин': 'skin'
+		};
+		let out = value;
+		Object.entries(dict).forEach(([ruWord, enWord]) => {
+			out = out.replace(new RegExp(ruWord, 'gi'), enWord);
+		});
+		const translit = {а:'a',б:'b',в:'v',г:'g',д:'d',е:'e',ё:'e',ж:'zh',з:'z',и:'i',й:'y',к:'k',л:'l',м:'m',н:'n',о:'o',п:'p',р:'r',с:'s',т:'t',у:'u',ф:'f',х:'h',ц:'ts',ч:'ch',ш:'sh',щ:'sch',ъ:'',ы:'y',ь:'',э:'e',ю:'yu',я:'ya'};
+		return out.replace(/[А-Яа-яЁё]/g, (ch) => {
+			const lower = ch.toLowerCase();
+			const rep = translit[lower] || '';
+			return ch === lower ? rep : (rep ? rep[0].toUpperCase() + rep.slice(1) : '');
+		});
+	}
+
+	function updateLocalizedUI() {
+		document.documentElement.lang = currentLanguage;
+		document.querySelectorAll('[data-lang]').forEach((el) => {
+			const key = el.dataset.lang;
+			if (!key) return;
+			if (el.id === 'level-text') {
+				el.dataset.langTemplate = t('level');
+				return;
+			}
+			el.textContent = t(key);
+		});
+
+		const staticMap = {
+			'.about-wait .wait > p': { ru: 'Что тебя ждёт:', en: 'What awaits you:' },
+			'.stats-title': { ru: 'СТАТИСТИКА', en: 'STATISTICS' },
+			'#stats-basic-title': { ru: 'Основное', en: 'Main' },
+			'#stats-upgrade-title': { ru: 'Прокачка', en: 'Upgrades' },
+			'#stats-robots-title': { ru: 'Роботы', en: 'Robots' },
+			'#stats-skins-title': { ru: 'Скины', en: 'Skins' },
+			'#stats-boosts-title': { ru: 'Бусты', en: 'Boosts' },
+			'#stats-achievements-title': { ru: 'Достижения', en: 'Achievements' },
+		};
+		Object.entries(staticMap).forEach(([selector, labels]) => {
+			const el = document.querySelector(selector);
+			if (el) el.textContent = labels[currentLanguage] || labels.ru;
+		});
+
+		if (languageSelect) languageSelect.value = currentLanguage;
+		renderSkinsGrid();
+		renderBoostsUI();
+		renderAchievements();
+		renderStatistics();
+		updateUI();
+	}
+
+	function applyLanguage(language, options = {}) {
+		const { save = true } = options;
+		currentLanguage = normalizeLanguage(language);
+		if (save) setStorageItem(LANGUAGE_KEY, currentLanguage);
+		updateLocalizedUI();
+	}
+
 	// Кликер
 	const scoreEl = document.getElementById('score');
 	const clickPowerEl = document.getElementById('click-power-val');
@@ -188,10 +308,10 @@ document.addEventListener('DOMContentLoaded', () => {
 	let critBoostActive = false;
 
 	const boostCategories = [
-		{ id: 'temporary', label: 'Временные' },
-		{ id: 'instant', label: 'Мгновенные' },
-		{ id: 'permanent', label: 'Постоянные' },
-		{ id: 'super', label: 'Супер' },
+		{ id: 'temporary', label: { ru: 'Временные', en: 'Temporary' } },
+		{ id: 'instant', label: { ru: 'Мгновенные', en: 'Instant' } },
+		{ id: 'permanent', label: { ru: 'Постоянные', en: 'Permanent' } },
+		{ id: 'super', label: { ru: 'Супер', en: 'Super' } },
 	];
 
 	const boosts = [
@@ -471,7 +591,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			const doneCount = achievements.filter((item) => item.unlocked).length;
 			const percent = safePercent(doneCount, achievements.length);
 			if (achievementsSummary) {
-				achievementsSummary.textContent = `Выполнено ${doneCount} / 80 • ${percent.toFixed(1)}%`;
+				achievementsSummary.textContent = currentLanguage === 'en' ? `Completed ${doneCount} / 80 • ${percent.toFixed(1)}%` : `Выполнено ${doneCount} / 80 • ${percent.toFixed(1)}%`;
 			}
 			if (achievementsOverallFill) {
 				achievementsOverallFill.style.width = `${percent.toFixed(1)}%`;
@@ -490,24 +610,24 @@ document.addEventListener('DOMContentLoaded', () => {
 			achievementsList.textContent = '';
 
 			prepared.forEach(({ item, current, itemPercent }) => {
-				let statusText = 'Недоступно';
+				let statusText = currentLanguage === 'en' ? 'Locked' : 'Недоступно';
 				let statusClass = 'achievement-card__status--locked';
 				if (item.unlocked) {
-					statusText = 'Выполнено';
+					statusText = currentLanguage === 'en' ? 'Completed' : 'Выполнено';
 					statusClass = 'achievement-card__status--done';
 				} else if (current > 0) {
-					statusText = 'В процессе';
+					statusText = currentLanguage === 'en' ? 'In progress' : 'В процессе';
 					statusClass = 'achievement-card__status--progress';
 				}
 
-				const claimButtonText = item.claimed ? 'Получено' : 'Забрать награду';
+				const claimButtonText = item.claimed ? (currentLanguage === 'en' ? 'Claimed' : 'Получено') : (currentLanguage === 'en' ? 'Claim reward' : 'Забрать награду');
 				const claimDisabled = item.claimed || !item.unlocked;
 				const claimClass = item.claimed
 					? 'achievement-card__claim-btn is-claimed'
 					: item.unlocked
 						? 'achievement-card__claim-btn is-ready'
 						: 'achievement-card__claim-btn is-locked';
-				const rewardText = `+${item.reward} монет${item.bonus ? ` + ${item.bonus}` : ''}`;
+				const rewardText = currentLanguage === 'en' ? `+${item.reward} coins${item.bonus ? ` + ${localizeDynamicText(item.bonus)}` : ''}` : `+${item.reward} монет${item.bonus ? ` + ${item.bonus}` : ''}`;
 
 				const card = document.createElement('article');
 				card.className = `achievement-card ${item.unlocked ? 'achievement-card--done' : current > 0 ? '' : 'achievement-card--locked'}`;
@@ -524,7 +644,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 				const nameEl = document.createElement('h3');
 				nameEl.className = 'achievement-card__name';
-				nameEl.textContent = `${item.name} — `;
+				nameEl.textContent = `${currentLanguage === 'en' ? `Achievement #${item.id}` : item.name} — `;
 
 				const statusEl = document.createElement('span');
 				statusEl.className = `achievement-card__status ${statusClass}`;
@@ -553,7 +673,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 				const descEl = document.createElement('p');
 				descEl.className = 'achievement-card__desc';
-				descEl.textContent = item.desc;
+				descEl.textContent = localizeDynamicText(item.desc);
 
 				const progressEl = document.createElement('div');
 				progressEl.className = 'achievement-card__progress';
@@ -642,6 +762,16 @@ document.addEventListener('DOMContentLoaded', () => {
 			themeSelect.value = opt.value; // value у option без value = её текст
 		}
 	}
+
+
+	if (languageSelect) {
+		languageSelect.addEventListener('change', () => {
+			applyLanguage(languageSelect.value || 'ru');
+		});
+	}
+
+	const savedLanguage = normalizeLanguage(getStorageItem(LANGUAGE_KEY));
+	applyLanguage(savedLanguage, { save: false });
 
 	// 1) При загрузке — вспомнить тему или поставить тёмную по умолчанию
 	const savedTheme = getStorageItem(THEME_KEY) || DEFAULT_THEME;
@@ -842,10 +972,10 @@ document.addEventListener('DOMContentLoaded', () => {
 	
 	// --- СКИНЫ: модалка, покупка, выбор и рендер карточек ---
 	function getRarityLabel(rarity) {
-		if (rarity === 'uncommon') return 'Uncommon';
-		if (rarity === 'rare') return 'Rare';
-		if (rarity === 'ultra') return 'Ultra';
-		return 'Common';
+		if (rarity === 'uncommon') return currentLanguage === 'en' ? 'Uncommon' : 'Uncommon';
+		if (rarity === 'rare') return currentLanguage === 'en' ? 'Rare' : 'Rare';
+		if (rarity === 'ultra') return currentLanguage === 'en' ? 'Ultra' : 'Ultra';
+		return currentLanguage === 'en' ? 'Common' : 'Common';
 	}
 
 	function updateClickObjectSkin() {
@@ -858,29 +988,29 @@ document.addEventListener('DOMContentLoaded', () => {
 		const isOwned = ownedSkinIds.has(skin.id) || skin.price === 0;
 		if (skin.id === selectedSkinId) {
 			return {
-				text: '✓ Надето',
+				text: currentLanguage === 'en' ? '✓ Equipped' : '✓ Надето',
 				className: 'is-equipped',
 				disabled: true,
-				title: 'Скин уже надет',
+				title: currentLanguage === 'en' ? 'Skin is already equipped' : 'Скин уже надет',
 			};
 		}
 
 		if (isOwned) {
 			return {
-				text: 'Куплено',
+				text: currentLanguage === 'en' ? 'Owned' : 'Куплено',
 				className: 'is-owned',
 				disabled: false,
-				title: 'Нажмите, чтобы надеть скин',
+				title: currentLanguage === 'en' ? 'Click to equip skin' : 'Нажмите, чтобы надеть скин',
 			};
 		}
 
 		const isLocked = coins < skin.price;
 
 		return {
-			text: `Купить за ${skin.price} 💰`,
+			text: currentLanguage === 'en' ? `Buy for ${skin.price} 💰` : `Купить за ${skin.price} 💰`,
 			className: isLocked ? 'is-locked' : '',
 			disabled: isLocked,
-			title: isLocked ? 'Недостаточно монет для покупки' : 'Нажмите, чтобы купить скин',
+			title: isLocked ? (currentLanguage === 'en' ? 'Not enough coins to buy' : 'Недостаточно монет для покупки') : (currentLanguage === 'en' ? 'Click to buy skin' : 'Нажмите, чтобы купить скин'),
 		};
 	}
 
@@ -899,7 +1029,7 @@ document.addEventListener('DOMContentLoaded', () => {
 				return `
 					<article class="${cardClass}">
 						<div class="skin-card__icon" aria-hidden="true">${skin.icon}</div>
-						<h3 class="skin-card__name">${skin.name}</h3>
+						<h3 class="skin-card__name">${localizeDynamicText(skin.name)}</h3>
 						<span class="skin-card__rarity">${rarityLabel}</span>
 						<button
 							type="button"
@@ -1073,7 +1203,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 	function getSelectedSkinName() {
 		const selectedSkin = skinById.get(selectedSkinId) || skinById.get(DEFAULT_SKIN_ID);
-		return selectedSkin ? selectedSkin.name : 'Не выбран';
+		return selectedSkin ? localizeDynamicText(selectedSkin.name) : (currentLanguage === 'en' ? 'Not selected' : 'Не выбран');
 	}
 
 	function renderStatistics() {
@@ -1113,7 +1243,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 		if (statsEls.achievementsUnlocked) statsEls.achievementsUnlocked.textContent = String(unlockedAchievementsCount);
 		if (statsEls.achievementsClaimed) statsEls.achievementsClaimed.textContent = String(claimedAchievementsCount);
-		if (statsEls.achievementsSystem) statsEls.achievementsSystem.textContent = achievementsButtonUnlocked ? 'Да' : 'Нет';
+		if (statsEls.achievementsSystem) statsEls.achievementsSystem.textContent = achievementsButtonUnlocked ? (currentLanguage === 'en' ? 'Yes' : 'Да') : (currentLanguage === 'en' ? 'No' : 'Нет');
 	}
 
 	function getBoostLevel(boostId) {
@@ -1231,21 +1361,21 @@ document.addEventListener('DOMContentLoaded', () => {
 		const price = getBoostPrice(boost);
 		if (boost.category === 'temporary') {
 			const used = Math.max(0, Math.floor(toFiniteNumber(boostUsageCount[boost.id], 0)));
-			if (isBoostActive(boost.id)) return { disabled: true, text: 'Активен', meta: 'Активен (таймер)' };
-			if (used >= 20) return { disabled: true, text: 'Лимит', meta: 'Осталось: 0/20' };
-			if (coins < price) return { disabled: true, text: 'Недостаточно монет', meta: `Осталось: ${20 - used}/20` };
-			return { disabled: false, text: `Купить за ${price} 💰`, meta: `Осталось: ${20 - used}/20` };
+			if (isBoostActive(boost.id)) return { disabled: true, text: currentLanguage === 'en' ? 'Active' : 'Активен', meta: currentLanguage === 'en' ? 'Active (timer)' : 'Активен (таймер)' };
+			if (used >= 20) return { disabled: true, text: currentLanguage === 'en' ? 'Limit' : 'Лимит', meta: currentLanguage === 'en' ? 'Left: 0/20' : 'Осталось: 0/20' };
+			if (coins < price) return { disabled: true, text: currentLanguage === 'en' ? 'Not enough coins' : 'Недостаточно монет', meta: currentLanguage === 'en' ? `Left: ${20 - used}/20` : `Осталось: ${20 - used}/20` };
+			return { disabled: false, text: currentLanguage === 'en' ? `Buy for ${price} 💰` : `Купить за ${price} 💰`, meta: currentLanguage === 'en' ? `Left: ${20 - used}/20` : `Осталось: ${20 - used}/20` };
 		}
-		if (boost.oneTime && getBoostLevel(boost.id) > 0) return { disabled: true, text: 'Куплено', meta: 'Одноразовый буст' };
-		if (boost.category === 'super' && isBoostActive(boost.id)) return { disabled: true, text: 'Активен', meta: 'Активен (таймер)' };
-		if (coins < price) return { disabled: true, text: 'Недостаточно монет', meta: `Цена: ${price} 💰` };
-		return { disabled: false, text: `Купить за ${price} 💰`, meta: boost.category === 'permanent' ? `Уровень: ${getBoostLevel(boost.id)}` : `Цена: ${price} 💰` };
+		if (boost.oneTime && getBoostLevel(boost.id) > 0) return { disabled: true, text: currentLanguage === 'en' ? 'Owned' : 'Куплено', meta: currentLanguage === 'en' ? 'One-time boost' : 'Одноразовый буст' };
+		if (boost.category === 'super' && isBoostActive(boost.id)) return { disabled: true, text: currentLanguage === 'en' ? 'Active' : 'Активен', meta: currentLanguage === 'en' ? 'Active (timer)' : 'Активен (таймер)' };
+		if (coins < price) return { disabled: true, text: currentLanguage === 'en' ? 'Not enough coins' : 'Недостаточно монет', meta: currentLanguage === 'en' ? `Price: ${price} 💰` : `Цена: ${price} 💰` };
+		return { disabled: false, text: currentLanguage === 'en' ? `Buy for ${price} 💰` : `Купить за ${price} 💰`, meta: boost.category === 'permanent' ? (currentLanguage === 'en' ? `Level: ${getBoostLevel(boost.id)}` : `Уровень: ${getBoostLevel(boost.id)}`) : (currentLanguage === 'en' ? `Price: ${price} 💰` : `Цена: ${price} 💰`) };
 	}
 
 	function renderBoostTabs() {
 		if (!boostsTabs) return;
 		boostsTabs.innerHTML = boostCategories.map((cat) => `
-			<button type="button" class="boosts-tab ${cat.id === currentBoostCategory ? 'is-active' : ''}" data-boost-category="${cat.id}">${cat.label}</button>
+			<button type="button" class="boosts-tab ${cat.id === currentBoostCategory ? 'is-active' : ''}" data-boost-category="${cat.id}">${cat.label[currentLanguage] || cat.label.ru}</button>
 		`).join('');
 	}
 
@@ -1270,15 +1400,15 @@ document.addEventListener('DOMContentLoaded', () => {
 					<div class="boost-active-item">
 						<div class="boost-active-item__icon">${boost.icon}</div>
 						<div>
-							<div class="boost-active-item__name">${boost.name} — ${seconds}с</div>
-							<div class="boost-active-item__time">Осталось ${seconds}с</div>
+							<div class="boost-active-item__name">${localizeDynamicText(boost.name)} — ${seconds}${currentLanguage === 'en' ? 's' : 'с'}</div>
+							<div class="boost-active-item__time">${currentLanguage === 'en' ? 'Left' : 'Осталось'} ${seconds}${currentLanguage === 'en' ? 's' : 'с'}</div>
 						</div>
 						<div class="boost-progress"><div class="boost-progress__fill" style="width:${Math.max(0, Math.min(100, progress)).toFixed(1)}%"></div></div>
 					</div>
 				`;
 			})
 			.filter(Boolean);
-		boostsActiveList.innerHTML = items.length ? items.join('') : '<div class="boost-active-item"><div class="boost-active-item__name">Нет активных бустов</div></div>';
+		boostsActiveList.innerHTML = items.length ? items.join('') : `<div class="boost-active-item"><div class="boost-active-item__name">${currentLanguage === 'en' ? 'No active boosts' : 'Нет активных бустов'}</div></div>`;
 	}
 
 	function renderBoostsGrid() {
@@ -1290,10 +1420,10 @@ document.addEventListener('DOMContentLoaded', () => {
 			return `
 				<article class="${rarityClass}">
 					<div class="boost-card__icon">${boost.icon}</div>
-					<h3 class="boost-card__name">${boost.name}</h3>
-					<p class="boost-card__desc">${boost.desc}</p>
+					<h3 class="boost-card__name">${localizeDynamicText(boost.name)}</h3>
+					<p class="boost-card__desc">${localizeDynamicText(boost.desc)}</p>
 					<div class="boost-card__price">${action.meta}</div>
-					<div class="boost-card__meta">${boost.category === 'temporary' || boost.category === 'super' ? `Длительность: ${boost.duration}с` : 'Постоянный эффект / моментально'}</div>
+					<div class="boost-card__meta">${boost.category === 'temporary' || boost.category === 'super' ? (currentLanguage === 'en' ? `Duration: ${boost.duration}s` : `Длительность: ${boost.duration}с`) : (currentLanguage === 'en' ? 'Permanent effect / instant' : 'Постоянный эффект / моментально')}</div>
 					<button class="boost-card__action" type="button" data-boost-id="${boost.id}" ${action.disabled ? 'disabled' : ''}>${action.text}</button>
 				</article>
 			`;
@@ -1327,21 +1457,21 @@ document.addEventListener('DOMContentLoaded', () => {
 			if (boost.id === 'coin_burst') {
 				coins += 500;
 				totalCoinsEarned += 500;
-				showBoostActivation('+500 МОНЕТ');
+				showBoostActivation(currentLanguage === 'en' ? '+500 COINS' : '+500 МОНЕТ');
 			}
 		if (boost.id === 'super_click') {
 			pendingSuperClick = true;
-			showBoostActivation('СУПЕР КЛИК x25');
+			showBoostActivation(currentLanguage === 'en' ? 'SUPER CLICK x25' : 'СУПЕР КЛИК x25');
 		}
 		if (boost.id === 'discount_protocol') {
 			pendingDiscount = true;
-			showBoostActivation('СКИДКА -50%');
+			showBoostActivation(currentLanguage === 'en' ? 'DISCOUNT -50%' : 'СКИДКА -50%');
 		}
 			if (boost.id === 'offline_bonus') {
 				const reward = getOfflineBonusReward();
 				coins += reward;
 				totalCoinsEarned += reward;
-				showBoostActivation(`ОФЛАЙН +${reward}`);
+				showBoostActivation(currentLanguage === 'en' ? `OFFLINE +${reward}` : `ОФЛАЙН +${reward}`);
 			}
 		}
 
@@ -1360,7 +1490,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			boostUsageCount[boost.id] = used + 1;
 			closeBoostsModal();
 			activateTimedBoost(boost);
-			showBoostActivation(boost.id === 'neon_overdrive' ? '×3 КЛИК' : boost.id === 'drone_army' ? 'ДРОНЫ АКТИВНЫ' : 'БУСТ АКТИВЕН');
+			showBoostActivation(currentLanguage === 'en' ? (boost.id === 'neon_overdrive' ? '×3 CLICK' : boost.id === 'drone_army' ? 'DRONES ACTIVE' : 'BOOST ACTIVE') : (boost.id === 'neon_overdrive' ? '×3 КЛИК' : boost.id === 'drone_army' ? 'ДРОНЫ АКТИВНЫ' : 'БУСТ АКТИВЕН'));
 		}
 
 		if (boost.category === 'super') {
@@ -1369,7 +1499,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			boostLevels[boost.id] = getBoostLevel(boost.id) + 1;
 			closeBoostsModal();
 			activateTimedBoost(boost);
-			showBoostActivation(boost.id === 'omega_mode' ? 'OMEGA MODE' : 'СУПЕР БУСТ');
+			showBoostActivation(boost.id === 'omega_mode' ? 'OMEGA MODE' : (currentLanguage === 'en' ? 'SUPER BOOST' : 'СУПЕР БУСТ'));
 		}
 
 		if (boost.category === 'instant') {
@@ -1382,7 +1512,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			if (boost.oneTime && getBoostLevel(boost.id) > 0) return;
 			coins -= price;
 			boostLevels[boost.id] = getBoostLevel(boost.id) + 1;
-			showBoostActivation('АПГРЕЙД УСТАНОВЛЕН');
+			showBoostActivation(currentLanguage === 'en' ? 'UPGRADE INSTALLED' : 'АПГРЕЙД УСТАНОВЛЕН');
 		}
 
 		updateBoostDerivedState();
@@ -1431,8 +1561,8 @@ document.addEventListener('DOMContentLoaded', () => {
 	}
 
 
-	const RESET_BUTTON_IDLE_TEXT = 'Сбросить весь прогресс';
-	const RESET_BUTTON_ARMED_TEXT = 'Держите 3 секунды';
+	const RESET_BUTTON_IDLE_TEXT = () => (currentLanguage === 'en' ? 'Reset all progress' : 'Сбросить весь прогресс');
+	const RESET_BUTTON_ARMED_TEXT = () => (currentLanguage === 'en' ? 'Hold for 3 seconds' : 'Держите 3 секунды');
 	const RESET_HOLD_DURATION_MS = 3000;
 	const RESET_ARM_TIMEOUT_MS = 30000;
 
@@ -1472,7 +1602,7 @@ document.addEventListener('DOMContentLoaded', () => {
 		if (resetProgressBtn) {
 			resetProgressBtn.classList.remove('is-armed', 'is-holding');
 		}
-		setResetLabel(RESET_BUTTON_IDLE_TEXT);
+		setResetLabel(RESET_BUTTON_IDLE_TEXT());
 		setResetProgress(0);
 	}
 
@@ -1481,7 +1611,7 @@ document.addEventListener('DOMContentLoaded', () => {
 		clearResetArmTimeout();
 		resetArmed = true;
 		resetProgressBtn.classList.add('is-armed');
-		setResetLabel(RESET_BUTTON_ARMED_TEXT);
+		setResetLabel(RESET_BUTTON_ARMED_TEXT());
 
 		resetArmTimeout = setTimeout(() => {
 			resetButtonToIdleState();
@@ -1976,7 +2106,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			}
 			if (critBoostActive && Math.random() < 0.3) {
 				gainedCoins *= 10;
-				showBoostActivation('КРИТ x10');
+				showBoostActivation(currentLanguage === 'en' ? 'CRIT x10' : 'КРИТ x10');
 			}
 				coins += gainedCoins;
 				totalCoinsEarned += gainedCoins;
@@ -2104,7 +2234,7 @@ document.addEventListener('DOMContentLoaded', () => {
 		}
 
 		if (robotInfoEl) {
-			robotInfoEl.textContent = `+${robotIncomePerSecond}/сек • ${robotCount} куплено`;
+			robotInfoEl.textContent = currentLanguage === 'en' ? `+${robotIncomePerSecond}/sec • ${robotCount} bought` : `+${robotIncomePerSecond}/сек • ${robotCount} куплено`;
 		}
 
 		if (autoBotBtn) {
