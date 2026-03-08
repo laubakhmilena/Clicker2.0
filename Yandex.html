@@ -51,9 +51,9 @@
 						<ul class="settings-list">
 							<li data-lang="language">🌍 Язык</li>
 							<li>
-								<select>
-									<option class="opt-btn active">RU</option>
-									<option class="opt-btn">EN</option>
+								<select id="language-select">
+									<option class="opt-btn active" value="ru">RU</option>
+									<option class="opt-btn" value="en">EN</option>
 								</select>
 							</li>
 							<li data-lang="sound">🔊 Звук</li>
@@ -65,9 +65,9 @@
 							<li data-lang="theme">🌗 Тема</li>
 							<li>
 								<select class="theme-select">
-									<option class="theme-btn active" data-theme="dark">Темная</option>
-									<option class="theme-btn" data-theme="light">Светлая</option>
-									<option class="theme-btn" data-theme="Auto">Авто</option>
+									<option class="theme-btn active" data-theme="dark" data-lang="theme-dark">Темная</option>
+									<option class="theme-btn" data-theme="light" data-lang="theme-light">Светлая</option>
+									<option class="theme-btn" data-theme="Auto" data-lang="theme-auto">Авто</option>
 								</select>
 							</li>
 						</ul>
@@ -115,12 +115,12 @@
 			</div>
 		</div>
 		<div class="shop-panel">
-			<h2 class="shop-panel__title">МАГАЗИН</h2>
+			<h2 class="shop-panel__title" data-lang="shop-title">МАГАЗИН</h2>
 			<section class="game-upgrades" aria-label="Улучшения">
 				<button id="btn-upgrade-click" class="upgrade-btn upgrade-btn--click" type="button">
 					<span class="upgrade-btn__icon" aria-hidden="true">⚡</span>
 					<span class="upgrade-btn__text">
-						<span class="upgrade-btn__title">Улучшить клик</span>
+						<span class="upgrade-btn__title" data-lang="upgrade-click">Улучшить клик</span>
 					</span>
 					<span class="price" aria-label="Цена"></span>
 				</button>
@@ -128,8 +128,8 @@
 				<button id="btn-auto-bot" class="upgrade-btn upgrade-btn--auto" type="button">
 					<span class="upgrade-btn__icon" aria-hidden="true">🤖</span>
 					<span class="upgrade-btn__text">
-						<span class="upgrade-btn__title">Робот</span>
-						<span id="robot-info" class="upgrade-btn__subtitle">+1/сек • 0 куплено</span>
+						<span class="upgrade-btn__title" data-lang="robot-btn">Робот</span>
+						<span id="robot-info" class="upgrade-btn__subtitle" data-lang="robot-info-default">+1/сек • 0 куплено</span>
 					</span>
 					<span class="price" aria-label="Цена"></span>
 				</button>
@@ -139,22 +139,22 @@
 		<div class="feature-panel" aria-label="Игровые разделы">
 			<button id="btn-skins" class="feature-btn" type="button">
 				<span class="feature-btn__icon" aria-hidden="true">👕</span>
-				<span class="feature-btn__text">Скины</span>
+				<span class="feature-btn__text" data-lang="skins-btn">Скины</span>
 			</button>
 
 			<button id="btn-boosts" class="feature-btn" type="button">
 				<span class="feature-btn__icon" aria-hidden="true">🚀</span>
-				<span class="feature-btn__text">Бусты</span>
+				<span class="feature-btn__text" data-lang="boosts-btn">Бусты</span>
 			</button>
 
 			<button id="btn-achievements" class="feature-btn locked" type="button">
 				<span class="feature-btn__icon" aria-hidden="true">🏆</span>
-				<span class="feature-btn__text">Достижения</span>
+				<span class="feature-btn__text" data-lang="achievements-btn">Достижения</span>
 			</button>
 
 			<button id="btn-stats" class="feature-btn" type="button">
 				<span class="feature-btn__icon" aria-hidden="true">📊</span>
-				<span class="feature-btn__text">Статистика</span>
+				<span class="feature-btn__text" data-lang="stats-btn">Статистика</span>
 			</button>
 		</div>
 
@@ -174,7 +174,7 @@
 		<div class="menu-frame">
 			<div class="skins-card">
 				<header class="skins-header">
-					<h2 class="menu-title skins-title">СКИНЫ</h2>
+					<h2 class="menu-title skins-title" data-lang="skins-title">СКИНЫ</h2>
 				</header>
 				<main class="skins-content">
 					<div id="skins-grid" class="skins-grid" aria-label="Список скинов"></div>
@@ -189,11 +189,11 @@
 			<div class="menu-frame">
 				<div class="boosts-card">
 					<header class="boosts-header">
-						<h2 class="menu-title boosts-title">БУСТЫ</h2>
+						<h2 class="menu-title boosts-title" data-lang="boosts-title">БУСТЫ</h2>
 					</header>
 					<nav id="boosts-tabs" class="boosts-tabs" aria-label="Категории бустов"></nav>
 					<section class="boosts-active" aria-label="Активные бусты">
-						<h3>Активные бусты</h3>
+						<h3 data-lang="active-boosts">Активные бусты</h3>
 						<div id="boosts-active-list"></div>
 					</section>
 					<main class="boosts-grid">
@@ -209,7 +209,7 @@
 			<div class="menu-frame">
 				<div class="achievements-card">
 					<header class="achievements-header">
-						<h2 class="menu-title achievements-title">ДОСТИЖЕНИЯ</h2>
+						<h2 class="menu-title achievements-title" data-lang="achievements-title">ДОСТИЖЕНИЯ</h2>
 						<p id="achievements-summary" class="achievements-summary">Выполнено 0 / 80 • 0%</p>
 						<div class="achievements-overall-progress" aria-label="Общий прогресс достижений">
 							<div id="achievements-overall-fill" class="achievements-overall-progress__fill"></div>
@@ -228,7 +228,7 @@
 			<div class="menu-frame">
 				<div class="stats-card">
 					<header class="stats-header">
-						<h2 class="menu-title stats-title">СТАТИСТИКА</h2>
+						<h2 class="menu-title stats-title" data-lang="stats-title">СТАТИСТИКА</h2>
 					</header>
 					<main class="stats-content" aria-label="Игровая статистика">
 						<section class="stats-section" aria-labelledby="stats-basic-title">
