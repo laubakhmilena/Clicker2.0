@@ -45,6 +45,37 @@ document.addEventListener('DOMContentLoaded', () => {
 		const achievementsList = document.getElementById('achievements-list');
 		const achievementsSummary = document.getElementById('achievements-summary');
 		const achievementsOverallFill = document.getElementById('achievements-overall-fill');
+		const statsModal = document.getElementById('stats-modal');
+		const closeStatsBtn = document.getElementById('close-stats');
+
+		// Элементы вкладки статистики. Храним ссылки централизованно,
+		// чтобы обновление шло через один рендер-метод без разрозненного кода.
+		const statsEls = {
+			coinsCurrent: document.getElementById('stats-coins-current'),
+			totalCoinsEarned: document.getElementById('stats-total-coins-earned'),
+			totalClicks: document.getElementById('stats-total-clicks'),
+			clickPowerBase: document.getElementById('stats-click-power-base'),
+			clickPowerEffective: document.getElementById('stats-click-power-effective'),
+			level: document.getElementById('stats-level'),
+			levelProgress: document.getElementById('stats-level-progress'),
+			levelRemaining: document.getElementById('stats-level-remaining'),
+			clickUpgrades: document.getElementById('stats-click-upgrades'),
+			robotsCount: document.getElementById('stats-robots-count'),
+			robotsIncomeBase: document.getElementById('stats-robots-income-base'),
+			robotsIncomeEffective: document.getElementById('stats-robots-income-effective'),
+			skinsBought: document.getElementById('stats-skins-bought'),
+			skinsOwned: document.getElementById('stats-skins-owned'),
+			skinsSelected: document.getElementById('stats-skins-selected'),
+			boostsUpgraded: document.getElementById('stats-boosts-upgraded'),
+			boostsUsedTotal: document.getElementById('stats-boosts-used-total'),
+			boostsTypesUsed: document.getElementById('stats-boosts-types-used'),
+			boostsActive: document.getElementById('stats-boosts-active'),
+			boostsBestCombo: document.getElementById('stats-boosts-best-combo'),
+			boostsTotalTime: document.getElementById('stats-boosts-total-time'),
+			achievementsUnlocked: document.getElementById('stats-achievements-unlocked'),
+			achievementsClaimed: document.getElementById('stats-achievements-claimed'),
+			achievementsSystem: document.getElementById('stats-achievements-system'),
+		};
 
 	let coins = 0;
 	let clickPower = 1;
@@ -565,6 +596,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 		function openAchievementsModal() {
 			if (!achievementsModal) return;
+			closeAllFeatureModals();
 			unlockAchievementsButton();
 			renderAchievements();
 			achievementsModal.classList.remove('hidden');
@@ -887,6 +919,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 	function openSkinsModal() {
 		if (!skinsModal) return;
+		closeAllFeatureModals();
 		renderSkinsGrid();
 		skinsModal.classList.remove('hidden');
 	}
@@ -977,12 +1010,111 @@ document.addEventListener('DOMContentLoaded', () => {
 			});
 		}
 
+	function closeAllFeatureModals() {
+		// Единая точка закрытия игровых модалок: скины/бусты/достижения/статистика.
+		// Это защищает от наложения нескольких окон и сохраняет единый UX.
+		closeSkinsModal();
+		closeBoostsModal();
+		closeAchievementsModal();
+		closeStatsModal();
+	}
+
+	function openStatsModal() {
+		if (!statsModal) return;
+		closeAllFeatureModals();
+		renderStatistics();
+		statsModal.classList.remove('hidden');
+	}
+
+	function closeStatsModal() {
+		if (!statsModal) return;
+		statsModal.classList.add('hidden');
+	}
+
 	if (statsBtn) {
-		statsBtn.addEventListener('click', () => {
-			console.log('Нажата кнопка: Статистика');
+		statsBtn.addEventListener('click', openStatsModal);
+	}
+
+	if (closeStatsBtn) {
+		closeStatsBtn.addEventListener('click', closeStatsModal);
+	}
+
+	if (statsModal) {
+		statsModal.addEventListener('click', (event) => {
+			if (event.target === statsModal) {
+				closeStatsModal();
+			}
 		});
 	}
 
+	function getBoostsUpgradedCount() {
+		// Считаем, сколько бустов было улучшено/куплено хотя бы один раз.
+		// Берём только реальные значения из boostLevels, без отдельного счётчика.
+		return Object.values(boostLevels).reduce((count, value) => {
+			return count + (Math.max(0, Math.floor(toFiniteNumber(value, 0))) > 0 ? 1 : 0);
+		}, 0);
+	}
+
+	function getTotalBoostUsageCount() {
+		// Сумма использований всех бустов из накопительного объекта boostUsageCount.
+		return Object.values(boostUsageCount).reduce((sum, value) => {
+			return sum + Math.max(0, Math.floor(toFiniteNumber(value, 0)));
+		}, 0);
+	}
+
+	function getActiveBoostsCount() {
+		// Считаем только бусты, которые реально активны на текущий момент,
+		// чтобы статистика не показывала уже истёкшие записи.
+		const now = Date.now();
+		return Object.values(activeBoosts).reduce((count, boostData) => {
+			return count + (toFiniteNumber(boostData?.endAt, 0) > now ? 1 : 0);
+		}, 0);
+	}
+
+	function getSelectedSkinName() {
+		const selectedSkin = skinById.get(selectedSkinId) || skinById.get(DEFAULT_SKIN_ID);
+		return selectedSkin ? selectedSkin.name : 'Не выбран';
+	}
+
+	function renderStatistics() {
+		if (!statsModal) return;
+
+		const levelRequiredClicks = requiredClicksForLevel(level);
+		const safeLevelClicks = Math.max(0, Math.floor(toFiniteNumber(levelClicks, 0)));
+		const levelRemainingClicks = Math.max(0, levelRequiredClicks - safeLevelClicks);
+		const unlockedAchievementsCount = achievements.filter((item) => item.unlocked === true).length;
+		const claimedAchievementsCount = achievements.filter((item) => item.claimed === true).length;
+
+		if (statsEls.coinsCurrent) statsEls.coinsCurrent.textContent = String(Math.floor(toFiniteNumber(coins, 0)));
+		if (statsEls.totalCoinsEarned) statsEls.totalCoinsEarned.textContent = String(Math.floor(toFiniteNumber(totalCoinsEarned, 0)));
+		if (statsEls.totalClicks) statsEls.totalClicks.textContent = String(Math.floor(toFiniteNumber(totalClicks, 0)));
+
+		if (statsEls.clickPowerBase) statsEls.clickPowerBase.textContent = String(Math.round(toFiniteNumber(clickPower, 0) * 100) / 100);
+		if (statsEls.clickPowerEffective) statsEls.clickPowerEffective.textContent = String(Math.round(getEffectiveClickPower() * 100) / 100);
+		if (statsEls.level) statsEls.level.textContent = String(Math.max(0, Math.floor(toFiniteNumber(level, 0))));
+		if (statsEls.levelProgress) statsEls.levelProgress.textContent = `${safeLevelClicks} / ${levelRequiredClicks}`;
+		if (statsEls.levelRemaining) statsEls.levelRemaining.textContent = String(levelRemainingClicks);
+		if (statsEls.clickUpgrades) statsEls.clickUpgrades.textContent = String(Math.max(0, Math.floor(toFiniteNumber(clickUpgradesCount, 0))));
+
+		if (statsEls.robotsCount) statsEls.robotsCount.textContent = String(Math.max(0, Math.floor(toFiniteNumber(robotCount, 0))));
+		if (statsEls.robotsIncomeBase) statsEls.robotsIncomeBase.textContent = String(Math.round(Math.max(0, toFiniteNumber(robotIncomePerSecond, 0)) * 100) / 100);
+		if (statsEls.robotsIncomeEffective) statsEls.robotsIncomeEffective.textContent = String(Math.round(Math.max(0, getEffectiveRobotIncome()) * 100) / 100);
+
+		if (statsEls.skinsBought) statsEls.skinsBought.textContent = String(Math.max(0, Math.floor(toFiniteNumber(skinsBoughtCount, 0))));
+		if (statsEls.skinsOwned) statsEls.skinsOwned.textContent = String(ownedSkinIds.size);
+		if (statsEls.skinsSelected) statsEls.skinsSelected.textContent = getSelectedSkinName();
+
+		if (statsEls.boostsUpgraded) statsEls.boostsUpgraded.textContent = String(getBoostsUpgradedCount());
+		if (statsEls.boostsUsedTotal) statsEls.boostsUsedTotal.textContent = String(getTotalBoostUsageCount());
+		if (statsEls.boostsTypesUsed) statsEls.boostsTypesUsed.textContent = String(boostTypesUsed.size);
+		if (statsEls.boostsActive) statsEls.boostsActive.textContent = String(getActiveBoostsCount());
+		if (statsEls.boostsBestCombo) statsEls.boostsBestCombo.textContent = String(Math.max(0, Math.floor(toFiniteNumber(achievementCounters.boostComboBest, 0))));
+		if (statsEls.boostsTotalTime) statsEls.boostsTotalTime.textContent = String(Math.floor(Math.max(0, toFiniteNumber(achievementCounters.boostTime, 0))));
+
+		if (statsEls.achievementsUnlocked) statsEls.achievementsUnlocked.textContent = String(unlockedAchievementsCount);
+		if (statsEls.achievementsClaimed) statsEls.achievementsClaimed.textContent = String(claimedAchievementsCount);
+		if (statsEls.achievementsSystem) statsEls.achievementsSystem.textContent = achievementsButtonUnlocked ? 'Да' : 'Нет';
+	}
 
 	function getBoostLevel(boostId) {
 		return Math.max(0, Math.floor(toFiniteNumber(boostLevels[boostId], 0)));
@@ -1176,6 +1308,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 	function openBoostsModal() {
 		if (!boostsModal) return;
+		closeAllFeatureModals();
 		renderBoostsUI();
 		boostsModal.classList.remove('hidden');
 	}
@@ -1417,6 +1550,7 @@ document.addEventListener('DOMContentLoaded', () => {
 		closeSkinsModal();
 		closeBoostsModal();
 		closeAchievementsModal();
+		closeStatsModal();
 		if (menuScreen) menuScreen.classList.remove('hidden');
 
 		// Удаляем временные «всплывающие» числа от прошлой сессии.
@@ -1668,6 +1802,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			if (achievementsModal && !achievementsModal.classList.contains('hidden')) {
 				renderAchievements();
 			}
+			renderStatistics();
 		}
 
 	// Сохраняем данные в localStorage

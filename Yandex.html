@@ -223,6 +223,79 @@
 			</div>
 		</section>
 
+		<!-- Статистика -->
+		<section id="stats-modal" class="menu stats-modal hidden">
+			<div class="menu-frame">
+				<div class="stats-card">
+					<header class="stats-header">
+						<h2 class="menu-title stats-title">СТАТИСТИКА</h2>
+					</header>
+					<main class="stats-content" aria-label="Игровая статистика">
+						<section class="stats-section" aria-labelledby="stats-basic-title">
+							<h3 id="stats-basic-title" class="stats-section__title">Основное</h3>
+							<div class="stats-grid">
+								<div class="stats-item"><span class="stats-item__label">Монеты сейчас</span><span id="stats-coins-current" class="stats-item__value">0</span></div>
+								<div class="stats-item"><span class="stats-item__label">Всего заработано монет</span><span id="stats-total-coins-earned" class="stats-item__value">0</span></div>
+								<div class="stats-item"><span class="stats-item__label">Всего кликов</span><span id="stats-total-clicks" class="stats-item__value">0</span></div>
+							</div>
+						</section>
+
+						<section class="stats-section" aria-labelledby="stats-upgrade-title">
+							<h3 id="stats-upgrade-title" class="stats-section__title">Прокачка</h3>
+							<div class="stats-grid">
+								<div class="stats-item"><span class="stats-item__label">Базовая сила клика</span><span id="stats-click-power-base" class="stats-item__value">0</span></div>
+								<div class="stats-item"><span class="stats-item__label">Эффективная сила клика</span><span id="stats-click-power-effective" class="stats-item__value">0</span></div>
+								<div class="stats-item"><span class="stats-item__label">Текущий уровень</span><span id="stats-level" class="stats-item__value">0</span></div>
+								<div class="stats-item"><span class="stats-item__label">Прогресс уровня</span><span id="stats-level-progress" class="stats-item__value">0 / 0</span></div>
+								<div class="stats-item"><span class="stats-item__label">До следующего уровня</span><span id="stats-level-remaining" class="stats-item__value">0</span></div>
+								<div class="stats-item"><span class="stats-item__label">Куплено улучшений клика</span><span id="stats-click-upgrades" class="stats-item__value">0</span></div>
+							</div>
+						</section>
+
+						<section class="stats-section" aria-labelledby="stats-robots-title">
+							<h3 id="stats-robots-title" class="stats-section__title">Роботы</h3>
+							<div class="stats-grid">
+								<div class="stats-item"><span class="stats-item__label">Роботов куплено</span><span id="stats-robots-count" class="stats-item__value">0</span></div>
+								<div class="stats-item"><span class="stats-item__label">Базовый доход роботов в секунду</span><span id="stats-robots-income-base" class="stats-item__value">0</span></div>
+								<div class="stats-item"><span class="stats-item__label">Эффективный доход роботов в секунду</span><span id="stats-robots-income-effective" class="stats-item__value">0</span></div>
+							</div>
+						</section>
+
+						<section class="stats-section" aria-labelledby="stats-skins-title">
+							<h3 id="stats-skins-title" class="stats-section__title">Скины</h3>
+							<div class="stats-grid">
+								<div class="stats-item"><span class="stats-item__label">Куплено скинов</span><span id="stats-skins-bought" class="stats-item__value">0</span></div>
+								<div class="stats-item"><span class="stats-item__label">Открыто скинов</span><span id="stats-skins-owned" class="stats-item__value">0</span></div>
+								<div class="stats-item"><span class="stats-item__label">Выбранный скин</span><span id="stats-skins-selected" class="stats-item__value">—</span></div>
+							</div>
+						</section>
+
+						<section class="stats-section" aria-labelledby="stats-boosts-title">
+							<h3 id="stats-boosts-title" class="stats-section__title">Бусты</h3>
+							<div class="stats-grid">
+								<div class="stats-item"><span class="stats-item__label">Улучшено бустов</span><span id="stats-boosts-upgraded" class="stats-item__value">0</span></div>
+								<div class="stats-item"><span class="stats-item__label">Всего использовано бустов</span><span id="stats-boosts-used-total" class="stats-item__value">0</span></div>
+								<div class="stats-item"><span class="stats-item__label">Разных типов использовано</span><span id="stats-boosts-types-used" class="stats-item__value">0</span></div>
+								<div class="stats-item"><span class="stats-item__label">Активно сейчас</span><span id="stats-boosts-active" class="stats-item__value">0</span></div>
+								<div class="stats-item"><span class="stats-item__label">Лучшее комбо бустов</span><span id="stats-boosts-best-combo" class="stats-item__value">0</span></div>
+								<div class="stats-item"><span class="stats-item__label">Суммарное время бустов (сек)</span><span id="stats-boosts-total-time" class="stats-item__value">0</span></div>
+							</div>
+						</section>
+
+						<section class="stats-section" aria-labelledby="stats-achievements-title">
+							<h3 id="stats-achievements-title" class="stats-section__title">Достижения</h3>
+							<div class="stats-grid">
+								<div class="stats-item"><span class="stats-item__label">Открыто достижений</span><span id="stats-achievements-unlocked" class="stats-item__value">0</span></div>
+								<div class="stats-item"><span class="stats-item__label">Получено наград</span><span id="stats-achievements-claimed" class="stats-item__value">0</span></div>
+								<div class="stats-item"><span class="stats-item__label">Система достижений</span><span id="stats-achievements-system" class="stats-item__value">Нет</span></div>
+							</div>
+						</section>
+					</main>
+					<button id="close-stats" class="close-btn" type="button" aria-label="Закрыть окно статистики">✕</button>
+				</div>
+			</div>
+		</section>
+
 		<script src="Script.js"></script>
 	</body>
 </html>
