@@ -84,9 +84,12 @@ document.addEventListener('DOMContentLoaded', () => {
 	const BRIGHTNESS_KEY = 'brightness';
 	const BR_MIN = 20;
 	const BR_MAX = 80;
+	const DEFAULT_THEME = 'dark';
+	const DEFAULT_BRIGHTNESS = BR_MAX;
+	const DEFAULT_VOLUME = 1;
 
 	const brightnessRange = document.getElementById('brightness-range'); // именно яркость (не звук)
-	let brightness = 70; // 20..80
+	let brightness = DEFAULT_BRIGHTNESS; // 20..80
 
 	if (brightnessRange) {
 		brightnessRange.min = String(BR_MIN);
@@ -292,7 +295,37 @@ document.addEventListener('DOMContentLoaded', () => {
 		let permanentRobotBonusMultiplier = 1;
 		const boostTypesUsed = new Set();
 		const achievementCounters = { boostComboBest: 0, boostTime: 0 };
-		let lastBoostTick = Date.now();
+	let lastBoostTick = Date.now();
+
+	// Полный список ключей, которые относятся только к игре.
+	// В reset мы чистим только эти ключи, не затрагивая чужие данные в localStorage.
+	const GAME_STORAGE_KEYS = [
+		'coins',
+		'clickPower',
+		CLICK_UPGRADE_PRICE_KEY,
+		ROBOT_PRICE_KEY,
+		ROBOT_COUNT_KEY,
+		ROBOT_INCOME_KEY,
+		BRIGHTNESS_KEY,
+		VOLUME_KEY,
+		LEVEL_KEY,
+		LEVEL_CLICKS_KEY,
+		SKINS_OWNED_KEY,
+		SKINS_SELECTED_KEY,
+		BOOST_LEVELS_KEY,
+		BOOST_USAGE_KEY,
+		BOOST_ACTIVE_KEY,
+		BOOST_PENDING_DISCOUNT_KEY,
+		BOOST_PENDING_SUPER_CLICK_KEY,
+		TOTAL_CLICKS_KEY,
+		TOTAL_COINS_EARNED_KEY,
+		CLICK_UPGRADES_COUNT_KEY,
+		SKINS_BOUGHT_COUNT_KEY,
+		ACHIEVEMENTS_BUTTON_UNLOCKED_KEY,
+		ACHIEVEMENTS_COUNTERS_KEY,
+		ACHIEVEMENTS_STATE_KEY,
+		THEME_KEY,
+	];
 
 	function toFiniteNumber(value, fallback = 0) {
 		const n = Number(value);
@@ -579,7 +612,7 @@ document.addEventListener('DOMContentLoaded', () => {
 	}
 
 	// 1) При загрузке — вспомнить тему или поставить тёмную по умолчанию
-	const savedTheme = getStorageItem(THEME_KEY) || 'dark';
+	const savedTheme = getStorageItem(THEME_KEY) || DEFAULT_THEME;
 	applyTheme(savedTheme);
 	setSelectToTheme(savedTheme);
 
@@ -587,7 +620,7 @@ document.addEventListener('DOMContentLoaded', () => {
 	if (themeSelect) {
 		themeSelect.addEventListener('change', () => {
 			const selectedOption = themeSelect.options[themeSelect.selectedIndex];
-			const selectedTheme = selectedOption?.dataset?.theme || 'dark';
+			const selectedTheme = selectedOption?.dataset?.theme || DEFAULT_THEME;
 
 			applyTheme(selectedTheme);
 			setStorageItem(THEME_KEY, normalizeTheme(selectedTheme));
@@ -678,7 +711,7 @@ document.addEventListener('DOMContentLoaded', () => {
 		} else if (volumeSlider) {
 			applyGlobalVolume(Number(volumeSlider.value || 100) / 100);
 		} else {
-			applyGlobalVolume(1);
+			applyGlobalVolume(DEFAULT_VOLUME);
 		}
 
 		if (!volumeSlider) return;
@@ -699,17 +732,27 @@ document.addEventListener('DOMContentLoaded', () => {
 		return Math.max(min, Math.min(max, num));
 	}
 
-	function applyBrightness(value) {
+	function applyBrightness(value, options = {}) {
+		const { syncSlider = true, syncState = true } = options;
 		const v = clamp(value, BR_MIN, BR_MAX);
+
+		if (syncState) {
+			brightness = v;
+		}
+
+		if (syncSlider && brightnessRange) {
+			brightnessRange.value = String(v);
+		}
+
 		const factor = v / BR_MAX; // 20..80 => 0.25..1.0
 		document.documentElement.style.setProperty('--screen-brightness', String(factor));
+		return v;
 	}
 
 	// Движение ползунка яркости
 	if (brightnessRange) {
 		brightnessRange.addEventListener('input', () => {
-			brightness = clamp(brightnessRange.value, BR_MIN, BR_MAX);
-			applyBrightness(brightness);
+			applyBrightness(brightnessRange.value);
 			saveGame(); // сохраняем сразу
 		});
 	}
@@ -1312,68 +1355,165 @@ document.addEventListener('DOMContentLoaded', () => {
 		}, RESET_ARM_TIMEOUT_MS);
 	}
 
-	function resetGameProgress() {
-		stopRobotIncomeTimer();
-		try {
-			localStorage.clear();
-		} catch {
-			// localStorage может быть недоступен
-		}
+	function createInitialGameState() {
+		return {
+			coins: 0,
+			clickPower: 1,
+			upgradePrice: 85,
+			robotPrice: ROBOT_BASE_PRICE,
+			robotCount: 0,
+			robotIncomePerSecond: 0,
+			level: 0,
+			levelClicks: 0,
+			ownedSkinIds: new Set([DEFAULT_SKIN_ID]),
+			selectedSkinId: DEFAULT_SKIN_ID,
+			boostLevels: {},
+			boostUsageCount: {},
+			activeBoosts: {},
+			pendingDiscount: false,
+			pendingSuperClick: false,
+			boostTimeScale: 1,
+			critBoostActive: false,
+			totalClicks: 0,
+			totalCoinsEarned: 0,
+			clickUpgradesCount: 0,
+			skinsBoughtCount: 0,
+			achievementsButtonUnlocked: false,
+			achievementCounters: { boostComboBest: 0, boostTime: 0 },
+			boostTypesUsed: [],
+			brightness: DEFAULT_BRIGHTNESS,
+			volume: DEFAULT_VOLUME,
+			theme: DEFAULT_THEME,
+		};
+	}
 
-		coins = 0;
-		clickPower = 1;
-		upgradePrice = 85;
-		robotPrice = ROBOT_BASE_PRICE;
-		robotCount = 0;
-		robotIncomePerSecond = 0;
-		level = 0;
-		levelClicks = 0;
-		ownedSkinIds = new Set([DEFAULT_SKIN_ID]);
-		selectedSkinId = DEFAULT_SKIN_ID;
-		boostLevels = {};
-		boostUsageCount = {};
-		activeBoosts = {};
+	function clearGameStorage() {
+		GAME_STORAGE_KEYS.forEach((key) => {
+			try {
+				localStorage.removeItem(key);
+			} catch {
+				// localStorage может быть недоступен
+			}
+		});
+	}
+
+	function resetAchievementsToInitialState() {
+		achievementsButtonUnlocked = false;
+		achievementCounters.boostComboBest = 0;
+		achievementCounters.boostTime = 0;
+		boostTypesUsed.clear();
+		achievements.forEach((item) => {
+			item.unlocked = false;
+			item.claimed = false;
+		});
+		updatePermanentBonusesFromAchievements();
+		restoreAchievementsButtonState();
+	}
+
+	function clearTransientUIState() {
+		// Закрываем все модалки и приводим экран к состоянию меню.
+		if (aboutScreen) aboutScreen.classList.add('hidden');
+		if (settingsScreen) settingsScreen.classList.add('hidden');
+		closeSkinsModal();
+		closeBoostsModal();
+		closeAchievementsModal();
+		if (menuScreen) menuScreen.classList.remove('hidden');
+
+		// Удаляем временные «всплывающие» числа от прошлой сессии.
+		document.querySelectorAll('.floating-number').forEach((el) => el.remove());
+
+		// Сбрасываем состояние кнопки reset (armed/holding/progress).
+		resetButtonToIdleState();
+	}
+
+	function stopAllTransientProcesses() {
+		stopRobotIncomeTimer();
 		boostTimers.forEach((timer) => clearTimeout(timer));
 		boostTimers.clear();
-			pendingDiscount = false;
-			pendingSuperClick = false;
-			boostTimeScale = 1;
-			critBoostActive = false;
-			totalClicks = 0;
-			totalCoinsEarned = 0;
-			clickUpgradesCount = 0;
-			skinsBoughtCount = 0;
-			achievementsButtonUnlocked = false;
-			achievementCounters.boostComboBest = 0;
-			achievementCounters.boostTime = 0;
-			boostTypesUsed.clear();
-			achievements.forEach((item) => {
-				item.unlocked = false;
-				item.claimed = false;
+		activeBoosts = {};
+		lastBoostTick = Date.now();
+	}
+
+	function applyInterfaceSettings(options = {}) {
+		const {
+			brightnessValue = brightness,
+			volumeValue = globalVolume,
+			themeValue = DEFAULT_THEME,
+			save = false,
+		} = options;
+
+		applyBrightness(brightnessValue, { syncSlider: true, syncState: true });
+		applyGlobalVolume(volumeValue);
+		applyTheme(themeValue);
+		setSelectToTheme(themeValue);
+
+		if (save) {
+			setStorageItem(BRIGHTNESS_KEY, brightness);
+			setStorageItem(VOLUME_KEY, globalVolume);
+			setStorageItem(THEME_KEY, normalizeTheme(themeValue));
+		}
+	}
+
+	function applyGameState(state) {
+		coins = state.coins;
+		clickPower = state.clickPower;
+		upgradePrice = state.upgradePrice;
+		robotPrice = state.robotPrice;
+		robotCount = state.robotCount;
+		robotIncomePerSecond = state.robotIncomePerSecond;
+		level = state.level;
+		levelClicks = state.levelClicks;
+		ownedSkinIds = new Set(state.ownedSkinIds);
+		selectedSkinId = state.selectedSkinId;
+		boostLevels = { ...state.boostLevels };
+		boostUsageCount = { ...state.boostUsageCount };
+		activeBoosts = { ...state.activeBoosts };
+		pendingDiscount = state.pendingDiscount;
+		pendingSuperClick = state.pendingSuperClick;
+		boostTimeScale = state.boostTimeScale;
+		critBoostActive = state.critBoostActive;
+		totalClicks = state.totalClicks;
+		totalCoinsEarned = state.totalCoinsEarned;
+		clickUpgradesCount = state.clickUpgradesCount;
+		skinsBoughtCount = state.skinsBoughtCount;
+
+		resetAchievementsToInitialState();
+		achievementsButtonUnlocked = state.achievementsButtonUnlocked;
+		achievementCounters.boostComboBest = state.achievementCounters.boostComboBest;
+		achievementCounters.boostTime = state.achievementCounters.boostTime;
+		boostTypesUsed.clear();
+		state.boostTypesUsed.forEach((type) => boostTypesUsed.add(String(type)));
+
+		if (Array.isArray(state.achievementsState)) {
+			const byId = new Map(state.achievementsState.map((it) => [Number(it.id), it]));
+			achievements.forEach((achievement) => {
+				const saved = byId.get(achievement.id);
+				if (!saved) return;
+				achievement.unlocked = Boolean(saved.unlocked);
+				achievement.claimed = Boolean(saved.claimed);
 			});
-			updatePermanentBonusesFromAchievements();
-			restoreAchievementsButtonState();
-			brightness = 70;
-		applyBrightness(brightness);
-		if (brightnessRange) {
-			brightnessRange.value = String(brightness);
 		}
+		updatePermanentBonusesFromAchievements();
+		restoreAchievementsButtonState();
+	}
 
-		applyGlobalVolume(1);
-		if (volumeSlider) {
-			volumeSlider.value = '100';
-		}
-
-		applyTheme('dark');
-		setSelectToTheme('dark');
-
+	function resetGameProgress() {
+		const initialState = createInitialGameState();
+		stopAllTransientProcesses();
+		clearGameStorage();
+		applyGameState(initialState);
+		applyInterfaceSettings({
+			brightnessValue: initialState.brightness,
+			volumeValue: initialState.volume,
+			themeValue: initialState.theme,
+			save: true,
+		});
+		updateBoostDerivedState();
 		updateClickObjectSkin();
 		renderSkinsGrid();
 		updateUI();
-		resetButtonToIdleState();
-		if (settingsScreen) settingsScreen.classList.add('hidden');
-		closeSkinsModal();
-		if (menuScreen) menuScreen.classList.remove('hidden');
+		clearTransientUIState();
+		saveGame();
 	}
 
 
@@ -1560,6 +1700,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
 	// Загружаем данные из localStorage
 	function loadGame() {
+		const initialState = createInitialGameState();
+		const loadedState = createInitialGameState();
+
 		const savedCoins = getStorageItem('coins');
 		const savedClickPower = getStorageItem('clickPower');
 		const savedUpgradePrice = getStorageItem(CLICK_UPGRADE_PRICE_KEY);
@@ -1568,135 +1711,109 @@ document.addEventListener('DOMContentLoaded', () => {
 		const savedRobotIncome = getStorageItem(ROBOT_INCOME_KEY);
 		const savedBrightness = getStorageItem(BRIGHTNESS_KEY);
 		const savedVolume = getStorageItem(VOLUME_KEY);
+		const savedTheme = getStorageItem(THEME_KEY);
 		const savedLevel = getStorageItem(LEVEL_KEY);
 		const savedLevelClicks = getStorageItem(LEVEL_CLICKS_KEY);
 		const savedOwnedSkins = getStorageItem(SKINS_OWNED_KEY);
 		const savedSelectedSkin = getStorageItem(SKINS_SELECTED_KEY);
 		const savedBoostLevels = getStorageItem(BOOST_LEVELS_KEY);
-			const savedBoostUsage = getStorageItem(BOOST_USAGE_KEY);
-			const savedActiveBoosts = getStorageItem(BOOST_ACTIVE_KEY);
-			const savedPendingDiscount = getStorageItem(BOOST_PENDING_DISCOUNT_KEY);
-			const savedPendingSuperClick = getStorageItem(BOOST_PENDING_SUPER_CLICK_KEY);
-			const savedTotalClicks = getStorageItem(TOTAL_CLICKS_KEY);
-			const savedTotalCoinsEarned = getStorageItem(TOTAL_COINS_EARNED_KEY);
-			const savedClickUpgradesCount = getStorageItem(CLICK_UPGRADES_COUNT_KEY);
-			const savedSkinsBoughtCount = getStorageItem(SKINS_BOUGHT_COUNT_KEY);
-			const savedAchievementsButtonUnlocked = getStorageItem(ACHIEVEMENTS_BUTTON_UNLOCKED_KEY);
-			const savedAchievementCounters = getStorageItem(ACHIEVEMENTS_COUNTERS_KEY);
-			const savedAchievementsState = getStorageItem(ACHIEVEMENTS_STATE_KEY);
+		const savedBoostUsage = getStorageItem(BOOST_USAGE_KEY);
+		const savedActiveBoosts = getStorageItem(BOOST_ACTIVE_KEY);
+		const savedPendingDiscount = getStorageItem(BOOST_PENDING_DISCOUNT_KEY);
+		const savedPendingSuperClick = getStorageItem(BOOST_PENDING_SUPER_CLICK_KEY);
+		const savedTotalClicks = getStorageItem(TOTAL_CLICKS_KEY);
+		const savedTotalCoinsEarned = getStorageItem(TOTAL_COINS_EARNED_KEY);
+		const savedClickUpgradesCount = getStorageItem(CLICK_UPGRADES_COUNT_KEY);
+		const savedSkinsBoughtCount = getStorageItem(SKINS_BOUGHT_COUNT_KEY);
+		const savedAchievementsButtonUnlocked = getStorageItem(ACHIEVEMENTS_BUTTON_UNLOCKED_KEY);
+		const savedAchievementCounters = getStorageItem(ACHIEVEMENTS_COUNTERS_KEY);
+		const savedAchievementsState = getStorageItem(ACHIEVEMENTS_STATE_KEY);
 
-		if (savedCoins !== null) {
-			coins = Math.max(0, toFiniteNumber(savedCoins, 0));
-		}
-		if (savedClickPower !== null) {
-			clickPower = Math.max(1, toFiniteNumber(savedClickPower, 1));
-		}
-		if (savedUpgradePrice !== null) {
-			upgradePrice = Math.max(1, toFiniteNumber(savedUpgradePrice, 85));
-		}
-		if (savedRobotPrice !== null) {
-			robotPrice = Math.max(ROBOT_BASE_PRICE, toFiniteNumber(savedRobotPrice, ROBOT_BASE_PRICE));
-		}
-		if (savedRobotCount !== null) {
-			robotCount = Math.max(0, Math.floor(toFiniteNumber(savedRobotCount, 0)));
-		}
+		if (savedCoins !== null) loadedState.coins = Math.max(0, toFiniteNumber(savedCoins, initialState.coins));
+		if (savedClickPower !== null) loadedState.clickPower = Math.max(1, toFiniteNumber(savedClickPower, initialState.clickPower));
+		if (savedUpgradePrice !== null) loadedState.upgradePrice = Math.max(1, toFiniteNumber(savedUpgradePrice, initialState.upgradePrice));
+		if (savedRobotPrice !== null) loadedState.robotPrice = Math.max(ROBOT_BASE_PRICE, toFiniteNumber(savedRobotPrice, initialState.robotPrice));
+		if (savedRobotCount !== null) loadedState.robotCount = Math.max(0, Math.floor(toFiniteNumber(savedRobotCount, initialState.robotCount)));
 		if (savedRobotIncome !== null) {
-			robotIncomePerSecond = Math.max(0, Math.floor(toFiniteNumber(savedRobotIncome, 0)));
+			loadedState.robotIncomePerSecond = Math.max(0, Math.floor(toFiniteNumber(savedRobotIncome, initialState.robotIncomePerSecond)));
 		} else {
-			robotIncomePerSecond = robotCount;
+			loadedState.robotIncomePerSecond = loadedState.robotCount;
 		}
+		if (savedLevel !== null) loadedState.level = Math.max(0, Math.floor(toFiniteNumber(savedLevel, initialState.level)));
+		if (savedLevelClicks !== null) loadedState.levelClicks = Math.max(0, Math.floor(toFiniteNumber(savedLevelClicks, initialState.levelClicks)));
 
-		if (savedBrightness !== null) {
-			brightness = clamp(savedBrightness, BR_MIN, BR_MAX);
-		} else if (brightnessRange) {
-			brightness = clamp(brightnessRange.value || 70, BR_MIN, BR_MAX);
-		} else {
-			brightness = 70;
-		}
-
-		if (savedVolume !== null) {
-			applyGlobalVolume(savedVolume);
-		}
-
-		if (savedLevel !== null) {
-			level = Math.max(0, Math.floor(toFiniteNumber(savedLevel, 0)));
-		}
-		if (savedLevelClicks !== null) {
-			levelClicks = Math.max(0, Math.floor(toFiniteNumber(savedLevelClicks, 0)));
-		}
 		if (savedOwnedSkins) {
 			try {
 				const parsed = JSON.parse(savedOwnedSkins);
 				if (Array.isArray(parsed)) {
-					ownedSkinIds = new Set(
-						parsed
-							.map((value) => Math.floor(toFiniteNumber(value, -1)))
-							.filter((id) => skinById.has(id))
-					);
+					loadedState.ownedSkinIds = new Set(parsed.map((value) => Math.floor(toFiniteNumber(value, -1))).filter((id) => skinById.has(id)));
 				}
 			} catch {
-				ownedSkinIds = new Set([DEFAULT_SKIN_ID]);
+				loadedState.ownedSkinIds = new Set([DEFAULT_SKIN_ID]);
 			}
 		}
-
-		ownedSkinIds.add(DEFAULT_SKIN_ID);
+		loadedState.ownedSkinIds.add(DEFAULT_SKIN_ID);
 
 		if (savedSelectedSkin !== null) {
 			const parsedSelected = Math.floor(toFiniteNumber(savedSelectedSkin, DEFAULT_SKIN_ID));
-			if (skinById.has(parsedSelected) && ownedSkinIds.has(parsedSelected)) {
-				selectedSkinId = parsedSelected;
-			} else {
-				selectedSkinId = DEFAULT_SKIN_ID;
-			}
+			loadedState.selectedSkinId = (skinById.has(parsedSelected) && loadedState.ownedSkinIds.has(parsedSelected)) ? parsedSelected : DEFAULT_SKIN_ID;
 		}
 
 		if (savedBoostLevels) {
-			try { boostLevels = JSON.parse(savedBoostLevels) || {}; } catch { boostLevels = {}; }
+			try { loadedState.boostLevels = JSON.parse(savedBoostLevels) || {}; } catch { loadedState.boostLevels = {}; }
 		}
 		if (savedBoostUsage) {
-			try { boostUsageCount = JSON.parse(savedBoostUsage) || {}; } catch { boostUsageCount = {}; }
+			try { loadedState.boostUsageCount = JSON.parse(savedBoostUsage) || {}; } catch { loadedState.boostUsageCount = {}; }
 		}
 		if (savedActiveBoosts) {
-			try { activeBoosts = JSON.parse(savedActiveBoosts) || {}; } catch { activeBoosts = {}; }
+			try { loadedState.activeBoosts = JSON.parse(savedActiveBoosts) || {}; } catch { loadedState.activeBoosts = {}; }
 		}
-			pendingDiscount = savedPendingDiscount === '1';
-			pendingSuperClick = savedPendingSuperClick === '1';
-			if (savedTotalClicks !== null) totalClicks = Math.max(0, Math.floor(toFiniteNumber(savedTotalClicks, 0)));
-			if (savedTotalCoinsEarned !== null) totalCoinsEarned = Math.max(0, toFiniteNumber(savedTotalCoinsEarned, coins));
-			if (savedClickUpgradesCount !== null) clickUpgradesCount = Math.max(0, Math.floor(toFiniteNumber(savedClickUpgradesCount, 0)));
-			if (savedSkinsBoughtCount !== null) skinsBoughtCount = Math.max(0, Math.floor(toFiniteNumber(savedSkinsBoughtCount, 0)));
-			achievementsButtonUnlocked = savedAchievementsButtonUnlocked === '1';
-			if (savedAchievementCounters) {
-				try {
-					const parsedCounters = JSON.parse(savedAchievementCounters) || {};
-					achievementCounters.boostComboBest = Math.max(0, Math.floor(toFiniteNumber(parsedCounters.boostComboBest, 0)));
-					achievementCounters.boostTime = Math.max(0, toFiniteNumber(parsedCounters.boostTime, 0));
-					boostTypesUsed.clear();
-					if (Array.isArray(parsedCounters.boostTypesUsed)) {
-						parsedCounters.boostTypesUsed.forEach((type) => boostTypesUsed.add(String(type)));
-					}
-				} catch {
-					achievementCounters.boostComboBest = 0;
-					achievementCounters.boostTime = 0;
+
+		loadedState.pendingDiscount = savedPendingDiscount === '1';
+		loadedState.pendingSuperClick = savedPendingSuperClick === '1';
+		if (savedTotalClicks !== null) loadedState.totalClicks = Math.max(0, Math.floor(toFiniteNumber(savedTotalClicks, initialState.totalClicks)));
+		if (savedTotalCoinsEarned !== null) loadedState.totalCoinsEarned = Math.max(0, toFiniteNumber(savedTotalCoinsEarned, loadedState.coins));
+		if (savedClickUpgradesCount !== null) loadedState.clickUpgradesCount = Math.max(0, Math.floor(toFiniteNumber(savedClickUpgradesCount, initialState.clickUpgradesCount)));
+		if (savedSkinsBoughtCount !== null) loadedState.skinsBoughtCount = Math.max(0, Math.floor(toFiniteNumber(savedSkinsBoughtCount, initialState.skinsBoughtCount)));
+		loadedState.achievementsButtonUnlocked = savedAchievementsButtonUnlocked === '1';
+
+		if (savedAchievementCounters) {
+			try {
+				const parsedCounters = JSON.parse(savedAchievementCounters) || {};
+				loadedState.achievementCounters.boostComboBest = Math.max(0, Math.floor(toFiniteNumber(parsedCounters.boostComboBest, 0)));
+				loadedState.achievementCounters.boostTime = Math.max(0, toFiniteNumber(parsedCounters.boostTime, 0));
+				if (Array.isArray(parsedCounters.boostTypesUsed)) {
+					loadedState.boostTypesUsed = parsedCounters.boostTypesUsed.map((type) => String(type));
 				}
+			} catch {
+				loadedState.achievementCounters = { ...initialState.achievementCounters };
+				loadedState.boostTypesUsed = [];
 			}
-			if (savedAchievementsState) {
-				try {
-					const parsedState = JSON.parse(savedAchievementsState);
-					if (Array.isArray(parsedState)) {
-						const byId = new Map(parsedState.map((it) => [Number(it.id), it]));
-						achievements.forEach((achievement) => {
-							const saved = byId.get(achievement.id);
-							if (!saved) return;
-							achievement.unlocked = Boolean(saved.unlocked);
-							achievement.claimed = Boolean(saved.claimed);
-						});
-					}
-				} catch {
-					// игнор
-				}
+		}
+
+		if (savedAchievementsState) {
+			try {
+				const parsedState = JSON.parse(savedAchievementsState);
+				if (Array.isArray(parsedState)) loadedState.achievementsState = parsedState;
+			} catch {
+				// игнор
 			}
-			updatePermanentBonusesFromAchievements();
+		}
+
+		loadedState.brightness = savedBrightness !== null
+			? clamp(savedBrightness, BR_MIN, BR_MAX)
+			: initialState.brightness;
+		loadedState.volume = savedVolume !== null ? clamp01(savedVolume) : initialState.volume;
+		loadedState.theme = savedTheme !== null ? normalizeTheme(savedTheme) : initialState.theme;
+
+		stopAllTransientProcesses();
+		applyGameState(loadedState);
+		applyInterfaceSettings({
+			brightnessValue: loadedState.brightness,
+			volumeValue: loadedState.volume,
+			themeValue: loadedState.theme,
+			save: false,
+		});
 
 		const now = Date.now();
 		Object.entries(activeBoosts).forEach(([id, data]) => {
@@ -1763,9 +1880,12 @@ document.addEventListener('DOMContentLoaded', () => {
 		stopRobotIncomeTimer();
 	}
 	updateUI(); // 2. показываем данные на экране
-	applyBrightness(brightness);
-	if (brightnessRange) brightnessRange.value = String(clamp(brightness, BR_MIN, BR_MAX));
-	if (volumeSlider) volumeSlider.value = String(Math.round(clamp01(globalVolume) * 100));
+	applyInterfaceSettings({
+		brightnessValue: brightness,
+		volumeValue: globalVolume,
+		themeValue: getStorageItem(THEME_KEY) || DEFAULT_THEME,
+		save: false,
+	});
 
 	// Сохранение при перезагрузке/закрытии и при уходе со страницы
 	window.addEventListener('beforeunload', saveGame);
