@@ -218,7 +218,6 @@ document.addEventListener('DOMContentLoaded', () => {
 		const closeAchievementsBtn = document.getElementById('close-achievements');
 		const achievementsList = document.getElementById('achievements-list');
 		const achievementsSummary = document.getElementById('achievements-summary');
-		const achievementsOverallFill = document.getElementById('achievements-overall-fill');
 		const statsModal = document.getElementById('stats-modal');
 		const closeStatsBtn = document.getElementById('close-stats');
 
@@ -677,7 +676,6 @@ document.addEventListener('DOMContentLoaded', () => {
 			if (achievementsSummary) {
 				achievementsSummary.textContent = currentLanguage === 'en' ? `Completed ${completedCards} / ${totalCards} • ${percent.toFixed(1)}%` : `Завершено ${completedCards} / ${totalCards} • ${percent.toFixed(1)}%`;
 			}
-			if (achievementsOverallFill) achievementsOverallFill.style.width = `${percent.toFixed(1)}%`;
 			achievementsList.textContent = '';
 
 			achievementsSeriesDefinitions.forEach((series) => {
@@ -687,17 +685,25 @@ document.addEventListener('DOMContentLoaded', () => {
 				const ready = !state.completed && current >= stage.goal;
 				const progressText = currentLanguage === 'en' ? `Progress: ${Math.min(current, stage.goal)} / ${stage.goal}` : `Прогресс: ${Math.min(current, stage.goal)} / ${stage.goal}`;
 				const status = state.completed ? (currentLanguage === 'en' ? 'Series Complete' : 'Серия завершена') : (ready ? (currentLanguage === 'en' ? 'Ready' : 'Готово') : (currentLanguage === 'en' ? 'Not Completed' : 'Не выполнено'));
-				const statusClass = state.completed ? 'achievement-card__status--done' : (ready ? 'achievement-card__status--progress' : 'achievement-card__status--locked');
+				const statusClass = state.completed ? 'achievement-card__status--series-complete' : (ready ? 'achievement-card__status--ready' : 'achievement-card__status--not-ready');
+				const claimText = currentLanguage === 'en' ? 'Claim Reward' : 'Забрать награду';
+				const actionControl = ready
+					? `<button type="button" class="achievement-card__claim-btn is-ready" data-achievement-kind="series" data-achievement-id="${series.id}">${claimText}</button>`
+					: `<span class="achievement-card__state-pill ${state.completed ? 'is-complete' : 'is-idle'}">${state.completed ? (currentLanguage === 'en' ? 'Claimed' : 'Получено') : (currentLanguage === 'en' ? 'Not ready' : 'Не готово')}</span>`;
 				const card = document.createElement('article');
 				card.className = `achievement-card ${state.completed ? 'achievement-card--series-complete' : ''}`;
+				card.dataset.series = series.id;
 				card.innerHTML = `
 					<div class="achievement-card__icon">${series.icon}</div>
 					<div class="achievement-card__main">
 						<div class="achievement-card__topline">
-							<h3 class="achievement-card__name">${getLocalizedText(series.title)} — <span class="achievement-card__status ${statusClass}">${status}</span></h3>
+							<div>
+								<h3 class="achievement-card__name">${getLocalizedText(series.title)}</h3>
+								<span class="achievement-card__status ${statusClass}">${status}</span>
+							</div>
 							<div class="achievement-card__controls">
-								<button type="button" class="achievement-card__claim-btn ${state.completed ? 'is-claimed' : ready ? 'is-ready' : 'is-locked'}" data-achievement-kind="series" data-achievement-id="${series.id}" ${(!ready || state.completed) ? 'disabled' : ''}>${state.completed ? (currentLanguage === 'en' ? 'Series complete' : 'Серия завершена') : (ready ? (currentLanguage === 'en' ? 'Claim Reward' : 'Забрать награду') : (currentLanguage === 'en' ? 'Not ready' : 'Не готово'))}</button>
-								<div class="achievement-card__reward">${currentLanguage === 'en' ? `+${stage.reward} coins` : `+${stage.reward} монет`}${stage.bonus ? ` • ${getBonusFromEntry(stage)}` : ''}</div>
+								${actionControl}
+								<div class="achievement-card__reward">💰 ${currentLanguage === 'en' ? `+${stage.reward} coins` : `+${stage.reward} монет`}${stage.bonus ? ` • ${getBonusFromEntry(stage)}` : ''}</div>
 							</div>
 						</div>
 						<p class="achievement-card__desc">${state.completed ? (currentLanguage === 'en' ? 'Final reward claimed. The chain is complete.' : 'Финальная награда получена. Цепочка завершена.') : getLocalizedText(stage.desc)}</p>
@@ -709,18 +715,25 @@ document.addEventListener('DOMContentLoaded', () => {
 			});
 
 			specialAchievements.forEach((item) => {
-				const statusText = item.claimed ? (currentLanguage === 'en' ? 'Reward Claimed' : 'Награда получена') : item.unlocked ? (currentLanguage === 'en' ? 'Ready' : 'Готово') : (currentLanguage === 'en' ? 'Not Completed' : 'Не выполнено');
-				const statusClass = item.claimed ? 'achievement-card__status--done' : item.unlocked ? 'achievement-card__status--progress' : 'achievement-card__status--locked';
+				const statusText = item.claimed ? (currentLanguage === 'en' ? 'Claimed' : 'Получено') : item.unlocked ? (currentLanguage === 'en' ? 'Ready' : 'Готово') : (currentLanguage === 'en' ? 'Not Completed' : 'Не выполнено');
+				const statusClass = item.claimed ? 'achievement-card__status--series-complete' : item.unlocked ? 'achievement-card__status--ready' : 'achievement-card__status--not-ready';
+				const actionControl = item.unlocked && !item.claimed
+					? `<button type="button" class="achievement-card__claim-btn is-ready" data-achievement-kind="special" data-achievement-id="${item.id}">${currentLanguage === 'en' ? 'Claim Reward' : 'Забрать награду'}</button>`
+					: `<span class="achievement-card__state-pill ${item.claimed ? 'is-complete' : 'is-idle'}">${item.claimed ? (currentLanguage === 'en' ? 'Claimed' : 'Получено') : (currentLanguage === 'en' ? 'Not ready' : 'Не готово')}</span>`;
 				const card = document.createElement('article');
 				card.className = `achievement-card ${item.claimed ? 'achievement-card--done' : ''}`;
+				card.dataset.series = 'special';
 				card.innerHTML = `
 					<div class="achievement-card__icon">${item.icon}</div>
 					<div class="achievement-card__main">
 						<div class="achievement-card__topline">
-							<h3 class="achievement-card__name">${getLocalizedText(item.name)} — <span class="achievement-card__status ${statusClass}">${statusText}</span></h3>
+							<div>
+								<h3 class="achievement-card__name">${getLocalizedText(item.name)}</h3>
+								<span class="achievement-card__status ${statusClass}">${statusText}</span>
+							</div>
 							<div class="achievement-card__controls">
-								<button type="button" class="achievement-card__claim-btn ${item.claimed ? 'is-claimed' : item.unlocked ? 'is-ready' : 'is-locked'}" data-achievement-kind="special" data-achievement-id="${item.id}" ${(item.claimed || !item.unlocked) ? 'disabled' : ''}>${item.claimed ? (currentLanguage === 'en' ? 'Claimed' : 'Получено') : (currentLanguage === 'en' ? 'Claim Reward' : 'Забрать награду')}</button>
-								<div class="achievement-card__reward">${currentLanguage === 'en' ? `+${item.reward} coins` : `+${item.reward} монет`}${item.bonus ? ` • ${getBonusFromEntry(item)}` : ''}</div>
+								${actionControl}
+								<div class="achievement-card__reward">💰 ${currentLanguage === 'en' ? `+${item.reward} coins` : `+${item.reward} монет`}${item.bonus ? ` • ${getBonusFromEntry(item)}` : ''}</div>
 							</div>
 						</div>
 						<p class="achievement-card__desc">${getLocalizedText(item.desc)}</p>
