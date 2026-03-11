@@ -116,15 +116,11 @@ document.addEventListener('DOMContentLoaded', () => {
 		return en[boost.id]?.[field] || boost[field] || '';
 	}
 
-	// Получение локализованного текста достижения строго по списку переводов.
-	function getAchievementText(achievement, field) {
-		if (currentLanguage !== 'en') return achievement[field] ?? '';
-		const en = ACHIEVEMENT_EN_BY_ID[achievement.id];
-		if (!en) return achievement[field] ?? '';
-		if (field === 'name') return en.name;
-		if (field === 'desc') return en.desc;
-		if (field === 'bonus') return en.bonus ?? achievement.bonus ?? '';
-		return achievement[field] ?? '';
+	function getLocalizedText(value) {
+		if (value && typeof value === 'object') {
+			return currentLanguage === 'en' ? (value.en || value.ru || '') : (value.ru || value.en || '');
+		}
+		return value ?? '';
 	}
 
 	function updateLocalizedUI() {
@@ -400,194 +396,128 @@ document.addEventListener('DOMContentLoaded', () => {
 		const CLICK_UPGRADES_COUNT_KEY = 'clickUpgradesCount';
 		const SKINS_BOUGHT_COUNT_KEY = 'skinsBoughtCount';
 
-		const achievements = [
-  { id: 1, name: "Первый контакт", icon: "👋", desc: "Сделай 1 клик", type: "clicks", goal: 1, reward: 50, bonus: null, unlocked: false, claimed: false },
-  { id: 2, name: "Я оживаю!", icon: "🤖", desc: "Купи 1 робота", type: "robots", goal: 1, reward: 150, bonus: null, unlocked: false, claimed: false },
-  { id: 3, name: "Первый тюнинг", icon: "⚙️", desc: "Улучши клик 1 раз", type: "clickUpgrades", goal: 1, reward: 100, bonus: null, unlocked: false, claimed: false },
-  { id: 4, name: "Добро пожаловать на борт", icon: "🌟", desc: "Достигни уровня 3", type: "level", goal: 3, reward: 300, bonus: null, unlocked: false, claimed: false },
-  { id: 5, name: "Первый сигнал", icon: "📡", desc: "Заработай 100 монет", type: "totalCoins", goal: 100, reward: 200, bonus: null, unlocked: false, claimed: false },
-  { id: 6, name: "Сборка начинается", icon: "🔧", desc: "Купи 3 робота", type: "robots", goal: 3, reward: 400, bonus: null, unlocked: false, claimed: false },
-  { id: 7, name: "Базовая калибровка", icon: "🛠️", desc: "Улучши клик 5 раз", type: "clickUpgrades", goal: 5, reward: 250, bonus: null, unlocked: false, claimed: false },
-  { id: 8, name: "Первые данные", icon: "📊", desc: "Набери 500 кликов", type: "clicks", goal: 500, reward: 350, bonus: null, unlocked: false, claimed: false },
-  { id: 9, name: "Выход на орбиту", icon: "🪐", desc: "Достигни уровня 5", type: "level", goal: 5, reward: 500, bonus: null, unlocked: false, claimed: false },
-  { id: 10, name: "Запуск протокола", icon: "🚀", desc: "Заработай 1000 монет", type: "totalCoins", goal: 1000, reward: 600, bonus: null, unlocked: false, claimed: false },
+		const achievementsSeriesDefinitions = [
+			{
+				id: 'levels',
+				category: 'level',
+				icon: '🧠',
+				title: { ru: 'Оживи меня', en: 'Bring Me Online' },
+				stages: [
+					{ goal: 1, metric: 'level', desc: { ru: 'Достигни 1 уровня', en: 'Reach level 1' }, reward: 200 },
+					{ goal: 5, metric: 'level', desc: { ru: 'Достигни 5 уровня', en: 'Reach level 5' }, reward: 600 },
+					{ goal: 10, metric: 'level', desc: { ru: 'Достигни 10 уровня', en: 'Reach level 10' }, reward: 1800 },
+					{ goal: 20, metric: 'level', desc: { ru: 'Достигни 20 уровня', en: 'Reach level 20' }, reward: 8000 },
+					{ goal: 30, metric: 'level', desc: { ru: 'Достигни 30 уровня', en: 'Reach level 30' }, reward: 15000 },
+					{ goal: 40, metric: 'level', desc: { ru: 'Достигни 40 уровня', en: 'Reach level 40' }, reward: 30000 },
+					{ goal: 50, metric: 'level', desc: { ru: 'Достигни 50 уровня', en: 'Reach level 50' }, reward: 60000, bonus: { ru: '+5% навсегда', en: '+5% forever' } },
+					{ goal: 100, metric: 'level', desc: { ru: 'Достигни 100 уровня', en: 'Reach level 100' }, reward: 240000, bonus: { ru: 'Финал: титул «Абсолютный Омега»', en: 'Finale: “Absolute Omega” title' } },
+				],
+			},
+			{
+				id: 'clicks', category: 'clicks', icon: '🖱️', title: { ru: 'Пульс реактора', en: 'Reactor Pulse' },
+				stages: [
+					{ goal: 1, metric: 'clicks', desc: { ru: 'Сделай 1 клик', en: 'Make 1 click' }, reward: 50 },
+					{ goal: 100, metric: 'clicks', desc: { ru: 'Сделай 100 кликов', en: 'Make 100 clicks' }, reward: 250 },
+					{ goal: 500, metric: 'clicks', desc: { ru: 'Сделай 500 кликов', en: 'Make 500 clicks' }, reward: 500 },
+					{ goal: 1000, metric: 'clicks', desc: { ru: 'Сделай 1 000 кликов', en: 'Make 1,000 clicks' }, reward: 900 },
+					{ goal: 5000, metric: 'clicks', desc: { ru: 'Сделай 5 000 кликов', en: 'Make 5,000 clicks' }, reward: 2000 },
+					{ goal: 10000, metric: 'clicks', desc: { ru: 'Сделай 10 000 кликов', en: 'Make 10,000 clicks' }, reward: 5000 },
+					{ goal: 50000, metric: 'clicks', desc: { ru: 'Сделай 50 000 кликов', en: 'Make 50,000 clicks' }, reward: 12000 },
+					{ goal: 100000, metric: 'clicks', desc: { ru: 'Сделай 100 000 кликов', en: 'Make 100,000 clicks' }, reward: 30000, bonus: { ru: '+2% навсегда', en: '+2% forever' } },
+				],
+			},
+			{ id: 'coins', category: 'totalCoins', icon: '💰', title: { ru: 'Золотой контур', en: 'Golden Circuit' }, stages: [
+				{ goal: 100, metric: 'totalCoins', desc: { ru: 'Заработай 100 монет', en: 'Earn 100 coins' }, reward: 200 },
+				{ goal: 1000, metric: 'totalCoins', desc: { ru: 'Заработай 1 000 монет', en: 'Earn 1,000 coins' }, reward: 600 },
+				{ goal: 10000, metric: 'totalCoins', desc: { ru: 'Заработай 10 000 монет', en: 'Earn 10,000 coins' }, reward: 2500 },
+				{ goal: 50000, metric: 'totalCoins', desc: { ru: 'Заработай 50 000 монет', en: 'Earn 50,000 coins' }, reward: 7000 },
+				{ goal: 100000, metric: 'totalCoins', desc: { ru: 'Заработай 100 000 монет', en: 'Earn 100,000 coins' }, reward: 15000 },
+				{ goal: 500000, metric: 'totalCoins', desc: { ru: 'Заработай 500 000 монет', en: 'Earn 500,000 coins' }, reward: 40000 },
+				{ goal: 1000000, metric: 'totalCoins', desc: { ru: 'Заработай 1 000 000 монет', en: 'Earn 1,000,000 coins' }, reward: 90000 },
+				{ goal: 10000000, metric: 'totalCoins', desc: { ru: 'Заработай 10 000 000 монет', en: 'Earn 10,000,000 coins' }, reward: 260000, bonus: { ru: '+3% навсегда', en: '+3% forever' } },
+			] },
+			{ id: 'robots', category: 'robots', icon: '🤖', title: { ru: 'Армия конвейера', en: 'Conveyor Army' }, stages: [
+				{ goal: 1, metric: 'robots', desc: { ru: 'Купи 1 робота', en: 'Buy 1 robot' }, reward: 150 },
+				{ goal: 5, metric: 'robots', desc: { ru: 'Купи 5 роботов', en: 'Buy 5 robots' }, reward: 800 },
+				{ goal: 10, metric: 'robots', desc: { ru: 'Купи 10 роботов', en: 'Buy 10 robots' }, reward: 2000 },
+				{ goal: 25, metric: 'robots', desc: { ru: 'Купи 25 роботов', en: 'Buy 25 robots' }, reward: 6000 },
+				{ goal: 50, metric: 'robots', desc: { ru: 'Купи 50 роботов', en: 'Buy 50 robots' }, reward: 12000 },
+				{ goal: 100, metric: 'robots', desc: { ru: 'Купи 100 роботов', en: 'Buy 100 robots' }, reward: 25000 },
+				{ goal: 250, metric: 'robots', desc: { ru: 'Купи 250 роботов', en: 'Buy 250 robots' }, reward: 60000 },
+				{ goal: 500, metric: 'robots', desc: { ru: 'Купи 500 роботов', en: 'Buy 500 robots' }, reward: 180000, bonus: { ru: '+5% роботы', en: '+5% robots' } },
+			] },
+			{ id: 'upgrades', category: 'clickUpgrades', icon: '⚙️', title: { ru: 'Кузница апгрейдов', en: 'Upgrade Forge' }, stages: [
+				{ goal: 1, metric: 'clickUpgrades', desc: { ru: 'Купи 1 улучшение клика', en: 'Buy 1 click upgrade' }, reward: 100 },
+				{ goal: 5, metric: 'clickUpgrades', desc: { ru: 'Купи 5 улучшений клика', en: 'Buy 5 click upgrades' }, reward: 500 },
+				{ goal: 10, metric: 'clickUpgrades', desc: { ru: 'Купи 10 улучшений клика', en: 'Buy 10 click upgrades' }, reward: 1300 },
+				{ goal: 25, metric: 'clickUpgrades', desc: { ru: 'Купи 25 улучшений клика', en: 'Buy 25 click upgrades' }, reward: 5000 },
+				{ goal: 50, metric: 'clickUpgrades', desc: { ru: 'Купи 50 улучшений клика', en: 'Buy 50 click upgrades' }, reward: 14000 },
+				{ goal: 100, metric: 'clickUpgrades', desc: { ru: 'Купи 100 улучшений клика', en: 'Buy 100 click upgrades' }, reward: 65000, bonus: { ru: '+4% навсегда', en: '+4% forever' } },
+			] },
+			{ id: 'boosts', category: 'boosts', icon: '⚡', title: { ru: 'Энергоразгон', en: 'Overcharge Lane' }, stages: [
+				{ goal: 1, metric: 'boosts', desc: { ru: 'Используй 1 буст', en: 'Use 1 boost' }, reward: 200 },
+				{ goal: 5, metric: 'boosts', desc: { ru: 'Используй 5 бустов', en: 'Use 5 boosts' }, reward: 700 },
+				{ goal: 10, metric: 'boosts', desc: { ru: 'Используй 10 бустов', en: 'Use 10 boosts' }, reward: 1600 },
+				{ goal: 25, metric: 'boosts', desc: { ru: 'Используй 25 бустов', en: 'Use 25 boosts' }, reward: 4500 },
+				{ goal: 50, metric: 'boosts', desc: { ru: 'Используй 50 бустов', en: 'Use 50 boosts' }, reward: 11000 },
+				{ goal: 100, metric: 'boosts', desc: { ru: 'Используй 100 бустов', en: 'Use 100 boosts' }, reward: 24000 },
+				{ goal: 250, metric: 'boosts', desc: { ru: 'Используй 250 бустов', en: 'Use 250 boosts' }, reward: 80000 },
+				{ goal: 500, metric: 'boosts', desc: { ru: 'Используй 500 бустов', en: 'Use 500 boosts' }, reward: 180000, bonus: { ru: 'Финал: уникальный заряд «Омега»', en: 'Finale: unique “Omega” charge' } },
+			] },
+			{ id: 'skins', category: 'skinsBought', icon: '🎭', title: { ru: 'Галактический гардероб', en: 'Galactic Wardrobe' }, stages: [
+				{ goal: 1, metric: 'skinsBought', desc: { ru: 'Купи 1 скин', en: 'Buy 1 skin' }, reward: 500 },
+				{ goal: 3, metric: 'skinsBought', desc: { ru: 'Купи 3 скина', en: 'Buy 3 skins' }, reward: 1500 },
+				{ goal: 5, metric: 'skinsBought', desc: { ru: 'Купи 5 скинов', en: 'Buy 5 skins' }, reward: 3000 },
+				{ goal: 8, metric: 'skinsBought', desc: { ru: 'Купи 8 скинов', en: 'Buy 8 skins' }, reward: 7000 },
+				{ goal: 10, metric: 'skinsBought', desc: { ru: 'Купи 10 скинов', en: 'Buy 10 skins' }, reward: 12000 },
+				{ goal: 12, metric: 'skinsBought', desc: { ru: 'Купи 12 скинов', en: 'Buy 12 skins' }, reward: 18000 },
+				{ goal: 15, metric: 'skinsBought', desc: { ru: 'Купи 15 скинов', en: 'Buy 15 skins' }, reward: 100000, bonus: { ru: 'Финал: секретный ультра-скин', en: 'Finale: secret ultra skin' } },
+			] },
+		];
 
-  { id: 11, name: "Клик-новичок", icon: "👆", desc: "500 кликов", type: "clicks", goal: 500, reward: 400, bonus: null, unlocked: false, claimed: false },
-  { id: 12, name: "Клик-машина", icon: "💥", desc: "2500 кликов", type: "clicks", goal: 2500, reward: 900, bonus: null, unlocked: false, claimed: false },
-  { id: 13, name: "Клик-маньяк", icon: "🔥", desc: "10000 кликов", type: "clicks", goal: 10000, reward: 2000, bonus: null, unlocked: false, claimed: false },
-  { id: 14, name: "Клик-шторм", icon: "⚡", desc: "25000 кликов", type: "clicks", goal: 25000, reward: 4500, bonus: null, unlocked: false, claimed: false },
-  { id: 15, name: "Клик-бог", icon: "🏆", desc: "50000 кликов", type: "clicks", goal: 50000, reward: 8000, bonus: null, unlocked: false, claimed: false },
-  { id: 16, name: "Галактический кликер", icon: "🌌", desc: "100000 кликов", type: "clicks", goal: 100000, reward: 15000, bonus: null, unlocked: false, claimed: false },
-  { id: 17, name: "Метеоритный дождь", icon: "☄️", desc: "250000 кликов", type: "clicks", goal: 250000, reward: 25000, bonus: "скин", unlocked: false, claimed: false },
-  { id: 18, name: "Взрывной клик", icon: "💣", desc: "500000 кликов", type: "clicks", goal: 500000, reward: 40000, bonus: null, unlocked: false, claimed: false },
-  { id: 19, name: "Абсолютный кликер", icon: "🧨", desc: "1000000 кликов", type: "clicks", goal: 1000000, reward: 70000, bonus: null, unlocked: false, claimed: false },
-  { id: 20, name: "Король кликов", icon: "👑", desc: "2500000 кликов", type: "clicks", goal: 2500000, reward: 120000, bonus: "+2% навсегда", unlocked: false, claimed: false },
+		const specialAchievements = [
+			{ id: 'special_eternal_engine', icon: '🔥', name: { ru: 'Вечный двигатель', en: 'Perpetual Engine' }, desc: { ru: '10 млн монет + 500 роботов', en: '10M coins + 500 robots' }, reward: 40000, bonus: null, unlocked: false, claimed: false },
+			{ id: 'special_evolution', icon: '🧬', name: { ru: 'Эволюция завершена', en: 'Evolution Complete' }, desc: { ru: 'Сила клика 500 + уровень 45', en: 'Click power 500 + level 45' }, reward: 60000, bonus: null, unlocked: false, claimed: false },
+			{ id: 'special_star_engineer', icon: '🌠', name: { ru: 'Звёздный инженер', en: 'Star Engineer' }, desc: { ru: 'Все скины + уровень 35', en: 'All skins + level 35' }, reward: 35000, bonus: null, unlocked: false, claimed: false },
+			{ id: 'special_overload', icon: '💥', name: { ru: 'Перегрузка системы', en: 'System Overload' }, desc: { ru: '5 млн кликов + 1000 роботов', en: '5M clicks + 1,000 robots' }, reward: 80000, bonus: null, unlocked: false, claimed: false },
+			{ id: 'special_ultimate', icon: '🏆', name: { ru: 'Абсолютная легенда', en: 'Ultimate Legend' }, desc: { ru: '500 млн монет + все серии завершены', en: '500M coins + all series completed' }, reward: 200000, bonus: { ru: 'секретный ультра-скин', en: 'secret ultra skin' }, unlocked: false, claimed: false },
+		];
 
-  { id: 21, name: "Первый миллионер", icon: "💰", desc: "10000 монет всего", type: "totalCoins", goal: 10000, reward: 800, bonus: null, unlocked: false, claimed: false },
-  { id: 22, name: "Космический банкир", icon: "🪙", desc: "50000 монет", type: "totalCoins", goal: 50000, reward: 2000, bonus: null, unlocked: false, claimed: false },
-  { id: 23, name: "Галактический олигарх", icon: "🏦", desc: "250000 монет", type: "totalCoins", goal: 250000, reward: 5000, bonus: null, unlocked: false, claimed: false },
-  { id: 24, name: "Триллионер", icon: "🌠", desc: "1000000 монет", type: "totalCoins", goal: 1000000, reward: 12000, bonus: null, unlocked: false, claimed: false },
-  { id: 25, name: "Алмазный запас", icon: "💎", desc: "5000000 монет", type: "totalCoins", goal: 5000000, reward: 25000, bonus: null, unlocked: false, claimed: false },
-  { id: 26, name: "Планетарный капитал", icon: "🪐", desc: "10000000 монет", type: "totalCoins", goal: 10000000, reward: 40000, bonus: null, unlocked: false, claimed: false },
-  { id: 27, name: "Звёздный магнат", icon: "🌌", desc: "25000000 монет", type: "totalCoins", goal: 25000000, reward: 70000, bonus: "+3% навсегда", unlocked: false, claimed: false },
-  { id: 28, name: "Метеоритный дождь богатства", icon: "☄️", desc: "50000000 монет", type: "totalCoins", goal: 50000000, reward: 100000, bonus: null, unlocked: false, claimed: false },
-  { id: 29, name: "Император богатства", icon: "👑", desc: "100000000 монет", type: "totalCoins", goal: 100000000, reward: 150000, bonus: null, unlocked: false, claimed: false },
-  { id: 30, name: "Абсолютный триллионер", icon: "🏆", desc: "250000000 монет", type: "totalCoins", goal: 250000000, reward: 250000, bonus: "секретный скин", unlocked: false, claimed: false },
+		const LEGACY_SERIES_ID_MAP = {
+			levels: [4, 9, 10, 70, 71, 72, 73, 74],
+			clicks: [1, 8, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20],
+			coins: [5, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30],
+			robots: [2, 6, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40],
+			upgrades: [3, 7, 41, 45, 49, 50],
+			boosts: [61, 62, 63, 64, 65, 66, 67, 68, 69],
+			skins: [51, 52, 53, 54, 55, 58, 59, 60],
+		};
 
-  { id: 31, name: "Армия начинается", icon: "🛠️", desc: "10 роботов", type: "robots", goal: 10, reward: 600, bonus: null, unlocked: false, claimed: false },
-  { id: 32, name: "Робот-фабрика", icon: "🤖", desc: "25 роботов", type: "robots", goal: 25, reward: 1500, bonus: null, unlocked: false, claimed: false },
-  { id: 33, name: "Робот-империя", icon: "🏭", desc: "50 роботов", type: "robots", goal: 50, reward: 3500, bonus: null, unlocked: false, claimed: false },
-  { id: 34, name: "Космический флот", icon: "🚀", desc: "100 роботов", type: "robots", goal: 100, reward: 7000, bonus: null, unlocked: false, claimed: false },
-  { id: 35, name: "Галактическая армада", icon: "🌌", desc: "200 роботов", type: "robots", goal: 200, reward: 15000, bonus: null, unlocked: false, claimed: false },
-  { id: 36, name: "Планетарный гарнизон", icon: "🪐", desc: "300 роботов", type: "robots", goal: 300, reward: 25000, bonus: null, unlocked: false, claimed: false },
-  { id: 37, name: "Механическая орда", icon: "👾", desc: "500 роботов", type: "robots", goal: 500, reward: 40000, bonus: null, unlocked: false, claimed: false },
-  { id: 38, name: "Автоматическая цивилизация", icon: "⚙️", desc: "750 роботов", type: "robots", goal: 750, reward: 60000, bonus: null, unlocked: false, claimed: false },
-  { id: 39, name: "Робот-император", icon: "🏆", desc: "1000 роботов", type: "robots", goal: 1000, reward: 90000, bonus: null, unlocked: false, claimed: false },
-  { id: 40, name: "Владыка машин", icon: "👑", desc: "2000 роботов", type: "robots", goal: 2000, reward: 150000, bonus: "+5% роботы", unlocked: false, claimed: false },
-
-  { id: 41, name: "Мастер апгрейдов", icon: "📈", desc: "20 улучшений клика", type: "clickUpgrades", goal: 20, reward: 800, bonus: null, unlocked: false, claimed: false },
-  { id: 42, name: "Процессор уровня 2", icon: "🔧", desc: "Сила клика = 20", type: "clickPower", goal: 20, reward: 1200, bonus: null, unlocked: false, claimed: false },
-  { id: 43, name: "Максимальная мощность", icon: "⚡", desc: "Сила клика = 50", type: "clickPower", goal: 50, reward: 3000, bonus: null, unlocked: false, claimed: false },
-  { id: 44, name: "Перегрев системы", icon: "🔥", desc: "Сила клика = 100", type: "clickPower", goal: 100, reward: 6000, bonus: null, unlocked: false, claimed: false },
-  { id: 45, name: "Сверхпроводник", icon: "🌟", desc: "100 улучшений клика", type: "clickUpgrades", goal: 100, reward: 12000, bonus: null, unlocked: false, claimed: false },
-  { id: 46, name: "Генетический тюнинг", icon: "🧬", desc: "Сила клика = 200", type: "clickPower", goal: 200, reward: 20000, bonus: null, unlocked: false, claimed: false },
-  { id: 47, name: "Хромовый максимум", icon: "💎", desc: "Сила клика = 300", type: "clickPower", goal: 300, reward: 35000, bonus: null, unlocked: false, claimed: false },
-  { id: 48, name: "Абсолютный процессор", icon: "☄️", desc: "Сила клика = 500", type: "clickPower", goal: 500, reward: 55000, bonus: null, unlocked: false, claimed: false },
-  { id: 49, name: "Императорский чип", icon: "👑", desc: "250 улучшений клика", type: "clickUpgrades", goal: 250, reward: 80000, bonus: null, unlocked: false, claimed: false },
-  { id: 50, name: "Легенда улучшений", icon: "🏆", desc: "Сила клика = 1000", type: "clickPower", goal: 1000, reward: 120000, bonus: "+4% навсегда", unlocked: false, claimed: false },
-
-  { id: 51, name: "Первый стиль", icon: "👕", desc: "Купи 1 скин", type: "skins", goal: 1, reward: 300, bonus: null, unlocked: false, claimed: false },
-  { id: 52, name: "Модный инженер", icon: "🎨", desc: "4 скина", type: "skins", goal: 4, reward: 1000, bonus: null, unlocked: false, claimed: false },
-  { id: 53, name: "Коллекционер среднего уровня", icon: "🌟", desc: "8 скинов", type: "skins", goal: 8, reward: 3000, bonus: null, unlocked: false, claimed: false },
-  { id: 54, name: "Редкий собиратель", icon: "🥷", desc: "12 скинов", type: "skins", goal: 12, reward: 7000, bonus: null, unlocked: false, claimed: false },
-  { id: 55, name: "Хромовый коллекционер", icon: "💎", desc: "Все 16 скинов", type: "skins", goal: 16, reward: 25000, bonus: "секретный скин", unlocked: false, claimed: false },
-  { id: 56, name: "Галактический гардероб", icon: "🌌", desc: "10 разных скинов одновременно", type: "skinsEquipped", goal: 10, reward: 12000, bonus: null, unlocked: false, claimed: false },
-  { id: 57, name: "Император стиля", icon: "👑", desc: "Все ультра-редкие скины", type: "skins", goal: 4, reward: 40000, bonus: null, unlocked: false, claimed: false },
-  { id: 58, name: "Легенда моды", icon: "🏆", desc: "Купи 50 скинов", type: "skinsBought", goal: 50, reward: 18000, bonus: null, unlocked: false, claimed: false },
-  { id: 59, name: "Огненный гардероб", icon: "🔥", desc: "Надень 5 редких скинов подряд", type: "skinsEquipped", goal: 5, reward: 8000, bonus: null, unlocked: false, claimed: false },
-  { id: 60, name: "Абсолютный коллекционер", icon: "☄️", desc: "Все 16 скинов + все достижения", type: "skins", goal: 16, reward: 100000, bonus: "вечный бонус", unlocked: false, claimed: false },
-
-  { id: 61, name: "Буст-новичок", icon: "⚡", desc: "Активируй 5 бустов", type: "boosts", goal: 5, reward: 500, bonus: null, unlocked: false, claimed: false },
-  { id: 62, name: "Буст-энтузиаст", icon: "🚀", desc: "25 бустов", type: "boosts", goal: 25, reward: 1500, bonus: null, unlocked: false, claimed: false },
-  { id: 63, name: "Буст-король", icon: "💥", desc: "100 бустов", type: "boosts", goal: 100, reward: 4000, bonus: null, unlocked: false, claimed: false },
-  { id: 64, name: "Мастер комбо", icon: "🌟", desc: "3 буста одновременно", type: "boostCombo", goal: 3, reward: 2500, bonus: null, unlocked: false, claimed: false },
-  { id: 65, name: "Временной бог", icon: "⏳", desc: "300+ секунд бустов суммарно", type: "boostTime", goal: 300, reward: 6000, bonus: null, unlocked: false, claimed: false },
-  { id: 66, name: "Критический буст", icon: "🔥", desc: "10 редких бустов", type: "boosts", goal: 10, reward: 8000, bonus: null, unlocked: false, claimed: false },
-  { id: 67, name: "Взрывной бустер", icon: "🧨", desc: "500 бустов", type: "boosts", goal: 500, reward: 15000, bonus: null, unlocked: false, claimed: false },
-  { id: 68, name: "Император бустов", icon: "👑", desc: "Все типы бустов хотя бы раз", type: "boostTypes", goal: 3, reward: 10000, bonus: null, unlocked: false, claimed: false },
-  { id: 69, name: "Легенда ускорения", icon: "🏆", desc: "1000 бустов", type: "boosts", goal: 1000, reward: 25000, bonus: null, unlocked: false, claimed: false },
-  { id: 70, name: "Абсолютный буст-мастер", icon: "☄️", desc: "2500 бустов + 10 комбо", type: "boosts", goal: 2500, reward: 50000, bonus: "+5% навсегда", unlocked: false, claimed: false },
-
-  { id: 71, name: "Инженер-легенда", icon: "🏅", desc: "Достигни уровня 20", type: "level", goal: 20, reward: 8000, bonus: null, unlocked: false, claimed: false },
-  { id: 72, name: "Галактический герой", icon: "🌌", desc: "Уровень 30", type: "level", goal: 30, reward: 15000, bonus: null, unlocked: false, claimed: false },
-  { id: 73, name: "Император лаборатории", icon: "👑", desc: "Уровень 40", type: "level", goal: 40, reward: 30000, bonus: null, unlocked: false, claimed: false },
-  { id: 74, name: "Абсолютный Омега", icon: "☄️", desc: "Уровень 50", type: "level", goal: 50, reward: 50000, bonus: "+5% навсегда", unlocked: false, claimed: false },
-  { id: 75, name: "Легенда Robo Clicker", icon: "🏆", desc: "Все достижения кроме этого", type: "achievements", goal: 79, reward: 100000, bonus: null, unlocked: false, claimed: false },
-  { id: 76, name: "Вечный двигатель", icon: "🔥", desc: "10 млн монет + 500 роботов", type: "totalCoins", goal: 10000000, reward: 40000, bonus: null, unlocked: false, claimed: false },
-  { id: 77, name: "Эволюция завершена", icon: "🧬", desc: "Сила клика 500 + уровень 45", type: "clickPower", goal: 500, reward: 60000, bonus: null, unlocked: false, claimed: false },
-  { id: 78, name: "Звёздный инженер", icon: "🌠", desc: "Все скины + уровень 35", type: "skins", goal: 16, reward: 35000, bonus: null, unlocked: false, claimed: false },
-  { id: 79, name: "Перегрузка системы", icon: "💥", desc: "5 млн кликов + 1000 роботов", type: "clicks", goal: 5000000, reward: 80000, bonus: null, unlocked: false, claimed: false },
-  { id: 80, name: "Абсолютная легенда", icon: "🏆", desc: "500 млн монет + все выше", type: "totalCoins", goal: 500000000, reward: 200000, bonus: "секретный ультра-скин", unlocked: false, claimed: false }
-];
-
-		// Готовые утверждённые английские переводы достижений.
-		const ACHIEVEMENT_EN_BY_ID = {
-			1: { name: 'First Contact', desc: 'Make 1 click' },
-			2: { name: "I’m Coming Alive!", desc: 'Buy 1 robot' },
-			3: { name: 'First Upgrade', desc: 'Upgrade click once' },
-			4: { name: 'Welcome Aboard', desc: 'Reach level 3' },
-			5: { name: 'First Signal', desc: 'Earn 100 coins' },
-			6: { name: 'Assembly Begins', desc: 'Buy 3 robots' },
-			7: { name: 'Basic Calibration', desc: 'Upgrade click 5 times' },
-			8: { name: 'First Data', desc: 'Reach 500 clicks' },
-			9: { name: 'Into Orbit', desc: 'Reach level 5' },
-			10: { name: 'Protocol Launch', desc: 'Earn 1,000 coins' },
-			11: { name: 'Click Rookie', desc: '500 clicks' },
-			12: { name: 'Click Machine', desc: '2,500 clicks' },
-			13: { name: 'Click Maniac', desc: '10,000 clicks' },
-			14: { name: 'Click Storm', desc: '25,000 clicks' },
-			15: { name: 'Click God', desc: '50,000 clicks' },
-			16: { name: 'Galactic Clicker', desc: '100,000 clicks' },
-			17: { name: 'Meteor Shower', desc: '250,000 clicks', bonus: 'skin' },
-			18: { name: 'Explosive Click', desc: '500,000 clicks' },
-			19: { name: 'Ultimate Clicker', desc: '1,000,000 clicks' },
-			20: { name: 'King of Clicks', desc: '2,500,000 clicks', bonus: '+2% forever' },
-			21: { name: 'First Millionaire', desc: '10,000 total coins' },
-			22: { name: 'Space Banker', desc: '50,000 coins' },
-			23: { name: 'Galactic Oligarch', desc: '250,000 coins' },
-			24: { name: 'Trillionaire', desc: '1,000,000 coins' },
-			25: { name: 'Diamond Reserve', desc: '5,000,000 coins' },
-			26: { name: 'Planetary Capital', desc: '10,000,000 coins' },
-			27: { name: 'Star Tycoon', desc: '25,000,000 coins', bonus: '+3% forever' },
-			28: { name: 'Meteor Shower of Wealth', desc: '50,000,000 coins' },
-			29: { name: 'Emperor of Wealth', desc: '100,000,000 coins' },
-			30: { name: 'Ultimate Trillionaire', desc: '250,000,000 coins', bonus: 'secret skin' },
-			31: { name: 'The Army Begins', desc: '10 robots' },
-			32: { name: 'Robot Factory', desc: '25 robots' },
-			33: { name: 'Robot Empire', desc: '50 robots' },
-			34: { name: 'Space Fleet', desc: '100 robots' },
-			35: { name: 'Galactic Armada', desc: '200 robots' },
-			36: { name: 'Planetary Garrison', desc: '300 robots' },
-			37: { name: 'Mechanical Horde', desc: '500 robots' },
-			38: { name: 'Automated Civilization', desc: '750 robots' },
-			39: { name: 'Robot Emperor', desc: '1,000 robots' },
-			40: { name: 'Lord of Machines', desc: '2,000 robots', bonus: '+5% robot income' },
-			41: { name: 'Upgrade Master', desc: '20 click upgrades' },
-			42: { name: 'Level 2 Processor', desc: 'Click power = 20' },
-			43: { name: 'Maximum Power', desc: 'Click power = 50' },
-			44: { name: 'System Overheat', desc: 'Click power = 100' },
-			45: { name: 'Superconductor', desc: '100 click upgrades' },
-			46: { name: 'Genetic Tuning', desc: 'Click power = 200' },
-			47: { name: 'Chrome Maximum', desc: 'Click power = 300' },
-			48: { name: 'Ultimate Processor', desc: 'Click power = 500' },
-			49: { name: 'Imperial Chip', desc: '250 click upgrades' },
-			50: { name: 'Legend of Upgrades', desc: 'Click power = 1,000', bonus: '+4% forever' },
-			51: { name: 'First Style', desc: 'Buy 1 skin' },
-			52: { name: 'Fashion Engineer', desc: '4 skins' },
-			53: { name: 'Mid-Tier Collector', desc: '8 skins' },
-			54: { name: 'Rare Collector', desc: '12 skins' },
-			55: { name: 'Chrome Collector', desc: 'All 16 skins', bonus: 'secret skin' },
-			56: { name: 'Galactic Wardrobe', desc: '10 different skins at once' },
-			57: { name: 'Emperor of Style', desc: 'All ultra-rare skins' },
-			58: { name: 'Fashion Legend', desc: 'Buy 50 skins' },
-			59: { name: 'Fiery Wardrobe', desc: 'Equip 5 rare skins in a row' },
-			60: { name: 'Ultimate Collector', desc: 'All 16 skins + all achievements', bonus: 'permanent bonus' },
-			61: { name: 'Boost Rookie', desc: 'Activate 5 boosts' },
-			62: { name: 'Boost Enthusiast', desc: '25 boosts' },
-			63: { name: 'Boost King', desc: '100 boosts' },
-			64: { name: 'Combo Master', desc: 'Activate 3 boosts at once' },
-			65: { name: 'Time God', desc: '300+ total boost seconds' },
-			66: { name: 'Critical Boost', desc: 'Use 10 rare boosts' },
-			67: { name: 'Explosive Booster', desc: '500 boosts' },
-			68: { name: 'Emperor of Boosts', desc: 'Use every boost type at least once' },
-			69: { name: 'Speed Legend', desc: '1,000 boosts' },
-			70: { name: 'Ultimate Boost Master', desc: '2,500 boosts + 10 combos', bonus: '+5% forever' },
-			71: { name: 'Legendary Engineer', desc: 'Reach level 20' },
-			72: { name: 'Galactic Hero', desc: 'Level 30' },
-			73: { name: 'Emperor of the Lab', desc: 'Level 40' },
-			74: { name: 'Absolute Omega', desc: 'Level 50', bonus: '+5% forever' },
-			75: { name: 'Robo Clicker Legend', desc: 'Unlock every achievement except this one' },
-			76: { name: 'Perpetual Engine', desc: '10M coins + 500 robots' },
-			77: { name: 'Evolution Complete', desc: 'Click power 500 + level 45' },
-			78: { name: 'Star Engineer', desc: 'All skins + level 35' },
-			79: { name: 'System Overload', desc: '5M clicks + 1,000 robots' },
-			80: { name: 'Ultimate Legend', desc: '500M coins + everything above', bonus: 'secret ultra skin' },
+		const LEGACY_SPECIAL_ID_MAP = {
+			special_eternal_engine: 76,
+			special_evolution: 77,
+			special_star_engineer: 78,
+			special_overload: 79,
+			special_ultimate: 80,
 		};
 
 		let totalClicks = 0;
 		let totalCoinsEarned = 0;
 		let clickUpgradesCount = 0;
 		let skinsBoughtCount = 0;
-		// Базовые стартовые значения, которые НЕ должны давать прогресс достижений.
 		const ACHIEVEMENT_BASE_LEVEL = 0;
 		const ACHIEVEMENT_BASE_ROBOTS = 0;
 		const ACHIEVEMENT_BASE_CLICK_UPGRADES = 0;
-		const ACHIEVEMENT_BASE_SKINS = 1; // стартовый скин по умолчанию
+		const ACHIEVEMENT_BASE_SKINS = 1;
 		let achievementsButtonUnlocked = false;
 		let permanentCoinBonusMultiplier = 1;
 		let permanentRobotBonusMultiplier = 1;
 		const boostTypesUsed = new Set();
 		const achievementCounters = { boostComboBest: 0, boostTime: 0 };
+		const achievementSeriesState = {};
+		achievementsSeriesDefinitions.forEach((series) => {
+			achievementSeriesState[series.id] = { stageIndex: 0, stageClaimed: false, completed: false };
+		});
 	let lastBoostTick = Date.now();
 
 	// Полный список ключей, которые относятся только к игре.
@@ -647,81 +577,92 @@ document.addEventListener('DOMContentLoaded', () => {
 			return Math.max(0, Math.min(100, pct));
 		}
 
-		function updatePermanentBonusesFromAchievements() {
-			permanentCoinBonusMultiplier = 1;
-			permanentRobotBonusMultiplier = 1;
-			achievements.forEach((achievement) => {
-				if (!achievement.claimed || !achievement.bonus) return;
-				if (achievement.bonus.includes('% навсегда')) {
-					const pct = toFiniteNumber(achievement.bonus.replace(/[^0-9.]/g, ''), 0);
-					if (pct > 0) permanentCoinBonusMultiplier *= (1 + (pct / 100));
-				}
-				if (achievement.bonus.includes('% роботы')) {
-					const pct = toFiniteNumber(achievement.bonus.replace(/[^0-9.]/g, ''), 0);
-					if (pct > 0) permanentRobotBonusMultiplier *= (1 + (pct / 100));
-				}
-			});
-		}
-
-		function getAchievementProgressValue(achievement) {
-			// Единый принцип: стартовые значения по умолчанию не считаются достижением.
-			// Для этого вычитаем базовые значения и не уходим в минус.
+		function getAchievementProgressValue(metric) {
 			const purchasedRobots = Math.max(0, robotCount - ACHIEVEMENT_BASE_ROBOTS);
 			const purchasedClickUpgrades = Math.max(0, clickUpgradesCount - ACHIEVEMENT_BASE_CLICK_UPGRADES);
 			const ownedSkinsWithoutDefault = Math.max(0, ownedSkinIds.size - ACHIEVEMENT_BASE_SKINS);
-
-			switch (achievement.type) {
+			switch (metric) {
 				case 'clicks': return totalClicks;
 				case 'totalCoins': return totalCoinsEarned;
 				case 'robots': return purchasedRobots;
 				case 'clickUpgrades': return purchasedClickUpgrades;
 				case 'clickPower': return Math.floor(getEffectiveClickPower());
 				case 'level': return Math.max(0, level - ACHIEVEMENT_BASE_LEVEL);
-				case 'skins': return ownedSkinsWithoutDefault;
-				case 'skinsEquipped': return ownedSkinsWithoutDefault;
 				case 'skinsBought': return skinsBoughtCount;
+				case 'skins': return ownedSkinsWithoutDefault;
 				case 'boosts': return Object.values(boostUsageCount).reduce((sum, n) => sum + Math.max(0, Math.floor(toFiniteNumber(n, 0))), 0);
-				case 'boostCombo': return achievementCounters.boostComboBest;
-				case 'boostTime': return Math.floor(achievementCounters.boostTime);
-				case 'boostTypes': return boostTypesUsed.size;
-				case 'achievements': return achievements.filter((item) => item.id !== 75 && item.claimed).length;
 				default: return 0;
 			}
 		}
 
-		function checkSpecialAchievementCompletion(achievement) {
-			if (achievement.id === 75) return achievements.filter((item) => item.id !== 75 && item.unlocked).length >= 79;
-			if (achievement.id === 76) return totalCoinsEarned >= 10000000 && Math.max(0, robotCount - ACHIEVEMENT_BASE_ROBOTS) >= 500;
-			if (achievement.id === 77) return getEffectiveClickPower() >= 500 && level >= 45;
-			if (achievement.id === 78) return Math.max(0, ownedSkinIds.size - ACHIEVEMENT_BASE_SKINS) >= 16 && level >= 35;
-			if (achievement.id === 79) return totalClicks >= 5000000 && Math.max(0, robotCount - ACHIEVEMENT_BASE_ROBOTS) >= 1000;
-			if (achievement.id === 80) return totalCoinsEarned >= 500000000 && achievements.filter((item) => item.id < 80 && item.unlocked).length === 79;
-			return null;
-		}
-
-		function applyAchievementReward(achievement) {
-			if (achievement.claimed) return;
-			achievement.claimed = true;
-			coins += Math.max(0, toFiniteNumber(achievement.reward, 0));
-			// Реально применяем только бонусы с процентами (клики/роботы). Остальные бонусы отображаются в карточке.
-			updatePermanentBonusesFromAchievements();
-		}
-
-		function updateAchievementsState() {
-			achievements.forEach((achievement) => {
-				const special = checkSpecialAchievementCompletion(achievement);
-				const isDone = special === null ? getAchievementProgressValue(achievement) >= achievement.goal : special;
-				achievement.unlocked = Boolean(isDone);
+		function updateSpecialAchievementsState() {
+			specialAchievements.forEach((achievement) => {
+				if (achievement.id === 'special_eternal_engine') achievement.unlocked = totalCoinsEarned >= 10000000 && Math.max(0, robotCount - ACHIEVEMENT_BASE_ROBOTS) >= 500;
+				if (achievement.id === 'special_evolution') achievement.unlocked = getEffectiveClickPower() >= 500 && level >= 45;
+				if (achievement.id === 'special_star_engineer') achievement.unlocked = Math.max(0, ownedSkinIds.size - ACHIEVEMENT_BASE_SKINS) >= 16 && level >= 35;
+				if (achievement.id === 'special_overload') achievement.unlocked = totalClicks >= 5000000 && Math.max(0, robotCount - ACHIEVEMENT_BASE_ROBOTS) >= 1000;
+				if (achievement.id === 'special_ultimate') {
+					const allSeriesDone = achievementsSeriesDefinitions.every((series) => achievementSeriesState[series.id]?.completed);
+					achievement.unlocked = totalCoinsEarned >= 500000000 && allSeriesDone;
+				}
 			});
 		}
 
-		function claimAchievementRewardById(achievementId) {
-			const parsedId = Number(achievementId);
-			const achievement = achievements.find((item) => item.id === parsedId);
-			if (!achievement) return;
-			updateAchievementsState();
-			if (!achievement.unlocked || achievement.claimed) return;
-			applyAchievementReward(achievement);
+		function getBonusFromEntry(entry) {
+			if (!entry || !entry.bonus) return '';
+			return getLocalizedText(entry.bonus);
+		}
+
+		function updatePermanentBonusesFromAchievements() {
+			permanentCoinBonusMultiplier = 1;
+			permanentRobotBonusMultiplier = 1;
+			const claimedEntries = [];
+			achievementsSeriesDefinitions.forEach((series) => {
+				const state = achievementSeriesState[series.id];
+				if (!state) return;
+				for (let index = 0; index < series.stages.length; index += 1) {
+					if (index < state.stageIndex || (state.completed && index === series.stages.length - 1)) claimedEntries.push(series.stages[index]);
+				}
+			});
+			specialAchievements.forEach((achievement) => { if (achievement.claimed) claimedEntries.push(achievement); });
+			claimedEntries.forEach((entry) => {
+				const bonusText = getBonusFromEntry(entry);
+				if (!bonusText) return;
+				const pct = toFiniteNumber(bonusText.replace(/[^0-9.]/g, ''), 0);
+				if (pct <= 0) return;
+				const low = bonusText.toLowerCase();
+				if (low.includes('роботы') || low.includes('robot')) permanentRobotBonusMultiplier *= (1 + (pct / 100));
+				if (low.includes('навсегда') || low.includes('forever')) permanentCoinBonusMultiplier *= (1 + (pct / 100));
+			});
+		}
+
+		function claimSeriesReward(seriesId) {
+			const series = achievementsSeriesDefinitions.find((item) => item.id === seriesId);
+			const state = achievementSeriesState[seriesId];
+			if (!series || !state || state.completed) return;
+			const stage = series.stages[state.stageIndex];
+			if (!stage) return;
+			if (getAchievementProgressValue(stage.metric) < stage.goal) return;
+			coins += Math.max(0, toFiniteNumber(stage.reward, 0));
+			const isFinal = state.stageIndex >= series.stages.length - 1;
+			if (isFinal) {
+				state.completed = true;
+			} else {
+				state.stageIndex += 1;
+			}
+			updatePermanentBonusesFromAchievements();
+			updateSpecialAchievementsState();
+			updateUI();
+			saveGame();
+			renderAchievements();
+		}
+
+		function claimSpecialReward(id) {
+			const achievement = specialAchievements.find((item) => item.id === id);
+			if (!achievement || achievement.claimed || !achievement.unlocked) return;
+			achievement.claimed = true;
+			coins += Math.max(0, toFiniteNumber(achievement.reward, 0));
+			updatePermanentBonusesFromAchievements();
 			updateUI();
 			saveGame();
 			renderAchievements();
@@ -729,108 +670,61 @@ document.addEventListener('DOMContentLoaded', () => {
 
 		function renderAchievements() {
 			if (!achievementsList) return;
-			updateAchievementsState();
-			const doneCount = achievements.filter((item) => item.unlocked).length;
-			const percent = safePercent(doneCount, achievements.length);
+			updateSpecialAchievementsState();
+			const totalCards = achievementsSeriesDefinitions.length + specialAchievements.length;
+			const completedCards = achievementsSeriesDefinitions.filter((series) => achievementSeriesState[series.id]?.completed).length + specialAchievements.filter((item) => item.claimed).length;
+			const percent = safePercent(completedCards, totalCards);
 			if (achievementsSummary) {
-				achievementsSummary.textContent = currentLanguage === 'en' ? `Completed ${doneCount} / 80 • ${percent.toFixed(1)}%` : `Выполнено ${doneCount} / 80 • ${percent.toFixed(1)}%`;
+				achievementsSummary.textContent = currentLanguage === 'en' ? `Completed ${completedCards} / ${totalCards} • ${percent.toFixed(1)}%` : `Завершено ${completedCards} / ${totalCards} • ${percent.toFixed(1)}%`;
 			}
-			if (achievementsOverallFill) {
-				achievementsOverallFill.style.width = `${percent.toFixed(1)}%`;
-			}
-
-			const prepared = achievements.map((item) => {
-				const current = getAchievementProgressValue(item);
-				const itemPercent = safePercent(current, item.goal);
-				return { item, current, itemPercent };
-			}).sort((a, b) => {
-				if (a.item.unlocked !== b.item.unlocked) return a.item.unlocked ? -1 : 1;
-				if (!a.item.unlocked && !b.item.unlocked && b.itemPercent !== a.itemPercent) return b.itemPercent - a.itemPercent;
-				return a.item.id - b.item.id;
-			});
-
+			if (achievementsOverallFill) achievementsOverallFill.style.width = `${percent.toFixed(1)}%`;
 			achievementsList.textContent = '';
 
-			prepared.forEach(({ item, current, itemPercent }) => {
-				let statusText = currentLanguage === 'en' ? 'Locked' : 'Недоступно';
-				let statusClass = 'achievement-card__status--locked';
-				if (item.unlocked) {
-					statusText = currentLanguage === 'en' ? 'Completed' : 'Выполнено';
-					statusClass = 'achievement-card__status--done';
-				} else if (current > 0) {
-					statusText = currentLanguage === 'en' ? 'In Progress' : 'В процессе';
-					statusClass = 'achievement-card__status--progress';
-				}
-
-				const claimButtonText = item.claimed ? (currentLanguage === 'en' ? 'Claimed' : 'Получено') : (currentLanguage === 'en' ? 'Claim Reward' : 'Забрать награду');
-				const claimDisabled = item.claimed || !item.unlocked;
-				const claimClass = item.claimed
-					? 'achievement-card__claim-btn is-claimed'
-					: item.unlocked
-						? 'achievement-card__claim-btn is-ready'
-						: 'achievement-card__claim-btn is-locked';
-				const rewardText = currentLanguage === 'en' ? `+${item.reward} coins${item.bonus ? ` + ${getAchievementText(item, 'bonus')}` : ''}` : `+${item.reward} монет${item.bonus ? ` + ${item.bonus}` : ''}`;
-
+			achievementsSeriesDefinitions.forEach((series) => {
+				const state = achievementSeriesState[series.id];
+				const stage = series.stages[Math.min(state.stageIndex, series.stages.length - 1)];
+				const current = getAchievementProgressValue(stage.metric);
+				const ready = !state.completed && current >= stage.goal;
+				const progressText = currentLanguage === 'en' ? `Progress: ${Math.min(current, stage.goal)} / ${stage.goal}` : `Прогресс: ${Math.min(current, stage.goal)} / ${stage.goal}`;
+				const status = state.completed ? (currentLanguage === 'en' ? 'Series Complete' : 'Серия завершена') : (ready ? (currentLanguage === 'en' ? 'Ready' : 'Готово') : (currentLanguage === 'en' ? 'Not Completed' : 'Не выполнено'));
+				const statusClass = state.completed ? 'achievement-card__status--done' : (ready ? 'achievement-card__status--progress' : 'achievement-card__status--locked');
 				const card = document.createElement('article');
-				card.className = `achievement-card ${item.unlocked ? 'achievement-card--done' : current > 0 ? '' : 'achievement-card--locked'}`;
+				card.className = `achievement-card ${state.completed ? 'achievement-card--series-complete' : ''}`;
+				card.innerHTML = `
+					<div class="achievement-card__icon">${series.icon}</div>
+					<div class="achievement-card__main">
+						<div class="achievement-card__topline">
+							<h3 class="achievement-card__name">${getLocalizedText(series.title)} — <span class="achievement-card__status ${statusClass}">${status}</span></h3>
+							<div class="achievement-card__controls">
+								<button type="button" class="achievement-card__claim-btn ${state.completed ? 'is-claimed' : ready ? 'is-ready' : 'is-locked'}" data-achievement-kind="series" data-achievement-id="${series.id}" ${(!ready || state.completed) ? 'disabled' : ''}>${state.completed ? (currentLanguage === 'en' ? 'Series complete' : 'Серия завершена') : (ready ? (currentLanguage === 'en' ? 'Claim Reward' : 'Забрать награду') : (currentLanguage === 'en' ? 'Not ready' : 'Не готово'))}</button>
+								<div class="achievement-card__reward">${currentLanguage === 'en' ? `+${stage.reward} coins` : `+${stage.reward} монет`}${stage.bonus ? ` • ${getBonusFromEntry(stage)}` : ''}</div>
+							</div>
+						</div>
+						<p class="achievement-card__desc">${state.completed ? (currentLanguage === 'en' ? 'Final reward claimed. The chain is complete.' : 'Финальная награда получена. Цепочка завершена.') : getLocalizedText(stage.desc)}</p>
+						<p class="achievement-card__meta">${progressText}</p>
+					</div>
+					<div class="achievement-card__progress"><div class="achievement-card__progress-fill" style="width:${state.completed ? 100 : safePercent(current, stage.goal)}%"></div></div>
+				`;
+				achievementsList.appendChild(card);
+			});
 
-				const iconEl = document.createElement('div');
-				iconEl.className = 'achievement-card__icon';
-				iconEl.textContent = item.icon;
-
-				const mainEl = document.createElement('div');
-				mainEl.className = 'achievement-card__main';
-
-				const topLineEl = document.createElement('div');
-				topLineEl.className = 'achievement-card__topline';
-
-				const nameEl = document.createElement('h3');
-				nameEl.className = 'achievement-card__name';
-				nameEl.textContent = `${getAchievementText(item, 'name')} — `;
-
-				const statusEl = document.createElement('span');
-				statusEl.className = `achievement-card__status ${statusClass}`;
-				statusEl.textContent = statusText;
-				nameEl.appendChild(statusEl);
-
-				const controlsEl = document.createElement('div');
-				controlsEl.className = 'achievement-card__controls';
-
-				const claimBtnEl = document.createElement('button');
-				claimBtnEl.type = 'button';
-				claimBtnEl.className = claimClass;
-				claimBtnEl.dataset.achievementId = String(item.id);
-				claimBtnEl.textContent = claimButtonText;
-				claimBtnEl.disabled = claimDisabled;
-
-				const rewardEl = document.createElement('div');
-				rewardEl.className = 'achievement-card__reward';
-				rewardEl.textContent = rewardText;
-
-				controlsEl.appendChild(claimBtnEl);
-				controlsEl.appendChild(rewardEl);
-
-				topLineEl.appendChild(nameEl);
-				topLineEl.appendChild(controlsEl);
-
-				const descEl = document.createElement('p');
-				descEl.className = 'achievement-card__desc';
-				descEl.textContent = getAchievementText(item, 'desc');
-
-				const progressEl = document.createElement('div');
-				progressEl.className = 'achievement-card__progress';
-				const progressFillEl = document.createElement('div');
-				progressFillEl.className = 'achievement-card__progress-fill';
-				progressFillEl.style.width = `${itemPercent.toFixed(1)}%`;
-				progressEl.appendChild(progressFillEl);
-
-				mainEl.appendChild(topLineEl);
-				mainEl.appendChild(descEl);
-
-				card.appendChild(iconEl);
-				card.appendChild(mainEl);
-				card.appendChild(progressEl);
-
+			specialAchievements.forEach((item) => {
+				const statusText = item.claimed ? (currentLanguage === 'en' ? 'Reward Claimed' : 'Награда получена') : item.unlocked ? (currentLanguage === 'en' ? 'Ready' : 'Готово') : (currentLanguage === 'en' ? 'Not Completed' : 'Не выполнено');
+				const statusClass = item.claimed ? 'achievement-card__status--done' : item.unlocked ? 'achievement-card__status--progress' : 'achievement-card__status--locked';
+				const card = document.createElement('article');
+				card.className = `achievement-card ${item.claimed ? 'achievement-card--done' : ''}`;
+				card.innerHTML = `
+					<div class="achievement-card__icon">${item.icon}</div>
+					<div class="achievement-card__main">
+						<div class="achievement-card__topline">
+							<h3 class="achievement-card__name">${getLocalizedText(item.name)} — <span class="achievement-card__status ${statusClass}">${statusText}</span></h3>
+							<div class="achievement-card__controls">
+								<button type="button" class="achievement-card__claim-btn ${item.claimed ? 'is-claimed' : item.unlocked ? 'is-ready' : 'is-locked'}" data-achievement-kind="special" data-achievement-id="${item.id}" ${(item.claimed || !item.unlocked) ? 'disabled' : ''}>${item.claimed ? (currentLanguage === 'en' ? 'Claimed' : 'Получено') : (currentLanguage === 'en' ? 'Claim Reward' : 'Забрать награду')}</button>
+								<div class="achievement-card__reward">${currentLanguage === 'en' ? `+${item.reward} coins` : `+${item.reward} монет`}${item.bonus ? ` • ${getBonusFromEntry(item)}` : ''}</div>
+							</div>
+						</div>
+						<p class="achievement-card__desc">${getLocalizedText(item.desc)}</p>
+					</div>`;
 				achievementsList.appendChild(card);
 			});
 		}
@@ -1285,8 +1179,10 @@ document.addEventListener('DOMContentLoaded', () => {
 				const claimButton = target.closest('.achievement-card__claim-btn');
 				if (!claimButton) return;
 				const achievementId = claimButton.dataset.achievementId;
-				if (!achievementId) return;
-				claimAchievementRewardById(achievementId);
+				const achievementKind = claimButton.dataset.achievementKind;
+				if (!achievementId || !achievementKind) return;
+				if (achievementKind === 'series') claimSeriesReward(achievementId);
+				if (achievementKind === 'special') claimSpecialReward(achievementId);
 			});
 		}
 
@@ -1362,8 +1258,15 @@ document.addEventListener('DOMContentLoaded', () => {
 		const levelRequiredClicks = requiredClicksForLevel(level);
 		const safeLevelClicks = Math.max(0, Math.floor(toFiniteNumber(levelClicks, 0)));
 		const levelRemainingClicks = Math.max(0, levelRequiredClicks - safeLevelClicks);
-		const unlockedAchievementsCount = achievements.filter((item) => item.unlocked === true).length;
-		const claimedAchievementsCount = achievements.filter((item) => item.claimed === true).length;
+		updateSpecialAchievementsState();
+		const unlockedAchievementsCount = achievementsSeriesDefinitions.filter((series) => {
+			const state = achievementSeriesState[series.id];
+			if (!state) return false;
+			if (state.completed) return true;
+			const stage = series.stages[Math.min(state.stageIndex, series.stages.length - 1)];
+			return getAchievementProgressValue(stage.metric) >= stage.goal;
+		}).length + specialAchievements.filter((item) => item.unlocked).length;
+		const claimedAchievementsCount = achievementsSeriesDefinitions.filter((series) => achievementSeriesState[series.id]?.completed).length + specialAchievements.filter((item) => item.claimed).length;
 
 		if (statsEls.coinsCurrent) statsEls.coinsCurrent.textContent = String(Math.floor(toFiniteNumber(coins, 0)));
 		if (statsEls.totalCoinsEarned) statsEls.totalCoinsEarned.textContent = String(Math.floor(toFiniteNumber(totalCoinsEarned, 0)));
@@ -1815,7 +1718,10 @@ document.addEventListener('DOMContentLoaded', () => {
 		achievementCounters.boostComboBest = 0;
 		achievementCounters.boostTime = 0;
 		boostTypesUsed.clear();
-		achievements.forEach((item) => {
+		achievementsSeriesDefinitions.forEach((series) => {
+			achievementSeriesState[series.id] = { stageIndex: 0, stageClaimed: false, completed: false };
+		});
+		specialAchievements.forEach((item) => {
 			item.unlocked = false;
 			item.claimed = false;
 		});
@@ -1898,15 +1804,41 @@ document.addEventListener('DOMContentLoaded', () => {
 		boostTypesUsed.clear();
 		state.boostTypesUsed.forEach((type) => boostTypesUsed.add(String(type)));
 
-		if (Array.isArray(state.achievementsState)) {
-			const byId = new Map(state.achievementsState.map((it) => [Number(it.id), it]));
-			achievements.forEach((achievement) => {
+		if (state.achievementsState && typeof state.achievementsState === 'object' && !Array.isArray(state.achievementsState)) {
+			const seriesState = state.achievementsState.seriesState || {};
+			Object.entries(seriesState).forEach(([seriesId, saved]) => {
+				if (!achievementSeriesState[seriesId]) return;
+				achievementSeriesState[seriesId].stageIndex = Math.max(0, Math.floor(toFiniteNumber(saved.stageIndex, 0)));
+				achievementSeriesState[seriesId].completed = Boolean(saved.completed);
+			});
+			const byId = new Map((state.achievementsState.specialState || []).map((it) => [String(it.id), it]));
+			specialAchievements.forEach((achievement) => {
 				const saved = byId.get(achievement.id);
 				if (!saved) return;
 				achievement.unlocked = Boolean(saved.unlocked);
 				achievement.claimed = Boolean(saved.claimed);
 			});
+		} else if (Array.isArray(state.achievementsState)) {
+			const byId = new Map(state.achievementsState.map((it) => [Number(it.id), it]));
+			achievementsSeriesDefinitions.forEach((series) => {
+				const legacyIds = LEGACY_SERIES_ID_MAP[series.id] || [];
+				const claimedCount = legacyIds.reduce((sum, id) => sum + (byId.get(id)?.claimed ? 1 : 0), 0);
+				if (claimedCount >= series.stages.length) {
+					achievementSeriesState[series.id].stageIndex = series.stages.length - 1;
+					achievementSeriesState[series.id].completed = true;
+				} else {
+					achievementSeriesState[series.id].stageIndex = Math.max(0, claimedCount);
+				}
+			});
+			specialAchievements.forEach((achievement) => {
+				const legacyId = LEGACY_SPECIAL_ID_MAP[achievement.id];
+				const saved = byId.get(legacyId);
+				if (!saved) return;
+				achievement.unlocked = Boolean(saved.unlocked);
+				achievement.claimed = Boolean(saved.claimed);
+			});
 		}
+		updateSpecialAchievementsState();
 		updatePermanentBonusesFromAchievements();
 		restoreAchievementsButtonState();
 	}
@@ -2110,7 +2042,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			setStorageItem(SKINS_BOUGHT_COUNT_KEY, Math.max(0, Math.floor(toFiniteNumber(skinsBoughtCount, 0))));
 			setStorageItem(ACHIEVEMENTS_BUTTON_UNLOCKED_KEY, achievementsButtonUnlocked ? '1' : '0');
 			setStorageItem(ACHIEVEMENTS_COUNTERS_KEY, JSON.stringify({ ...achievementCounters, boostTypesUsed: Array.from(boostTypesUsed) }));
-			setStorageItem(ACHIEVEMENTS_STATE_KEY, JSON.stringify(achievements.map((item) => ({ id: item.id, unlocked: item.unlocked, claimed: item.claimed }))));
+			setStorageItem(ACHIEVEMENTS_STATE_KEY, JSON.stringify({ seriesState: achievementSeriesState, specialState: specialAchievements.map((item) => ({ id: item.id, unlocked: item.unlocked, claimed: item.claimed })) }));
 		}
 
 	// Загружаем данные из localStorage
@@ -2209,7 +2141,7 @@ document.addEventListener('DOMContentLoaded', () => {
 		if (savedAchievementsState) {
 			try {
 				const parsedState = JSON.parse(savedAchievementsState);
-				if (Array.isArray(parsedState)) loadedState.achievementsState = parsedState;
+				if (Array.isArray(parsedState) || (parsedState && typeof parsedState === 'object')) loadedState.achievementsState = parsedState;
 			} catch {
 				// игнор
 			}
