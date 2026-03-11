@@ -1844,6 +1844,22 @@ body.light_theme .primary-btn{
 	border-color:rgba(255,189,122,0.35);
 }
 
+
+.achievement-card--series-done{
+	border-color:rgba(255,215,120,0.85);
+	box-shadow:0 0 0 1px rgba(255,215,120,0.35), 0 10px 24px rgba(2,6,23,0.35);
+	background:linear-gradient(135deg, rgba(255,220,135,0.2), rgba(120,255,190,0.09));
+}
+
+.achievement-card__progress-meta{
+	margin:4px 0 0;
+	font-size:10px;
+	font-weight:700;
+	opacity:.85;
+}
+
+.achievement-card__status--series-done{ color:#ffd777; }
+
 .achievement-card__icon{
 	grid-row:1 / span 2;
 	font-size:30px;

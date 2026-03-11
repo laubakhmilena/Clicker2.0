@@ -127,6 +127,22 @@ document.addEventListener('DOMContentLoaded', () => {
 		return achievement[field] ?? '';
 	}
 
+	function getAchievementSeriesText(series, step, field) {
+		if (!series) return '';
+		if (currentLanguage !== 'en') {
+			if (field === 'name') return series.name || '';
+			if (field === 'desc') return step?.desc || '';
+			if (field === 'bonus') return step?.bonus || '';
+			return '';
+		}
+		const firstStep = Array.isArray(series.steps) && series.steps.length > 0 ? series.steps[0] : null;
+		const enName = firstStep ? getAchievementText(firstStep, 'name') : series.name;
+		if (field === 'name') return enName || series.name || '';
+		if (field === 'desc') return step ? getAchievementText(step, 'desc') : '';
+		if (field === 'bonus') return step ? getAchievementText(step, 'bonus') : '';
+		return '';
+	}
+
 	function updateLocalizedUI() {
 		document.documentElement.lang = currentLanguage;
 		document.querySelectorAll('[data-lang]').forEach((el) => {
@@ -574,6 +590,79 @@ document.addEventListener('DOMContentLoaded', () => {
 			80: { name: 'Ultimate Legend', desc: '500M coins + everything above', bonus: 'secret ultra skin' },
 		};
 
+
+		const ACHIEVEMENT_SERIES_SCHEMA_VERSION = 2;
+		const achievementSeries = [];
+		const achievementSeriesById = new Map();
+		const achievementStepByLegacyId = new Map();
+
+		function createSeriesFromLegacy(id, options = {}) {
+			const { type = null, name = '', icon = '🏅', stepIds = [] } = options;
+			const steps = stepIds
+				.map((legacyId) => achievements.find((item) => item.id === legacyId))
+				.filter(Boolean)
+				.sort((a, b) => a.goal - b.goal)
+				.map((item, index, arr) => ({
+					id: item.id,
+					goal: item.goal,
+					desc: item.desc,
+					reward: item.reward,
+					bonus: item.bonus,
+					final: index === arr.length - 1,
+					finalVisual: index === arr.length - 1,
+					legacyAchievement: item,
+					claimed: false,
+					unlocked: false,
+				}));
+
+			const series = {
+				id,
+				name: name || (steps[0] ? steps[0].name : ''),
+				icon: icon || (steps[0] ? steps[0].icon : '🏅'),
+				type: type || (steps[0] ? steps[0].type : 'special'),
+				category: type || (steps[0] ? steps[0].type : 'special'),
+				hiddenStageProgression: true,
+				steps,
+				currentStepIndex: 0,
+				completed: false,
+				fullyCompleted: false,
+			};
+
+			steps.forEach((step) => {
+				achievementStepByLegacyId.set(step.id, { seriesId: id, stepId: step.id });
+			});
+			return series;
+		}
+
+		function buildAchievementSeries() {
+			achievementSeries.length = 0;
+			achievementSeriesById.clear();
+			achievementStepByLegacyId.clear();
+
+			const definitions = [
+				{ id: 'clicks_series', type: 'clicks', name: 'Путь кликера', icon: '🖱️', stepIds: [1, 8, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20] },
+				{ id: 'coins_series', type: 'totalCoins', name: 'Монетная орбита', icon: '💰', stepIds: [5, 10, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30] },
+				{ id: 'robots_series', type: 'robots', name: 'Робо-армия', icon: '🤖', stepIds: [2, 6, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40] },
+				{ id: 'upgrades_series', type: 'clickUpgrades', name: 'Инженер апгрейдов', icon: '⚙️', stepIds: [3, 7, 41, 45, 49] },
+				{ id: 'click_power_series', type: 'clickPower', name: 'Мощность ядра', icon: '🔋', stepIds: [42, 43, 44, 46, 47, 48, 50] },
+				{ id: 'level_series', type: 'level', name: 'Ранг инженера', icon: '🌟', stepIds: [4, 9, 71, 72, 73, 74] },
+				{ id: 'skins_series', type: 'skins', name: 'Коллекция стиля', icon: '🎨', stepIds: [51, 52, 53, 54, 55] },
+				{ id: 'skins_master_series', type: 'skinsBought', name: 'Модный прорыв', icon: '👔', stepIds: [56, 58, 59, 57, 60] },
+				{ id: 'boosts_series', type: 'boosts', name: 'Поток бустов', icon: '🚀', stepIds: [61, 62, 63, 67, 69] },
+				{ id: 'boosts_master_series', type: 'boostCombo', name: 'Мастер синергии', icon: '✨', stepIds: [64, 65, 66, 68, 70] },
+				{ id: 'legendary_series', type: 'special', name: 'Легенды лаборатории', icon: '🏆', stepIds: [76, 77, 78, 79, 75, 80] },
+			];
+
+			definitions.forEach((definition) => {
+				const series = createSeriesFromLegacy(definition.id, definition);
+				if (series.steps.length === 0) return;
+				achievementSeries.push(series);
+				achievementSeriesById.set(series.id, series);
+			});
+		}
+
+		buildAchievementSeries();
+
 		let totalClicks = 0;
 		let totalCoinsEarned = 0;
 		let clickUpgradesCount = 0;
@@ -586,6 +675,7 @@ document.addEventListener('DOMContentLoaded', () => {
 		let achievementsButtonUnlocked = false;
 		let permanentCoinBonusMultiplier = 1;
 		let permanentRobotBonusMultiplier = 1;
+		let permanentClickPowerBonus = 0;
 		const boostTypesUsed = new Set();
 		const achievementCounters = { boostComboBest: 0, boostTime: 0 };
 	let lastBoostTick = Date.now();
@@ -647,29 +737,34 @@ document.addEventListener('DOMContentLoaded', () => {
 			return Math.max(0, Math.min(100, pct));
 		}
 
-		function updatePermanentBonusesFromAchievements() {
-			permanentCoinBonusMultiplier = 1;
-			permanentRobotBonusMultiplier = 1;
-			achievements.forEach((achievement) => {
-				if (!achievement.claimed || !achievement.bonus) return;
-				if (achievement.bonus.includes('% навсегда')) {
-					const pct = toFiniteNumber(achievement.bonus.replace(/[^0-9.]/g, ''), 0);
-					if (pct > 0) permanentCoinBonusMultiplier *= (1 + (pct / 100));
-				}
-				if (achievement.bonus.includes('% роботы')) {
-					const pct = toFiniteNumber(achievement.bonus.replace(/[^0-9.]/g, ''), 0);
-					if (pct > 0) permanentRobotBonusMultiplier *= (1 + (pct / 100));
-				}
-			});
+		function getAchievementStatusText(state) {
+			if (state === 'series_done') return currentLanguage === 'en' ? 'Fully completed' : 'Полностью завершено';
+			if (state === 'step_ready') return currentLanguage === 'en' ? 'Ready for reward' : 'Награда доступна';
+			if (state === 'step_progress') return currentLanguage === 'en' ? 'In progress' : 'В процессе';
+			return currentLanguage === 'en' ? 'Unavailable' : 'Недоступно';
+		}
+
+		function formatAchievementReward(step) {
+			if (!step) return '';
+			const parts = [];
+			const coinText = currentLanguage === 'en' ? `+${step.reward} coins` : `+${step.reward} монет`;
+			parts.push(coinText);
+			if (step.bonus) {
+				parts.push(currentLanguage === 'en' ? getAchievementText(step.legacyAchievement, 'bonus') : step.bonus);
+			}
+			return parts.join(currentLanguage === 'en' ? ' + ' : ' + ');
+		}
+
+		function getSeriesCurrentStep(series) {
+			if (!series || !Array.isArray(series.steps) || series.steps.length === 0) return null;
+			const idx = Math.max(0, Math.min(series.currentStepIndex, series.steps.length - 1));
+			return series.steps[idx];
 		}
 
 		function getAchievementProgressValue(achievement) {
-			// Единый принцип: стартовые значения по умолчанию не считаются достижением.
-			// Для этого вычитаем базовые значения и не уходим в минус.
 			const purchasedRobots = Math.max(0, robotCount - ACHIEVEMENT_BASE_ROBOTS);
 			const purchasedClickUpgrades = Math.max(0, clickUpgradesCount - ACHIEVEMENT_BASE_CLICK_UPGRADES);
 			const ownedSkinsWithoutDefault = Math.max(0, ownedSkinIds.size - ACHIEVEMENT_BASE_SKINS);
-
 			switch (achievement.type) {
 				case 'clicks': return totalClicks;
 				case 'totalCoins': return totalCoinsEarned;
@@ -699,12 +794,40 @@ document.addEventListener('DOMContentLoaded', () => {
 			return null;
 		}
 
-		function applyAchievementReward(achievement) {
-			if (achievement.claimed) return;
-			achievement.claimed = true;
-			coins += Math.max(0, toFiniteNumber(achievement.reward, 0));
-			// Реально применяем только бонусы с процентами (клики/роботы). Остальные бонусы отображаются в карточке.
-			updatePermanentBonusesFromAchievements();
+		function applyAchievementRewardEffects(step) {
+			const bonusText = String(step?.bonus || '').toLowerCase();
+			if (bonusText.includes('скин') || bonusText.includes('skin')) {
+				const available = skins.filter((skin) => !ownedSkinIds.has(skin.id));
+				if (available.length > 0) ownedSkinIds.add(available[0].id);
+			}
+			if (bonusText.includes('% навсегда') || bonusText.includes('% forever')) {
+				const pct = toFiniteNumber(String(step.bonus).replace(/[^0-9.]/g, ''), 0);
+				if (pct > 0) permanentCoinBonusMultiplier *= (1 + (pct / 100));
+			}
+			if (bonusText.includes('% роботы') || bonusText.includes('robot')) {
+				const pct = toFiniteNumber(String(step.bonus).replace(/[^0-9.]/g, ''), 0);
+				if (pct > 0) permanentRobotBonusMultiplier *= (1 + (pct / 100));
+			}
+			if (bonusText.includes('процессор') || bonusText.includes('click power')) {
+				const add = toFiniteNumber(String(step.bonus).replace(/[^0-9.]/g, ''), 0);
+				if (add > 0) permanentClickPowerBonus += add;
+			}
+		}
+
+		function updatePermanentBonusesFromAchievements() {
+			permanentCoinBonusMultiplier = 1;
+			permanentRobotBonusMultiplier = 1;
+			permanentClickPowerBonus = 0;
+			achievements.forEach((achievement) => {
+				if (!achievement.claimed) return;
+				const stepRef = achievementStepByLegacyId.get(achievement.id);
+				if (!stepRef) return;
+				const series = achievementSeriesById.get(stepRef.seriesId);
+				if (!series) return;
+				const step = series.steps.find((it) => it.id === stepRef.stepId);
+				if (!step) return;
+				applyAchievementRewardEffects(step);
+			});
 		}
 
 		function updateAchievementsState() {
@@ -713,9 +836,42 @@ document.addEventListener('DOMContentLoaded', () => {
 				const isDone = special === null ? getAchievementProgressValue(achievement) >= achievement.goal : special;
 				achievement.unlocked = Boolean(isDone);
 			});
+
+			achievementSeries.forEach((series) => {
+				let currentIndex = series.steps.findIndex((step) => !step.legacyAchievement.claimed);
+				if (currentIndex === -1) currentIndex = series.steps.length - 1;
+				series.currentStepIndex = Math.max(0, currentIndex);
+				series.steps.forEach((step) => {
+					step.claimed = Boolean(step.legacyAchievement.claimed);
+					step.unlocked = Boolean(step.legacyAchievement.unlocked);
+				});
+				series.completed = series.steps.every((step) => step.claimed || step.unlocked);
+				series.fullyCompleted = series.steps.every((step) => step.claimed);
+			});
+		}
+
+		function applyAchievementReward(achievement) {
+			if (achievement.claimed) return;
+			achievement.claimed = true;
+			coins += Math.max(0, toFiniteNumber(achievement.reward, 0));
+			updatePermanentBonusesFromAchievements();
 		}
 
 		function claimAchievementRewardById(achievementId) {
+			const rawId = String(achievementId);
+			const series = achievementSeriesById.get(rawId);
+			if (series) {
+				updateAchievementsState();
+				if (series.fullyCompleted) return;
+				const step = getSeriesCurrentStep(series);
+				if (!step || !step.legacyAchievement.unlocked || step.legacyAchievement.claimed) return;
+				applyAchievementReward(step.legacyAchievement);
+				updateAchievementsState();
+				updateUI();
+				saveGame();
+				renderAchievements();
+				return;
+			}
 			const parsedId = Number(achievementId);
 			const achievement = achievements.find((item) => item.id === parsedId);
 			if (!achievement) return;
@@ -730,53 +886,56 @@ document.addEventListener('DOMContentLoaded', () => {
 		function renderAchievements() {
 			if (!achievementsList) return;
 			updateAchievementsState();
-			const doneCount = achievements.filter((item) => item.unlocked).length;
-			const percent = safePercent(doneCount, achievements.length);
+			const fullyDone = achievementSeries.filter((item) => item.fullyCompleted).length;
+			const percent = safePercent(fullyDone, achievementSeries.length);
 			if (achievementsSummary) {
-				achievementsSummary.textContent = currentLanguage === 'en' ? `Completed ${doneCount} / 80 • ${percent.toFixed(1)}%` : `Выполнено ${doneCount} / 80 • ${percent.toFixed(1)}%`;
+				achievementsSummary.textContent = currentLanguage === 'en'
+					? `Series completed: ${fullyDone} • Progress ${percent.toFixed(1)}%`
+					: `Завершено серий: ${fullyDone} • Прогресс ${percent.toFixed(1)}%`;
 			}
-			if (achievementsOverallFill) {
-				achievementsOverallFill.style.width = `${percent.toFixed(1)}%`;
-			}
+			if (achievementsOverallFill) achievementsOverallFill.style.width = `${percent.toFixed(1)}%`;
 
-			const prepared = achievements.map((item) => {
-				const current = getAchievementProgressValue(item);
-				const itemPercent = safePercent(current, item.goal);
-				return { item, current, itemPercent };
+			const prepared = achievementSeries.map((series) => {
+				const step = getSeriesCurrentStep(series);
+				const currentValue = step ? getAchievementProgressValue(step.legacyAchievement) : 0;
+				const stepPercent = step ? safePercent(currentValue, step.goal) : 100;
+				const state = series.fullyCompleted ? 'series_done' : (step && step.unlocked && !step.claimed ? 'step_ready' : (currentValue > 0 ? 'step_progress' : 'locked'));
+				return { series, step, currentValue, stepPercent, state };
 			}).sort((a, b) => {
-				if (a.item.unlocked !== b.item.unlocked) return a.item.unlocked ? -1 : 1;
-				if (!a.item.unlocked && !b.item.unlocked && b.itemPercent !== a.itemPercent) return b.itemPercent - a.itemPercent;
-				return a.item.id - b.item.id;
+				if (a.series.fullyCompleted !== b.series.fullyCompleted) return a.series.fullyCompleted ? 1 : -1;
+				if (a.state === 'step_ready' && b.state !== 'step_ready') return -1;
+				if (b.state === 'step_ready' && a.state !== 'step_ready') return 1;
+				return b.stepPercent - a.stepPercent;
 			});
 
 			achievementsList.textContent = '';
-
-			prepared.forEach(({ item, current, itemPercent }) => {
-				let statusText = currentLanguage === 'en' ? 'Locked' : 'Недоступно';
-				let statusClass = 'achievement-card__status--locked';
-				if (item.unlocked) {
-					statusText = currentLanguage === 'en' ? 'Completed' : 'Выполнено';
-					statusClass = 'achievement-card__status--done';
-				} else if (current > 0) {
-					statusText = currentLanguage === 'en' ? 'In Progress' : 'В процессе';
-					statusClass = 'achievement-card__status--progress';
-				}
-
-				const claimButtonText = item.claimed ? (currentLanguage === 'en' ? 'Claimed' : 'Получено') : (currentLanguage === 'en' ? 'Claim Reward' : 'Забрать награду');
-				const claimDisabled = item.claimed || !item.unlocked;
-				const claimClass = item.claimed
+			prepared.forEach(({ series, step, currentValue, stepPercent, state }) => {
+				const statusText = getAchievementStatusText(state);
+				const statusClass = state === 'series_done'
+					? 'achievement-card__status--series-done'
+					: state === 'step_ready'
+						? 'achievement-card__status--done'
+						: state === 'step_progress'
+							? 'achievement-card__status--progress'
+							: 'achievement-card__status--locked';
+				const rewardText = formatAchievementReward(step);
+				const claimDisabled = state !== 'step_ready';
+				const claimText = series.fullyCompleted
+					? (currentLanguage === 'en' ? 'Completed' : 'Серия завершена')
+					: (currentLanguage === 'en' ? 'Claim reward' : 'Забрать награду');
+				const claimClass = series.fullyCompleted
 					? 'achievement-card__claim-btn is-claimed'
-					: item.unlocked
-						? 'achievement-card__claim-btn is-ready'
-						: 'achievement-card__claim-btn is-locked';
-				const rewardText = currentLanguage === 'en' ? `+${item.reward} coins${item.bonus ? ` + ${getAchievementText(item, 'bonus')}` : ''}` : `+${item.reward} монет${item.bonus ? ` + ${item.bonus}` : ''}`;
+					: claimDisabled ? 'achievement-card__claim-btn is-locked' : 'achievement-card__claim-btn is-ready';
+				const progressText = step
+					? (currentLanguage === 'en' ? `${Math.min(currentValue, step.goal)} / ${step.goal}` : `${Math.min(currentValue, step.goal)} / ${step.goal}`)
+					: '';
 
 				const card = document.createElement('article');
-				card.className = `achievement-card ${item.unlocked ? 'achievement-card--done' : current > 0 ? '' : 'achievement-card--locked'}`;
+				card.className = `achievement-card ${series.fullyCompleted ? 'achievement-card--series-done' : (state === 'locked' ? 'achievement-card--locked' : '')}`;
 
 				const iconEl = document.createElement('div');
 				iconEl.className = 'achievement-card__icon';
-				iconEl.textContent = item.icon;
+				iconEl.textContent = series.icon;
 
 				const mainEl = document.createElement('div');
 				mainEl.className = 'achievement-card__main';
@@ -786,7 +945,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 				const nameEl = document.createElement('h3');
 				nameEl.className = 'achievement-card__name';
-				nameEl.textContent = `${getAchievementText(item, 'name')} — `;
+				nameEl.textContent = `${getAchievementSeriesText(series, step, 'name')} — `;
 
 				const statusEl = document.createElement('span');
 				statusEl.className = `achievement-card__status ${statusClass}`;
@@ -799,8 +958,8 @@ document.addEventListener('DOMContentLoaded', () => {
 				const claimBtnEl = document.createElement('button');
 				claimBtnEl.type = 'button';
 				claimBtnEl.className = claimClass;
-				claimBtnEl.dataset.achievementId = String(item.id);
-				claimBtnEl.textContent = claimButtonText;
+				claimBtnEl.dataset.achievementId = series.id;
+				claimBtnEl.textContent = claimText;
 				claimBtnEl.disabled = claimDisabled;
 
 				const rewardEl = document.createElement('div');
@@ -809,28 +968,30 @@ document.addEventListener('DOMContentLoaded', () => {
 
 				controlsEl.appendChild(claimBtnEl);
 				controlsEl.appendChild(rewardEl);
-
 				topLineEl.appendChild(nameEl);
 				topLineEl.appendChild(controlsEl);
 
 				const descEl = document.createElement('p');
 				descEl.className = 'achievement-card__desc';
-				descEl.textContent = getAchievementText(item, 'desc');
+				descEl.textContent = step ? getAchievementSeriesText(series, step, 'desc') : '';
+
+				const progressMetaEl = document.createElement('p');
+				progressMetaEl.className = 'achievement-card__progress-meta';
+				progressMetaEl.textContent = progressText;
 
 				const progressEl = document.createElement('div');
 				progressEl.className = 'achievement-card__progress';
 				const progressFillEl = document.createElement('div');
 				progressFillEl.className = 'achievement-card__progress-fill';
-				progressFillEl.style.width = `${itemPercent.toFixed(1)}%`;
+				progressFillEl.style.width = `${(series.fullyCompleted ? 100 : stepPercent).toFixed(1)}%`;
 				progressEl.appendChild(progressFillEl);
 
 				mainEl.appendChild(topLineEl);
 				mainEl.appendChild(descEl);
-
+				mainEl.appendChild(progressMetaEl);
 				card.appendChild(iconEl);
 				card.appendChild(mainEl);
 				card.appendChild(progressEl);
-
 				achievementsList.appendChild(card);
 			});
 		}
@@ -1362,7 +1523,7 @@ document.addEventListener('DOMContentLoaded', () => {
 		const levelRequiredClicks = requiredClicksForLevel(level);
 		const safeLevelClicks = Math.max(0, Math.floor(toFiniteNumber(levelClicks, 0)));
 		const levelRemainingClicks = Math.max(0, levelRequiredClicks - safeLevelClicks);
-		const unlockedAchievementsCount = achievements.filter((item) => item.unlocked === true).length;
+		const unlockedAchievementsCount = achievementSeries.filter((item) => item.fullyCompleted === true).length;
 		const claimedAchievementsCount = achievements.filter((item) => item.claimed === true).length;
 
 		if (statsEls.coinsCurrent) statsEls.coinsCurrent.textContent = String(Math.floor(toFiniteNumber(coins, 0)));
@@ -1422,6 +1583,7 @@ document.addEventListener('DOMContentLoaded', () => {
 	function getEffectiveClickPower() {
 		let power = clickPower;
 		power += getBoostLevel('processor_plus');
+		power += permanentClickPowerBonus;
 		if (getBoostLevel('evolution_module') > 0) {
 			power *= 1 + (level * 0.05);
 		}
@@ -1819,6 +1981,15 @@ document.addEventListener('DOMContentLoaded', () => {
 			item.unlocked = false;
 			item.claimed = false;
 		});
+		achievementSeries.forEach((series) => {
+			series.currentStepIndex = 0;
+			series.completed = false;
+			series.fullyCompleted = false;
+			series.steps.forEach((step) => {
+				step.claimed = false;
+				step.unlocked = false;
+			});
+		});
 		updatePermanentBonusesFromAchievements();
 		restoreAchievementsButtonState();
 	}
@@ -1906,7 +2077,20 @@ document.addEventListener('DOMContentLoaded', () => {
 				achievement.unlocked = Boolean(saved.unlocked);
 				achievement.claimed = Boolean(saved.claimed);
 			});
+		} else if (state.achievementsState && typeof state.achievementsState === 'object' && Array.isArray(state.achievementsState.series)) {
+			const bySeries = new Map(state.achievementsState.series.map((item) => [String(item.id), item]));
+			achievementSeries.forEach((series) => {
+				const savedSeries = bySeries.get(series.id);
+				if (!savedSeries || !Array.isArray(savedSeries.claimedStepIds)) return;
+				const claimedSet = new Set(savedSeries.claimedStepIds.map((id) => Number(id)));
+				series.steps.forEach((step) => {
+					if (claimedSet.has(step.id)) {
+						step.legacyAchievement.claimed = true;
+					}
+				});
+			});
 		}
+		updateAchievementsState();
 		updatePermanentBonusesFromAchievements();
 		restoreAchievementsButtonState();
 	}
@@ -2110,7 +2294,15 @@ document.addEventListener('DOMContentLoaded', () => {
 			setStorageItem(SKINS_BOUGHT_COUNT_KEY, Math.max(0, Math.floor(toFiniteNumber(skinsBoughtCount, 0))));
 			setStorageItem(ACHIEVEMENTS_BUTTON_UNLOCKED_KEY, achievementsButtonUnlocked ? '1' : '0');
 			setStorageItem(ACHIEVEMENTS_COUNTERS_KEY, JSON.stringify({ ...achievementCounters, boostTypesUsed: Array.from(boostTypesUsed) }));
-			setStorageItem(ACHIEVEMENTS_STATE_KEY, JSON.stringify(achievements.map((item) => ({ id: item.id, unlocked: item.unlocked, claimed: item.claimed }))));
+			setStorageItem(ACHIEVEMENTS_STATE_KEY, JSON.stringify({
+				version: ACHIEVEMENT_SERIES_SCHEMA_VERSION,
+				series: achievementSeries.map((series) => ({
+					id: series.id,
+					currentStepIndex: series.currentStepIndex,
+					claimedStepIds: series.steps.filter((step) => step.legacyAchievement.claimed).map((step) => step.id),
+				})),
+				legacy: achievements.map((item) => ({ id: item.id, unlocked: item.unlocked, claimed: item.claimed })),
+			}));
 		}
 
 	// Загружаем данные из localStorage
@@ -2209,7 +2401,13 @@ document.addEventListener('DOMContentLoaded', () => {
 		if (savedAchievementsState) {
 			try {
 				const parsedState = JSON.parse(savedAchievementsState);
-				if (Array.isArray(parsedState)) loadedState.achievementsState = parsedState;
+				if (Array.isArray(parsedState)) {
+					loadedState.achievementsState = parsedState;
+				} else if (parsedState && typeof parsedState === 'object' && Array.isArray(parsedState.series)) {
+					loadedState.achievementsState = parsedState;
+				} else if (parsedState && typeof parsedState === 'object' && Array.isArray(parsedState.legacy)) {
+					loadedState.achievementsState = parsedState.legacy;
+				}
 			} catch {
 				// игнор
 			}
