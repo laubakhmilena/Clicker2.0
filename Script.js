@@ -12,6 +12,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 	const aboutBtn = document.getElementById('about-btn'); // Об игре
 	const closeAbout = document.getElementById('close-about');
+	const aboutGoBtn = document.getElementById('about-go-btn');
 
 	const settingsBtn = document.getElementById('settings-btn'); // настройки
 	const closeSetting = document.getElementById('close-settings');
@@ -1096,6 +1097,14 @@ document.addEventListener('DOMContentLoaded', () => {
 		closeAbout.onclick = () => {
 			aboutScreen.classList.add('hidden'); // крестик об игре
 		};
+	}
+
+	if (aboutGoBtn && aboutScreen) {
+		aboutGoBtn.addEventListener('click', () => {
+			playSound('start');
+			aboutScreen.classList.add('hidden');
+			goToMenu();
+		});
 	}
 
 	if (settingsBtn && settingsScreen) {
