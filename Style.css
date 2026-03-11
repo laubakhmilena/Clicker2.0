@@ -1698,6 +1698,10 @@ body.light_theme .primary-btn{
 
 .boost-card__meta{ font-size:11px; opacity:.8; min-height:16px; }
 
+
+.boost-card--active{ border-color: rgba(154,255,181,0.72); box-shadow:0 0 0 1px rgba(154,255,181,0.24), 0 0 12px rgba(154,255,181,0.2); }
+.boost-card__timer{ font-size:12px; font-weight:700; color:#9df8c4; }
+
 .boost-activate-fx{
 	position:absolute;
 	left:50%;

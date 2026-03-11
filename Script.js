@@ -94,26 +94,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
 	// Получение названия/описания буста на активном языке строго по утверждённому словарю.
 	function getBoostText(boost, field) {
-		if (currentLanguage !== 'en') return boost[field] || '';
+		if (currentLanguage !== 'en') return boost[field] || boost.description || '';
 		const en = {
-			neon_overdrive: { name: 'Neon Overdrive', desc: 'x3 click power for 45 seconds' },
-			rocket_pulse: { name: 'Rocket Pulse', desc: 'x2.5 click power and +20% robot income' },
-			drone_army: { name: 'Drone Army', desc: 'x3 robot income for 90 seconds' },
-			golden_storm: { name: 'Golden Storm', desc: '+150% coins per click for 40 seconds' },
-			coin_burst: { name: 'Coin Burst', desc: 'Instantly gain 500 coins' },
-			super_click: { name: 'Super Click', desc: 'Your next click is x25' },
-			discount_protocol: { name: 'Discount Protocol', desc: 'Your next upgrade purchase costs 50% less' },
-			offline_bonus: { name: 'Offline Bonus', desc: 'Grants 50% of offline income' },
-			processor_plus: { name: 'Enhanced Processor', desc: '+1 click power' },
-			eternal_generator: { name: 'Eternal Generator', desc: '+0.5 robot income' },
-			evolution_module: { name: 'Evolution Module', desc: '+5% click power per level' },
-			space_amplifier: { name: 'Space Amplifier', desc: '+10% to all income' },
-			critical_overload: { name: 'Critical Overload', desc: '30% chance for x10 click power' },
-			time_freeze: { name: 'Time Freeze', desc: 'Timers run at x0.5 speed for 30 seconds' },
-			galactic_breakthrough: { name: 'Galactic Breakthrough', desc: 'Clicks x10 and robots x5' },
-			omega_mode: { name: 'Omega Mode', desc: 'Clicks x20 for 20 seconds' },
+			neon_overdrive: { name: 'Neon Overdrive', description: 'x3 click power for 30 seconds' },
+			offline_accelerator: { name: 'Offline Accelerator', description: 'x5 offline income for 2 hours' },
+			drone_army: { name: 'Drone Army', description: 'x3 robot income for 90 seconds' },
+			golden_storm: { name: 'Golden Storm', description: '+150% coins per click for 40 seconds' },
+			coin_burst: { name: 'Coin Burst', description: 'Instantly gain 500 coins' },
+			super_click: { name: 'Super Click', description: 'Your next click is x25' },
+			discount_protocol: { name: 'Discount Protocol', description: 'Your next upgrade purchase costs 50% less' },
+			offline_bonus: { name: 'Offline Bonus', description: 'Grants 50% of offline income' },
+			processor_plus: { name: 'Enhanced Processor', description: '+1 click power' },
+			eternal_generator: { name: 'Eternal Generator', description: '+0.5 robot income' },
+			evolution_module: { name: 'Evolution Module', description: '+5% click power per level' },
+			space_amplifier: { name: 'Space Amplifier', description: '+10% to all income' },
+			critical_overload: { name: 'Critical Overload', description: '30% chance for x10 click power' },
+			time_freeze: { name: 'Time Freeze', description: 'Timers run at x0.5 speed for 30 seconds' },
+			galactic_breakthrough: { name: 'Galactic Breakthrough', description: 'Clicks x10 and robots x5' },
+			omega_mode: { name: 'Omega Mode', description: 'Clicks x20 for 20 seconds' },
 		};
-		return en[boost.id]?.[field] || boost[field] || '';
+		return en[boost.id]?.[field] || boost[field] || boost.description || '';
 	}
 
 	// Получение локализованного текста достижения строго по списку переводов.
@@ -368,6 +368,8 @@ document.addEventListener('DOMContentLoaded', () => {
 	const BOOST_LEVELS_KEY = 'boostLevels';
 	const BOOST_USAGE_KEY = 'boostUsageCount';
 	const BOOST_ACTIVE_KEY = 'activeBoosts';
+	const BOOSTS_STATE_KEY = 'boostsState';
+	const LAST_SEEN_KEY = 'lastSeenAt';
 	const BOOST_PENDING_DISCOUNT_KEY = 'pendingDiscount';
 	const BOOST_PENDING_SUPER_CLICK_KEY = 'pendingSuperClick';
 
@@ -389,23 +391,24 @@ document.addEventListener('DOMContentLoaded', () => {
 	];
 
 	const boosts = [
-		{ id: 'neon_overdrive', category: 'temporary', rarity: 'rare', icon: '⚡', name: 'Неоновый разгон', desc: 'x3 к силе клика на 45 секунд', price: 900, duration: 45 },
-		{ id: 'rocket_pulse', category: 'temporary', rarity: 'rare', icon: '🚀', name: 'Ракетный импульс', desc: 'x2.5 к клику и +20% дохода роботов', price: 1400, duration: 60 },
-		{ id: 'drone_army', category: 'temporary', rarity: 'epic', icon: '🤖', name: 'Армия дронов', desc: 'x3 доход роботов на 90 секунд', price: 1800, duration: 90 },
-		{ id: 'golden_storm', category: 'temporary', rarity: 'rare', icon: '🌟', name: 'Золотой шторм', desc: '+150% монет за клик на 40 секунд', price: 1200, duration: 40 },
-		{ id: 'coin_burst', category: 'instant', rarity: 'common', icon: '💰', name: 'Монетный взрыв', desc: 'Сразу +500 монет', price: 400, priceGrowth: 1.28 },
-		{ id: 'super_click', category: 'instant', rarity: 'rare', icon: '🔨', name: 'Супер клик', desc: 'Следующий клик x25', price: 750, priceGrowth: 1.3 },
-		{ id: 'discount_protocol', category: 'instant', rarity: 'common', icon: '🛒', name: 'Скидочный протокол', desc: 'Следующая покупка апгрейда -50%', price: 600, priceGrowth: 1.25 },
-		{ id: 'offline_bonus', category: 'instant', rarity: 'rare', icon: '⏳', name: 'Офлайн бонус', desc: 'Начисляет 50% офлайн дохода', price: 850, priceGrowth: 1.35 },
-		{ id: 'processor_plus', category: 'permanent', rarity: 'rare', icon: '📈', name: 'Улучшенный процессор', desc: '+1 к силе клика', price: 3000, priceGrowth: 1.35 },
-		{ id: 'eternal_generator', category: 'permanent', rarity: 'epic', icon: '🔋', name: 'Вечный генератор', desc: '+0.5 дохода роботов', price: 5000, priceGrowth: 1.35 },
-		{ id: 'evolution_module', category: 'permanent', rarity: 'epic', icon: '🧬', name: 'Модуль эволюции', desc: '+5% к силе клика за уровень', price: 12000, oneTime: true },
-		{ id: 'space_amplifier', category: 'permanent', rarity: 'epic', icon: '🌌', name: 'Космический усилитель', desc: '+10% ко всем доходам', price: 25000, oneTime: true },
-		{ id: 'critical_overload', category: 'super', rarity: 'epic', icon: '💥', name: 'Критический перегруз', desc: '30% шанс x10 за клик', price: 1700, duration: 75 },
-		{ id: 'time_freeze', category: 'super', rarity: 'rare', icon: '❄', name: 'Заморозка времени', desc: 'Таймеры x0.5 на 30 секунд', price: 1500, duration: 30 },
-		{ id: 'galactic_breakthrough', category: 'super', rarity: 'epic', icon: '🌠', name: 'Галактический прорыв', desc: 'Клики x10 и роботы x5', price: 8000, duration: 15 },
-		{ id: 'omega_mode', category: 'super', rarity: 'epic', icon: '🌀', name: 'Омега режим', desc: 'Клики x20 на 20 секунд', price: 12000, duration: 20 },
+		{ id: 'neon_overdrive', category: 'temporary', type: 'temporary', rarity: 'rare', icon: '⚡', name: 'Неоновый разгон', description: 'x3 к силе клика на 30 секунд', basePrice: 300, currentPrice: 300, priceMultiplier: 1.2, baseEffect: 3, currentEffect: 3, effectStep: 1, purchases: 0, duration: 30, active: false, expiresAt: null, activeEffect: null },
+		{ id: 'offline_accelerator', category: 'temporary', type: 'temporary_offline', rarity: 'rare', icon: '🛰️', name: 'Офлайн-ускоритель', description: 'x5 к офлайн-доходу на 2 часа', basePrice: 800, currentPrice: 800, priceMultiplier: 1.2, baseEffect: 5, currentEffect: 5, effectStep: 0, purchases: 0, duration: 7200, active: false, expiresAt: null, activeEffect: null },
+		{ id: 'drone_army', category: 'temporary', type: 'temporary', rarity: 'epic', icon: '🤖', name: 'Армия дронов', description: 'x3 доход роботов на 90 секунд', basePrice: 1800, currentPrice: 1800, priceMultiplier: 1.2, baseEffect: 3, currentEffect: 3, effectStep: 0.2, purchases: 0, duration: 90, active: false, expiresAt: null, activeEffect: null },
+		{ id: 'golden_storm', category: 'temporary', type: 'temporary', rarity: 'rare', icon: '🌟', name: 'Золотой шторм', description: '+150% монет за клик на 40 секунд', basePrice: 1200, currentPrice: 1200, priceMultiplier: 1.2, baseEffect: 2.5, currentEffect: 2.5, effectStep: 0.25, purchases: 0, duration: 40, active: false, expiresAt: null, activeEffect: null },
+		{ id: 'coin_burst', category: 'instant', type: 'instant', rarity: 'common', icon: '💰', name: 'Монетный взрыв', description: 'Сразу +500 монет', basePrice: 400, currentPrice: 400, priceMultiplier: 1.28, baseEffect: 500, currentEffect: 500, effectStep: 200, purchases: 0, duration: 0, active: false, expiresAt: null },
+		{ id: 'super_click', category: 'instant', type: 'instant', rarity: 'rare', icon: '🔨', name: 'Супер клик', description: 'Следующий клик x25', basePrice: 750, currentPrice: 750, priceMultiplier: 1.3, baseEffect: 25, currentEffect: 25, effectStep: 5, purchases: 0, duration: 0, active: false, expiresAt: null },
+		{ id: 'discount_protocol', category: 'instant', type: 'instant_one_time', rarity: 'common', icon: '🛒', name: 'Скидочный протокол', description: 'Следующая покупка апгрейда -50%', basePrice: 600, currentPrice: 600, priceMultiplier: 1.25, baseEffect: 50, currentEffect: 50, effectStep: 0, purchases: 0, duration: 0, active: false, expiresAt: null },
+		{ id: 'offline_bonus', category: 'instant', type: 'instant', rarity: 'rare', icon: '⏳', name: 'Офлайн бонус', description: 'Начисляет 50% офлайн дохода', basePrice: 850, currentPrice: 850, priceMultiplier: 1.35, baseEffect: 0.5, currentEffect: 0.5, effectStep: 0.1, purchases: 0, duration: 0, active: false, expiresAt: null },
+		{ id: 'processor_plus', category: 'permanent', type: 'permanent', rarity: 'rare', icon: '📈', name: 'Улучшенный процессор', description: '+1 к силе клика', basePrice: 3000, currentPrice: 3000, priceMultiplier: 1.35, baseEffect: 1, currentEffect: 1, effectStep: 1, purchases: 0, duration: 0, active: false, expiresAt: null },
+		{ id: 'eternal_generator', category: 'permanent', type: 'permanent', rarity: 'epic', icon: '🔋', name: 'Вечный генератор', description: '+0.5 дохода роботов', basePrice: 5000, currentPrice: 5000, priceMultiplier: 1.35, baseEffect: 0.5, currentEffect: 0.5, effectStep: 0.5, purchases: 0, duration: 0, active: false, expiresAt: null },
+		{ id: 'evolution_module', category: 'permanent', type: 'one_time', rarity: 'epic', icon: '🧬', name: 'Модуль эволюции', description: '+5% к силе клика за уровень', basePrice: 12000, currentPrice: 12000, priceMultiplier: 1.35, baseEffect: 5, currentEffect: 5, effectStep: 0, purchases: 0, duration: 0, active: false, expiresAt: null, oneTime: true },
+		{ id: 'space_amplifier', category: 'permanent', type: 'one_time', rarity: 'epic', icon: '🌌', name: 'Космический усилитель', description: '+10% ко всем доходам', basePrice: 25000, currentPrice: 25000, priceMultiplier: 1.35, baseEffect: 10, currentEffect: 10, effectStep: 0, purchases: 0, duration: 0, active: false, expiresAt: null, oneTime: true },
+		{ id: 'critical_overload', category: 'super', type: 'temporary', rarity: 'epic', icon: '💥', name: 'Критический перегруз', description: '30% шанс критического клика x10', basePrice: 6000, currentPrice: 6000, priceMultiplier: 1.3, baseEffect: 10, currentEffect: 10, effectStep: 1, purchases: 0, duration: 45, active: false, expiresAt: null, activeEffect: null },
+		{ id: 'time_freeze', category: 'super', type: 'temporary', rarity: 'epic', icon: '🧊', name: 'Заморозка времени', description: 'Таймеры бустов замедляются на 30 секунд', basePrice: 7200, currentPrice: 7200, priceMultiplier: 1.3, baseEffect: 0.5, currentEffect: 0.5, effectStep: 0, purchases: 0, duration: 30, active: false, expiresAt: null, activeEffect: null },
+		{ id: 'galactic_breakthrough', category: 'super', type: 'temporary', rarity: 'epic', icon: '🌠', name: 'Галактический прорыв', description: 'Клики x10 и роботы x5 на 25 секунд', basePrice: 9500, currentPrice: 9500, priceMultiplier: 1.3, baseEffect: 10, currentEffect: 10, effectStep: 1, purchases: 0, duration: 25, active: false, expiresAt: null, activeEffect: null },
+		{ id: 'omega_mode', category: 'super', type: 'temporary', rarity: 'epic', icon: '☄️', name: 'Омега режим', description: 'Клики x20 на 20 секунд', basePrice: 12000, currentPrice: 12000, priceMultiplier: 1.3, baseEffect: 20, currentEffect: 20, effectStep: 2, purchases: 0, duration: 20, active: false, expiresAt: null, activeEffect: null },
 	];
+
 		const boostById = new Map(boosts.map((boost) => [boost.id, boost]));
 
 		const ACHIEVEMENTS_STATE_KEY = 'achievementsState';
@@ -713,6 +716,10 @@ document.addEventListener('DOMContentLoaded', () => {
 	function toFiniteNumber(value, fallback = 0) {
 		const n = Number(value);
 		return Number.isFinite(n) ? n : fallback;
+	}
+
+	function toInt(value) {
+		return Math.floor(Number(value) || 0);
 	}
 
 	function getStorageItem(key) {
@@ -1489,238 +1496,132 @@ document.addEventListener('DOMContentLoaded', () => {
 	}
 
 	function getBoostsUpgradedCount() {
-		// Считаем, сколько бустов было улучшено/куплено хотя бы один раз.
-		// Берём только реальные значения из boostLevels, без отдельного счётчика.
-		return Object.values(boostLevels).reduce((count, value) => {
-			return count + (Math.max(0, Math.floor(toFiniteNumber(value, 0))) > 0 ? 1 : 0);
-		}, 0);
+		return boosts.reduce((count, boost) => count + (toInt(boost.purchases) > 0 ? 1 : 0), 0);
 	}
 
 	function getTotalBoostUsageCount() {
-		// Сумма использований всех бустов из накопительного объекта boostUsageCount.
-		return Object.values(boostUsageCount).reduce((sum, value) => {
-			return sum + Math.max(0, Math.floor(toFiniteNumber(value, 0)));
-		}, 0);
+		return boosts.reduce((sum, boost) => sum + toInt(boost.purchases), 0);
 	}
 
-	function getActiveBoostsCount() {
-		// Считаем только бусты, которые реально активны на текущий момент,
-		// чтобы статистика не показывала уже истёкшие записи.
-		const now = Date.now();
-		return Object.values(activeBoosts).reduce((count, boostData) => {
-			return count + (toFiniteNumber(boostData?.endAt, 0) > now ? 1 : 0);
-		}, 0);
-	}
-
-	function getSelectedSkinName() {
-		const selectedSkin = skinById.get(selectedSkinId) || skinById.get(DEFAULT_SKIN_ID);
-		return selectedSkin ? getSkinNameById(selectedSkin.id, selectedSkin.name) : (currentLanguage === 'en' ? 'Not selected' : 'Не выбран');
-	}
-
-	function renderStatistics() {
-		if (!statsModal) return;
-
-		const levelRequiredClicks = requiredClicksForLevel(level);
-		const safeLevelClicks = Math.max(0, Math.floor(toFiniteNumber(levelClicks, 0)));
-		const levelRemainingClicks = Math.max(0, levelRequiredClicks - safeLevelClicks);
-		const unlockedAchievementsCount = achievementSeries.filter((item) => item.fullyCompleted === true).length;
-		const claimedAchievementsCount = achievements.filter((item) => item.claimed === true).length;
-
-		if (statsEls.coinsCurrent) statsEls.coinsCurrent.textContent = String(Math.floor(toFiniteNumber(coins, 0)));
-		if (statsEls.totalCoinsEarned) statsEls.totalCoinsEarned.textContent = String(Math.floor(toFiniteNumber(totalCoinsEarned, 0)));
-		if (statsEls.totalClicks) statsEls.totalClicks.textContent = String(Math.floor(toFiniteNumber(totalClicks, 0)));
-
-		if (statsEls.clickPowerBase) statsEls.clickPowerBase.textContent = String(Math.round(toFiniteNumber(clickPower, 0) * 100) / 100);
-		if (statsEls.clickPowerEffective) statsEls.clickPowerEffective.textContent = String(Math.round(getEffectiveClickPower() * 100) / 100);
-		if (statsEls.level) statsEls.level.textContent = String(Math.max(0, Math.floor(toFiniteNumber(level, 0))));
-		if (statsEls.levelProgress) statsEls.levelProgress.textContent = `${safeLevelClicks} / ${levelRequiredClicks}`;
-		if (statsEls.levelRemaining) statsEls.levelRemaining.textContent = String(levelRemainingClicks);
-		if (statsEls.clickUpgrades) statsEls.clickUpgrades.textContent = String(Math.max(0, Math.floor(toFiniteNumber(clickUpgradesCount, 0))));
-
-		if (statsEls.robotsCount) statsEls.robotsCount.textContent = String(Math.max(0, Math.floor(toFiniteNumber(robotCount, 0))));
-		if (statsEls.robotsIncomeBase) statsEls.robotsIncomeBase.textContent = String(Math.round(Math.max(0, toFiniteNumber(robotIncomePerSecond, 0)) * 100) / 100);
-		if (statsEls.robotsIncomeEffective) statsEls.robotsIncomeEffective.textContent = String(Math.round(Math.max(0, getEffectiveRobotIncome()) * 100) / 100);
-
-		if (statsEls.skinsBought) statsEls.skinsBought.textContent = String(Math.max(0, Math.floor(toFiniteNumber(skinsBoughtCount, 0))));
-		if (statsEls.skinsOwned) statsEls.skinsOwned.textContent = String(ownedSkinIds.size);
-		if (statsEls.skinsSelected) statsEls.skinsSelected.textContent = getSelectedSkinName();
-
-		if (statsEls.boostsUpgraded) statsEls.boostsUpgraded.textContent = String(getBoostsUpgradedCount());
-		if (statsEls.boostsUsedTotal) statsEls.boostsUsedTotal.textContent = String(getTotalBoostUsageCount());
-		if (statsEls.boostsTypesUsed) statsEls.boostsTypesUsed.textContent = String(boostTypesUsed.size);
-		if (statsEls.boostsActive) statsEls.boostsActive.textContent = String(getActiveBoostsCount());
-		if (statsEls.boostsBestCombo) statsEls.boostsBestCombo.textContent = String(Math.max(0, Math.floor(toFiniteNumber(achievementCounters.boostComboBest, 0))));
-		if (statsEls.boostsTotalTime) statsEls.boostsTotalTime.textContent = String(Math.floor(Math.max(0, toFiniteNumber(achievementCounters.boostTime, 0))));
-
-		if (statsEls.achievementsUnlocked) statsEls.achievementsUnlocked.textContent = String(unlockedAchievementsCount);
-		if (statsEls.achievementsClaimed) statsEls.achievementsClaimed.textContent = String(claimedAchievementsCount);
-		if (statsEls.achievementsSystem) statsEls.achievementsSystem.textContent = achievementsButtonUnlocked ? (currentLanguage === 'en' ? 'Yes' : 'Да') : (currentLanguage === 'en' ? 'No' : 'Нет');
-	}
-
-	function getBoostLevel(boostId) {
-		return Math.max(0, Math.floor(toFiniteNumber(boostLevels[boostId], 0)));
-	}
-
-	function getBoostPrice(boost) {
-		const level = getBoostLevel(boost.id);
-		if (boost.oneTime) return boost.price;
-		const growth = toFiniteNumber(boost.priceGrowth, 1.28);
-		return Math.max(1, Math.floor(boost.price * Math.pow(growth, level)));
+	function refreshBoostState(boost) {
+		if (!boost.active || !boost.expiresAt) return;
+		if (Date.now() >= boost.expiresAt) {
+			boost.active = false;
+			boost.expiresAt = null;
+			boost.activeEffect = null;
+		}
 	}
 
 	function isBoostActive(boostId) {
-		const now = Date.now();
-		const item = activeBoosts[boostId];
-		if (!item) return false;
-		return toFiniteNumber(item.endAt, 0) > now;
+		const boost = boostById.get(boostId);
+		if (!boost) return false;
+		refreshBoostState(boost);
+		return Boolean(boost.active && boost.expiresAt && Date.now() < boost.expiresAt);
 	}
 
 	function updateBoostDerivedState() {
+		boosts.forEach(refreshBoostState);
 		critBoostActive = isBoostActive('critical_overload');
 		boostTimeScale = isBoostActive('time_freeze') ? 0.5 : 1;
 	}
 
+	function formatBoostTime(seconds) {
+		const s = Math.max(0, toInt(seconds));
+		const hh = String(toInt(s / 3600)).padStart(2, '0');
+		const mm = String(toInt((s % 3600) / 60)).padStart(2, '0');
+		const ss = String(s % 60).padStart(2, '0');
+		return `${hh}:${mm}:${ss}`;
+	}
+
 	function getEffectiveClickPower() {
-		let power = clickPower;
-		power += getBoostLevel('processor_plus');
-		power += permanentClickPowerBonus;
-		if (getBoostLevel('evolution_module') > 0) {
-			power *= 1 + (level * 0.05);
-		}
-		if (isBoostActive('neon_overdrive')) power *= 3;
-		if (isBoostActive('rocket_pulse')) power *= 2.5;
-		if (isBoostActive('galactic_breakthrough')) power *= 10;
-		if (isBoostActive('omega_mode')) power *= 20;
+		let power = clickPower + getBoostsUpgradedCount() * 0 + permanentClickPowerBonus;
+		power = clickPower + toInt(boostById.get('processor_plus')?.purchases || 0) + permanentClickPowerBonus;
+		if (toInt(boostById.get('evolution_module')?.purchases || 0) > 0) power *= 1 + (level * 0.05);
+		if (isBoostActive('neon_overdrive')) power *= toFiniteNumber(boostById.get('neon_overdrive')?.activeEffect ?? 3, 3);
+		if (isBoostActive('galactic_breakthrough')) power *= toFiniteNumber(boostById.get('galactic_breakthrough')?.activeEffect ?? 10, 10);
+		if (isBoostActive('omega_mode')) power *= toFiniteNumber(boostById.get('omega_mode')?.activeEffect ?? 20, 20);
 		return power;
 	}
 
-		function getEffectiveCoinsPerClick() {
-			let coinsPerClick = getEffectiveClickPower();
-			if (isBoostActive('golden_storm')) coinsPerClick *= 2.5;
-			if (getBoostLevel('space_amplifier') > 0) coinsPerClick *= 1.1;
-			coinsPerClick *= permanentCoinBonusMultiplier;
-			return coinsPerClick;
-		}
-
-		function getEffectiveRobotIncome() {
-			let income = robotIncomePerSecond;
-			income += getBoostLevel('eternal_generator') * 0.5;
-			if (isBoostActive('rocket_pulse')) income *= 1.2;
-			if (isBoostActive('drone_army')) income *= 3;
-			if (isBoostActive('galactic_breakthrough')) income *= 5;
-			if (getBoostLevel('space_amplifier') > 0) income *= 1.1;
-			income *= permanentRobotBonusMultiplier;
-			return income;
-		}
-
-	function showBoostActivation(text) {
-		if (!clickObject) return;
-		const pulse = document.createElement('div');
-		pulse.className = 'boost-activate-fx';
-		clickObject.appendChild(pulse);
-		setTimeout(() => pulse.remove(), 750);
-
-		const label = document.createElement('div');
-		label.className = 'boost-fx-text';
-		label.textContent = text;
-		clickObject.appendChild(label);
-		setTimeout(() => label.remove(), 920);
-		playSound('menu');
+	function getEffectiveCoinsPerClick() {
+		let coinsPerClick = getEffectiveClickPower();
+		if (isBoostActive('golden_storm')) coinsPerClick *= toFiniteNumber(boostById.get('golden_storm')?.activeEffect ?? 2.5, 2.5);
+		if (toInt(boostById.get('space_amplifier')?.purchases || 0) > 0) coinsPerClick *= 1.1;
+		coinsPerClick *= permanentCoinBonusMultiplier;
+		return toInt(coinsPerClick);
 	}
 
-	function activateTimedBoost(boost) {
-		const startAt = Date.now();
-		const durationMs = Math.max(1000, Math.floor(toFiniteNumber(boost.duration, 10) * 1000));
-		activeBoosts[boost.id] = { startAt, endAt: startAt + durationMs, durationMs };
+	function getEffectiveRobotIncome() {
+		let income = robotIncomePerSecond + (toInt(boostById.get('eternal_generator')?.purchases || 0) * 0.5);
+		if (isBoostActive('drone_army')) income *= toFiniteNumber(boostById.get('drone_army')?.activeEffect ?? 3, 3);
+		if (isBoostActive('galactic_breakthrough')) income *= 5;
+		if (toInt(boostById.get('space_amplifier')?.purchases || 0) > 0) income *= 1.1;
+		income *= permanentRobotBonusMultiplier;
+		return toInt(income);
+	}
 
-		if (boost.id === 'time_freeze') {
-			Object.entries(activeBoosts).forEach(([id, data]) => {
-				if (id === 'time_freeze') return;
-				data.endAt += durationMs;
-				data.durationMs += durationMs;
-				scheduleBoostTimer(id);
-			});
+	function canBuyBoost(boost) {
+		refreshBoostState(boost);
+		if (coins < toInt(boost.currentPrice)) return false;
+		if (boost.oneTime && toInt(boost.purchases) > 0) return false;
+		if ((boost.type === 'temporary' || boost.type === 'temporary_offline') && boost.active) return false;
+		if (boost.id === 'discount_protocol' && pendingDiscount) return false;
+		return true;
+	}
+
+	function applyBoostEffect(boost) {
+		if (boost.type === 'temporary' || boost.type === 'temporary_offline') {
+			boost.active = true;
+			boost.activeEffect = boost.currentEffect;
+			boost.expiresAt = Date.now() + (toInt(boost.duration) * 1000);
 		}
-
-		scheduleBoostTimer(boost.id);
-		updateBoostDerivedState();
-		renderBoostsUI();
+		if (boost.id === 'coin_burst') {
+			coins = toInt(coins + boost.currentEffect);
+			totalCoinsEarned = toInt(totalCoinsEarned + boost.currentEffect);
+		}
+		if (boost.id === 'super_click') pendingSuperClick = true;
+		if (boost.id === 'discount_protocol') pendingDiscount = true;
+		if (boost.id === 'offline_bonus') {
+			const reward = toInt(getEffectiveRobotIncome() * 30 * boost.currentEffect);
+			coins = toInt(coins + reward);
+			totalCoinsEarned = toInt(totalCoinsEarned + reward);
+		}
 	}
 
-	function deactivateBoost(boostId) {
-		delete activeBoosts[boostId];
-		const timer = boostTimers.get(boostId);
-		if (timer) clearTimeout(timer);
-		boostTimers.delete(boostId);
-		updateBoostDerivedState();
-		renderBoostsUI();
+	function recalculateBoostEffect(boost) {
+		const step = toFiniteNumber(boost.effectStep, 0);
+		if (step > 0) boost.currentEffect = toFiniteNumber(boost.currentEffect, boost.baseEffect) + step;
 	}
 
-	function scheduleBoostTimer(boostId) {
-		const active = activeBoosts[boostId];
-		if (!active) return;
-		const existing = boostTimers.get(boostId);
-		if (existing) clearTimeout(existing);
-		const msLeft = Math.max(0, active.endAt - Date.now());
-		const timeoutId = setTimeout(() => {
-			deactivateBoost(boostId);
-			saveGame();
-		}, msLeft);
-		boostTimers.set(boostId, timeoutId);
+	function getActiveBoostsCount() {
+		return boosts.reduce((count, boost) => count + (isBoostActive(boost.id) ? 1 : 0), 0);
 	}
 
 	function getBoostActionState(boost) {
-		const price = getBoostPrice(boost);
-		if (boost.category === 'temporary') {
-			const used = Math.max(0, Math.floor(toFiniteNumber(boostUsageCount[boost.id], 0)));
-			if (isBoostActive(boost.id)) return { disabled: true, text: currentLanguage === 'en' ? 'Active' : 'Активен', meta: currentLanguage === 'en' ? 'Active (timer)' : 'Активен (таймер)' };
-			if (used >= 20) return { disabled: true, text: currentLanguage === 'en' ? 'Limit' : 'Лимит', meta: currentLanguage === 'en' ? 'Left: 0/20' : 'Осталось: 0/20' };
-			if (coins < price) return { disabled: true, text: currentLanguage === 'en' ? 'Not enough coins' : 'Недостаточно монет', meta: currentLanguage === 'en' ? `Left: ${20 - used}/20` : `Осталось: ${20 - used}/20` };
-			return { disabled: false, text: currentLanguage === 'en' ? `Buy for ${price} 💰` : `Купить за ${price} 💰`, meta: currentLanguage === 'en' ? `Left: ${20 - used}/20` : `Осталось: ${20 - used}/20` };
-		}
-		if (boost.oneTime && getBoostLevel(boost.id) > 0) return { disabled: true, text: currentLanguage === 'en' ? 'Owned' : 'Куплено', meta: currentLanguage === 'en' ? 'One-time boost' : 'Одноразовый буст' };
-		if (boost.category === 'super' && isBoostActive(boost.id)) return { disabled: true, text: currentLanguage === 'en' ? 'Active' : 'Активен', meta: currentLanguage === 'en' ? 'Active (timer)' : 'Активен (таймер)' };
-		if (coins < price) return { disabled: true, text: currentLanguage === 'en' ? 'Not enough coins' : 'Недостаточно монет', meta: currentLanguage === 'en' ? `Price: ${price} 💰` : `Цена: ${price} 💰` };
-		return { disabled: false, text: currentLanguage === 'en' ? `Buy for ${price} 💰` : `Купить за ${price} 💰`, meta: boost.category === 'permanent' ? (currentLanguage === 'en' ? `Level: ${getBoostLevel(boost.id)}` : `Уровень: ${getBoostLevel(boost.id)}`) : (currentLanguage === 'en' ? `Price: ${price} 💰` : `Цена: ${price} 💰`) };
+		if (isBoostActive(boost.id)) return { disabled: true, text: currentLanguage === 'en' ? 'Already active' : 'Уже активен' };
+		if (boost.oneTime && toInt(boost.purchases) > 0) return { disabled: true, text: currentLanguage === 'en' ? 'Owned' : 'Куплено' };
+		if (boost.id === 'discount_protocol' && pendingDiscount) return { disabled: true, text: currentLanguage === 'en' ? 'Already prepared' : 'Уже подготовлен' };
+		if (coins < toInt(boost.currentPrice)) return { disabled: true, text: currentLanguage === 'en' ? 'Not enough coins' : 'Недостаточно монет' };
+		return { disabled: false, text: currentLanguage === 'en' ? 'Buy' : 'Купить' };
 	}
 
 	function renderBoostTabs() {
 		if (!boostsTabs) return;
-		boostsTabs.innerHTML = boostCategories.map((cat) => `
-			<button type="button" class="boosts-tab ${cat.id === currentBoostCategory ? 'is-active' : ''}" data-boost-category="${cat.id}">${cat.label[currentLanguage] || cat.label.ru}</button>
-		`).join('');
+		boostsTabs.innerHTML = boostCategories.map((cat) => `<button type="button" class="boosts-tab ${cat.id === currentBoostCategory ? 'is-active' : ''}" data-boost-category="${cat.id}">${cat.label[currentLanguage] || cat.label.ru}</button>`).join('');
 	}
 
-		function renderActiveBoosts() {
-			const now = Date.now();
-			const delta = Math.max(0, (now - lastBoostTick) / 1000);
-			lastBoostTick = now;
-			if (Object.keys(activeBoosts).length > 0) {
-				achievementCounters.boostTime += delta;
-			}
-			achievementCounters.boostComboBest = Math.max(achievementCounters.boostComboBest, Object.keys(activeBoosts).length);
-			if (!boostsActiveList) return;
-			const items = Object.entries(activeBoosts)
-			.filter(([, data]) => toFiniteNumber(data.endAt, 0) > now)
-			.map(([id, data]) => {
-				const boost = boostById.get(id);
-				if (!boost) return '';
-				const remainingMs = data.endAt - now;
-				const seconds = Math.max(0, Math.ceil(remainingMs / 1000));
-				const progress = data.durationMs > 0 ? (remainingMs / data.durationMs) * 100 : 0;
-				return `
-					<div class="boost-active-item">
-						<div class="boost-active-item__icon">${boost.icon}</div>
-						<div>
-							<div class="boost-active-item__name">${getBoostText(boost, 'name')} — ${seconds}${currentLanguage === 'en' ? 's' : 'с'}</div>
-							<div class="boost-active-item__time">${currentLanguage === 'en' ? 'Left' : 'Осталось'} ${seconds}${currentLanguage === 'en' ? 's' : 'с'}</div>
-						</div>
-						<div class="boost-progress"><div class="boost-progress__fill" style="width:${Math.max(0, Math.min(100, progress)).toFixed(1)}%"></div></div>
-					</div>
-				`;
-			})
-			.filter(Boolean);
-		boostsActiveList.innerHTML = items.length ? items.join('') : `<div class="boost-active-item"><div class="boost-active-item__name">${currentLanguage === 'en' ? 'No active boosts' : 'Нет активных бустов'}</div></div>`;
+	function renderActiveBoosts() {
+		const now = Date.now();
+		const delta = Math.max(0, (now - lastBoostTick) / 1000);
+		lastBoostTick = now;
+		const activeItems = boosts.filter((boost) => isBoostActive(boost.id));
+		if (activeItems.length > 0) achievementCounters.boostTime += delta;
+		achievementCounters.boostComboBest = Math.max(achievementCounters.boostComboBest, activeItems.length);
+		if (!boostsActiveList) return;
+		boostsActiveList.innerHTML = activeItems.length ? activeItems.map((boost) => {
+			const left = Math.max(0, toInt((boost.expiresAt - now) / 1000));
+			return `<div class="boost-active-item"><div class="boost-active-item__icon">${boost.icon}</div><div><div class="boost-active-item__name">${getBoostText(boost, 'name')}</div><div class="boost-active-item__time">${currentLanguage === 'en' ? 'Left' : 'Осталось'} ${formatBoostTime(left)}</div></div></div>`;
+		}).join('') : `<div class="boost-active-item"><div class="boost-active-item__name">${currentLanguage === 'en' ? 'No active boosts' : 'Нет активных бустов'}</div></div>`;
 	}
 
 	function renderBoostsGrid() {
@@ -1728,105 +1629,28 @@ document.addEventListener('DOMContentLoaded', () => {
 		const filtered = boosts.filter((boost) => boost.category === currentBoostCategory);
 		boostsGrid.innerHTML = filtered.map((boost) => {
 			const action = getBoostActionState(boost);
-			const rarityClass = `boost-card boost-card--${boost.rarity === 'epic' ? 'epic' : boost.rarity === 'rare' ? 'rare' : 'common'}`;
-			return `
-				<article class="${rarityClass}">
-					<div class="boost-card__icon">${boost.icon}</div>
-					<h3 class="boost-card__name">${getBoostText(boost, 'name')}</h3>
-					<p class="boost-card__desc">${getBoostText(boost, 'desc')}</p>
-					<div class="boost-card__price">${action.meta}</div>
-					<div class="boost-card__meta">${boost.category === 'temporary' || boost.category === 'super' ? (currentLanguage === 'en' ? `Duration: ${boost.duration}s` : `Длительность: ${boost.duration}с`) : (currentLanguage === 'en' ? 'Permanent effect / instant' : 'Постоянный эффект / моментально')}</div>
-					<button class="boost-card__action" type="button" data-boost-id="${boost.id}" ${action.disabled ? 'disabled' : ''}>${action.text}</button>
-				</article>
-			`;
+			const nextEffect = toFiniteNumber(boost.effectStep, 0) > 0 ? toFiniteNumber(boost.currentEffect, 0) + toFiniteNumber(boost.effectStep, 0) : null;
+			const active = isBoostActive(boost.id);
+			const timer = active ? `<div class="boost-card__timer">${currentLanguage === 'en' ? 'Left' : 'Осталось'}: ${formatBoostTime((boost.expiresAt - Date.now()) / 1000)}</div>` : '';
+			return `<article class="boost-card ${active ? 'boost-card--active' : ''}"><div class="boost-card__icon">${boost.icon}</div><h3 class="boost-card__name">${getBoostText(boost, 'name')}</h3><p class="boost-card__desc">${getBoostText(boost, 'description')}</p><div class="boost-card__meta">${currentLanguage === 'en' ? 'Current effect' : 'Текущий эффект'}: ${boost.currentEffect}</div><div class="boost-card__meta">${currentLanguage === 'en' ? 'Next effect' : 'Следующий эффект'}: ${nextEffect ?? boost.currentEffect}</div><div class="boost-card__price">${currentLanguage === 'en' ? 'Price' : 'Цена'}: ${toInt(boost.currentPrice)} 💰</div><div class="boost-card__meta">${currentLanguage === 'en' ? 'Bought' : 'Куплено'}: ${toInt(boost.purchases)}</div>${boost.duration ? `<div class="boost-card__meta">${currentLanguage === 'en' ? 'Duration' : 'Длительность'}: ${formatBoostTime(boost.duration)}</div>` : ''}${timer}<button class="boost-card__action" type="button" data-boost-id="${boost.id}" ${action.disabled ? 'disabled' : ''}>${action.text}</button></article>`;
 		}).join('');
 	}
 
-	function renderBoostsUI() {
-		renderBoostTabs();
-		renderBoostsGrid();
-		renderActiveBoosts();
-	}
+	function renderBoostsUI() { renderBoostTabs(); renderBoostsGrid(); renderActiveBoosts(); }
+	function openBoostsModal() { if (!boostsModal) return; closeAllFeatureModals(); renderBoostsUI(); boostsModal.classList.remove('hidden'); }
+	function closeBoostsModal() { if (!boostsModal) return; boostsModal.classList.add('hidden'); }
 
-	function openBoostsModal() {
-		if (!boostsModal) return;
-		closeAllFeatureModals();
-		renderBoostsUI();
-		boostsModal.classList.remove('hidden');
-	}
-
-	function closeBoostsModal() {
-		if (!boostsModal) return;
-		boostsModal.classList.add('hidden');
-	}
-
-	function getOfflineBonusReward() {
-		const base = Math.max(0, getEffectiveRobotIncome());
-		return Math.floor(base * 30);
-	}
-
-		function applyInstantBoost(boost) {
-			if (boost.id === 'coin_burst') {
-				coins += 500;
-				totalCoinsEarned += 500;
-				showBoostActivation(currentLanguage === 'en' ? '+500 COINS' : '+500 МОНЕТ');
-			}
-		if (boost.id === 'super_click') {
-			pendingSuperClick = true;
-			showBoostActivation(currentLanguage === 'en' ? 'SUPER CLICK x25' : 'СУПЕР КЛИК x25');
-		}
-		if (boost.id === 'discount_protocol') {
-			pendingDiscount = true;
-			showBoostActivation(currentLanguage === 'en' ? 'DISCOUNT -50%' : 'СКИДКА -50%');
-		}
-			if (boost.id === 'offline_bonus') {
-				const reward = getOfflineBonusReward();
-				coins += reward;
-				totalCoinsEarned += reward;
-				showBoostActivation(currentLanguage === 'en' ? `OFFLINE +${reward}` : `ОФЛАЙН +${reward}`);
-			}
-		}
-
-		function buyBoost(boostId) {
-			const boost = boostById.get(boostId);
-			if (!boost) return;
-			boostTypesUsed.add(boost.category);
-			const price = getBoostPrice(boost);
-		if (coins < price) return;
-
-		if (boost.category === 'temporary') {
-			const used = Math.max(0, Math.floor(toFiniteNumber(boostUsageCount[boost.id], 0)));
-			if (used >= 20 || isBoostActive(boost.id)) return;
-			coins -= price;
-			boostLevels[boost.id] = getBoostLevel(boost.id) + 1;
-			boostUsageCount[boost.id] = used + 1;
-			closeBoostsModal();
-			activateTimedBoost(boost);
-			showBoostActivation(currentLanguage === 'en' ? (boost.id === 'neon_overdrive' ? '×3 CLICK' : boost.id === 'drone_army' ? 'DRONES ACTIVE' : 'BOOST ACTIVE') : (boost.id === 'neon_overdrive' ? '×3 КЛИК' : boost.id === 'drone_army' ? 'ДРОНЫ АКТИВНЫ' : 'БУСТ АКТИВЕН'));
-		}
-
-		if (boost.category === 'super') {
-			if (isBoostActive(boost.id)) return;
-			coins -= price;
-			boostLevels[boost.id] = getBoostLevel(boost.id) + 1;
-			closeBoostsModal();
-			activateTimedBoost(boost);
-			showBoostActivation(boost.id === 'omega_mode' ? 'OMEGA MODE' : (currentLanguage === 'en' ? 'SUPER BOOST' : 'СУПЕР БУСТ'));
-		}
-
-		if (boost.category === 'instant') {
-			coins -= price;
-			applyInstantBoost(boost);
-			boostLevels[boost.id] = getBoostLevel(boost.id) + 1;
-		}
-
-		if (boost.category === 'permanent') {
-			if (boost.oneTime && getBoostLevel(boost.id) > 0) return;
-			coins -= price;
-			boostLevels[boost.id] = getBoostLevel(boost.id) + 1;
-			showBoostActivation(currentLanguage === 'en' ? 'UPGRADE INSTALLED' : 'АПГРЕЙД УСТАНОВЛЕН');
-		}
-
+	function buyBoost(boostId) {
+		const boost = boostById.get(boostId);
+		if (!boost || !canBuyBoost(boost)) return;
+		boostTypesUsed.add(boost.category);
+		coins = toInt(coins - boost.currentPrice);
+		applyBoostEffect(boost);
+		boost.purchases = toInt(boost.purchases + 1);
+		boostLevels[boost.id] = boost.purchases;
+		boostUsageCount[boost.id] = toInt(boostUsageCount[boost.id]) + 1;
+		boost.currentPrice = toInt(boost.currentPrice * boost.priceMultiplier);
+		recalculateBoostEffect(boost);
 		updateBoostDerivedState();
 		updateUI();
 		renderBoostsUI();
@@ -2051,6 +1875,7 @@ document.addEventListener('DOMContentLoaded', () => {
 		ownedSkinIds = new Set(state.ownedSkinIds);
 		selectedSkinId = state.selectedSkinId;
 		boostLevels = { ...state.boostLevels };
+		boosts.forEach((boost) => { if (typeof boost.purchases === 'number') boostLevels[boost.id] = toInt(boost.purchases); });
 		boostUsageCount = { ...state.boostUsageCount };
 		activeBoosts = { ...state.activeBoosts };
 		pendingDiscount = state.pendingDiscount;
@@ -2240,9 +2065,9 @@ document.addEventListener('DOMContentLoaded', () => {
 		if (robotTimer || robotIncomePerSecond <= 0) return;
 
 		robotTimer = setInterval(() => {
-			const robotIncome = getEffectiveRobotIncome();
-			coins += robotIncome;
-			totalCoinsEarned += robotIncome;
+			const robotIncome = toInt(getEffectiveRobotIncome());
+			coins = toInt(coins + robotIncome);
+			totalCoinsEarned = toInt(totalCoinsEarned + robotIncome);
 			updateUI();
 			saveGame();
 		}, 1000);
@@ -2256,8 +2081,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
 	// Обновляет числа на экране
 		function updateUI() {
-			if (scoreEl) scoreEl.textContent = String(coins);
-			if (moneyCounterEl) moneyCounterEl.textContent = String(coins);
+			coins = toInt(coins);
+			if (scoreEl) scoreEl.textContent = String(toInt(coins));
+			if (moneyCounterEl) moneyCounterEl.textContent = String(toInt(coins));
 			if (clickPowerEl) clickPowerEl.textContent = String(Math.round(getEffectiveClickPower() * 100) / 100);
 			updateLevelUI();
 			updateClickUpgradeUI();
@@ -2271,7 +2097,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 	// Сохраняем данные в localStorage
 	function saveGame() {
-		setStorageItem('coins', Math.max(0, toFiniteNumber(coins, 0)));
+		setStorageItem('coins', Math.max(0, toInt(coins)));
 		setStorageItem('clickPower', Math.max(1, toFiniteNumber(clickPower, 1)));
 		setStorageItem(CLICK_UPGRADE_PRICE_KEY, Math.max(1, toFiniteNumber(upgradePrice, 85)));
 		setStorageItem(ROBOT_PRICE_KEY, Math.max(ROBOT_BASE_PRICE, toFiniteNumber(robotPrice, ROBOT_BASE_PRICE)));
@@ -2286,10 +2112,20 @@ document.addEventListener('DOMContentLoaded', () => {
 			setStorageItem(BOOST_LEVELS_KEY, JSON.stringify(boostLevels));
 			setStorageItem(BOOST_USAGE_KEY, JSON.stringify(boostUsageCount));
 			setStorageItem(BOOST_ACTIVE_KEY, JSON.stringify(activeBoosts));
+			setStorageItem(BOOSTS_STATE_KEY, JSON.stringify(boosts.map((boost) => ({
+				id: boost.id,
+				currentPrice: toInt(boost.currentPrice),
+				currentEffect: toFiniteNumber(boost.currentEffect, boost.baseEffect),
+				purchases: toInt(boost.purchases),
+				active: Boolean(boost.active),
+				expiresAt: boost.expiresAt,
+				activeEffect: boost.activeEffect ?? null,
+			}))));
+			setStorageItem(LAST_SEEN_KEY, Date.now());
 			setStorageItem(BOOST_PENDING_DISCOUNT_KEY, pendingDiscount ? '1' : '0');
 			setStorageItem(BOOST_PENDING_SUPER_CLICK_KEY, pendingSuperClick ? '1' : '0');
 			setStorageItem(TOTAL_CLICKS_KEY, Math.max(0, Math.floor(toFiniteNumber(totalClicks, 0))));
-			setStorageItem(TOTAL_COINS_EARNED_KEY, Math.max(0, toFiniteNumber(totalCoinsEarned, 0)));
+			setStorageItem(TOTAL_COINS_EARNED_KEY, Math.max(0, toInt(totalCoinsEarned)));
 			setStorageItem(CLICK_UPGRADES_COUNT_KEY, Math.max(0, Math.floor(toFiniteNumber(clickUpgradesCount, 0))));
 			setStorageItem(SKINS_BOUGHT_COUNT_KEY, Math.max(0, Math.floor(toFiniteNumber(skinsBoughtCount, 0))));
 			setStorageItem(ACHIEVEMENTS_BUTTON_UNLOCKED_KEY, achievementsButtonUnlocked ? '1' : '0');
@@ -2326,6 +2162,7 @@ document.addEventListener('DOMContentLoaded', () => {
 		const savedBoostLevels = getStorageItem(BOOST_LEVELS_KEY);
 		const savedBoostUsage = getStorageItem(BOOST_USAGE_KEY);
 		const savedActiveBoosts = getStorageItem(BOOST_ACTIVE_KEY);
+		const savedBoostsState = getStorageItem(BOOSTS_STATE_KEY);
 		const savedPendingDiscount = getStorageItem(BOOST_PENDING_DISCOUNT_KEY);
 		const savedPendingSuperClick = getStorageItem(BOOST_PENDING_SUPER_CLICK_KEY);
 		const savedTotalClicks = getStorageItem(TOTAL_CLICKS_KEY);
@@ -2336,7 +2173,7 @@ document.addEventListener('DOMContentLoaded', () => {
 		const savedAchievementCounters = getStorageItem(ACHIEVEMENTS_COUNTERS_KEY);
 		const savedAchievementsState = getStorageItem(ACHIEVEMENTS_STATE_KEY);
 
-		if (savedCoins !== null) loadedState.coins = Math.max(0, toFiniteNumber(savedCoins, initialState.coins));
+		if (savedCoins !== null) loadedState.coins = Math.max(0, toInt(savedCoins));
 		if (savedClickPower !== null) loadedState.clickPower = Math.max(1, toFiniteNumber(savedClickPower, initialState.clickPower));
 		if (savedUpgradePrice !== null) loadedState.upgradePrice = Math.max(1, toFiniteNumber(savedUpgradePrice, initialState.upgradePrice));
 		if (savedRobotPrice !== null) loadedState.robotPrice = Math.max(ROBOT_BASE_PRICE, toFiniteNumber(savedRobotPrice, initialState.robotPrice));
@@ -2376,10 +2213,29 @@ document.addEventListener('DOMContentLoaded', () => {
 			try { loadedState.activeBoosts = JSON.parse(savedActiveBoosts) || {}; } catch { loadedState.activeBoosts = {}; }
 		}
 
+		if (savedBoostsState) {
+			try {
+				const parsedBoosts = JSON.parse(savedBoostsState);
+				if (Array.isArray(parsedBoosts)) {
+					parsedBoosts.forEach((savedBoost) => {
+						const boost = boostById.get(String(savedBoost.id));
+						if (!boost) return;
+						boost.currentPrice = Math.max(1, toInt(savedBoost.currentPrice ?? boost.basePrice));
+						boost.currentEffect = toFiniteNumber(savedBoost.currentEffect, boost.baseEffect);
+						boost.purchases = Math.max(0, toInt(savedBoost.purchases));
+						boost.active = Boolean(savedBoost.active);
+						boost.expiresAt = savedBoost.expiresAt ? toInt(savedBoost.expiresAt) : null;
+						boost.activeEffect = savedBoost.activeEffect ?? null;
+						boostLevels[boost.id] = boost.purchases;
+					});
+				}
+			} catch {}
+		}
+
 		loadedState.pendingDiscount = savedPendingDiscount === '1';
 		loadedState.pendingSuperClick = savedPendingSuperClick === '1';
 		if (savedTotalClicks !== null) loadedState.totalClicks = Math.max(0, Math.floor(toFiniteNumber(savedTotalClicks, initialState.totalClicks)));
-		if (savedTotalCoinsEarned !== null) loadedState.totalCoinsEarned = Math.max(0, toFiniteNumber(savedTotalCoinsEarned, loadedState.coins));
+		if (savedTotalCoinsEarned !== null) loadedState.totalCoinsEarned = Math.max(0, toInt(savedTotalCoinsEarned));
 		if (savedClickUpgradesCount !== null) loadedState.clickUpgradesCount = Math.max(0, Math.floor(toFiniteNumber(savedClickUpgradesCount, initialState.clickUpgradesCount)));
 		if (savedSkinsBoughtCount !== null) loadedState.skinsBoughtCount = Math.max(0, Math.floor(toFiniteNumber(savedSkinsBoughtCount, initialState.skinsBoughtCount)));
 		loadedState.achievementsButtonUnlocked = savedAchievementsButtonUnlocked === '1';
@@ -2429,16 +2285,26 @@ document.addEventListener('DOMContentLoaded', () => {
 		});
 
 		const now = Date.now();
-		Object.entries(activeBoosts).forEach(([id, data]) => {
-			if (toFiniteNumber(data.endAt, 0) <= now) {
-				delete activeBoosts[id];
-				return;
+		const savedLastSeen = getStorageItem(LAST_SEEN_KEY);
+		if (savedLastSeen !== null) {
+			const lastSeen = toInt(savedLastSeen);
+			const elapsed = Math.max(0, toInt((now - lastSeen) / 1000));
+			const capped = Math.min(elapsed, 7200);
+			if (capped > 0) {
+				const offBoost = boostById.get('offline_accelerator');
+				let boostedSeconds = 0;
+				if (offBoost && offBoost.expiresAt) {
+					const activeUntil = Math.min(toInt(offBoost.expiresAt), now);
+					boostedSeconds = Math.max(0, Math.min(capped, toInt((activeUntil - lastSeen) / 1000)));
+				}
+				const normalSeconds = Math.max(0, capped - boostedSeconds);
+				const baseIncome = toInt(robotIncomePerSecond);
+				const reward = toInt((baseIncome * normalSeconds) + (baseIncome * boostedSeconds * 5));
+				coins = toInt(coins + reward);
+				totalCoinsEarned = toInt(totalCoinsEarned + reward);
 			}
-			if (!toFiniteNumber(data.durationMs, 0)) {
-				activeBoosts[id].durationMs = Math.max(1000, toFiniteNumber(data.endAt, now) - toFiniteNumber(data.startAt, now));
-			}
-			scheduleBoostTimer(id);
-		});
+		}
+		boosts.forEach(refreshBoostState);
 		updateBoostDerivedState();
 	}
 
@@ -2456,8 +2322,8 @@ document.addEventListener('DOMContentLoaded', () => {
 				gainedCoins *= 10;
 				showBoostActivation(currentLanguage === 'en' ? 'CRIT x10' : 'КРИТ x10');
 			}
-				coins += gainedCoins;
-				totalCoinsEarned += gainedCoins;
+				coins = toInt(coins + gainedCoins);
+				totalCoinsEarned = toInt(totalCoinsEarned + gainedCoins);
 				totalClicks += 1;
 
 			// прогресс уровня по кликам
@@ -2471,7 +2337,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 			updateUI();
 			saveGame();
-			createFloatingNumber(e.clientX, e.clientY, Math.round(gainedCoins * 100) / 100);
+			createFloatingNumber(e.clientX, e.clientY, toInt(gainedCoins));
 		});
 	}
 
@@ -2562,7 +2428,7 @@ document.addEventListener('DOMContentLoaded', () => {
 	// улучшение клика
 	function updateClickUpgradeUI() {
 		// Цена на кнопке
-		const displayPrice = pendingDiscount ? Math.floor(upgradePrice * 0.5) : upgradePrice;
+		const displayPrice = pendingDiscount ? toInt(upgradePrice * 0.5) : toInt(upgradePrice);
 		if (upgradeClickPriceEl) {
 			upgradeClickPriceEl.textContent = `${displayPrice} 💰`;
 		}
@@ -2576,7 +2442,7 @@ document.addEventListener('DOMContentLoaded', () => {
 	}
 
 	function updateRobotUpgradeUI() {
-		const displayPrice = pendingDiscount ? Math.floor(robotPrice * 0.5) : robotPrice;
+		const displayPrice = pendingDiscount ? toInt(robotPrice * 0.5) : toInt(robotPrice);
 		if (autoBotPriceEl) {
 			autoBotPriceEl.textContent = `${displayPrice} 💰`;
 		}
@@ -2593,13 +2459,13 @@ document.addEventListener('DOMContentLoaded', () => {
 	}
 
 	function buyAutoBot() {
-		const finalPrice = pendingDiscount ? Math.floor(robotPrice * 0.5) : robotPrice;
+		const finalPrice = pendingDiscount ? toInt(robotPrice * 0.5) : toInt(robotPrice);
 		if (coins < finalPrice) return;
-		coins -= finalPrice;
+		coins = toInt(coins - finalPrice);
 		pendingDiscount = false;
 		robotCount += 1;
 		robotIncomePerSecond += 1;
-		robotPrice *= 2;
+		robotPrice = toInt(robotPrice * 2);
 
 		startRobotIncomeTimer();
 		updateUI();
@@ -2608,16 +2474,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
 	// Покупка улучшения клика
 	function buyClickUpgrade() {
-		const finalPrice = pendingDiscount ? Math.floor(upgradePrice * 0.5) : upgradePrice;
+		const finalPrice = pendingDiscount ? toInt(upgradePrice * 0.5) : toInt(upgradePrice);
 		if (coins < finalPrice) return;
 
-			coins -= finalPrice;
+			coins = toInt(coins - finalPrice);
 			pendingDiscount = false;
 			clickPower += 1;
 			clickUpgradesCount += 1;
 
 		// Плавный рост цены на 15%, но всегда минимум +1
-		upgradePrice = Math.max(upgradePrice + 1, Math.floor(upgradePrice * 1.15));
+		upgradePrice = toInt(Math.max(upgradePrice + 1, Math.floor(upgradePrice * 1.15)));
+			coins = toInt(coins);
 
 		updateUI();
 		saveGame();
