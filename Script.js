@@ -672,7 +672,9 @@ document.addEventListener('DOMContentLoaded', () => {
 		const ACHIEVEMENT_BASE_ROBOTS = 0;
 		const ACHIEVEMENT_BASE_CLICK_UPGRADES = 0;
 		const ACHIEVEMENT_BASE_SKINS = 1; // стартовый скин по умолчанию
-		let achievementsButtonUnlocked = false;
+		let achievementsButtonUnlocked = true;
+		let hasUnreadAchievement = false;
+		const seenReadyAchievementIds = new Set();
 		let permanentCoinBonusMultiplier = 1;
 		let permanentRobotBonusMultiplier = 1;
 		let permanentClickPowerBonus = 0;
@@ -830,6 +832,28 @@ document.addEventListener('DOMContentLoaded', () => {
 			});
 		}
 
+		function updateAchievementButtonAttentionState() {
+			if (!achievementsBtn) return;
+			achievementsBtn.classList.toggle('has-new-achievement', hasUnreadAchievement);
+		}
+
+		function getReadyAchievementIds() {
+			const ids = [];
+			achievementSeries.forEach((series) => {
+				if (series.fullyCompleted) return;
+				const step = getSeriesCurrentStep(series);
+				if (!step || !step.unlocked || step.claimed) return;
+				ids.push(step.id);
+			});
+			return ids;
+		}
+
+		function markAchievementNotificationAsRead() {
+			getReadyAchievementIds().forEach((id) => seenReadyAchievementIds.add(id));
+			hasUnreadAchievement = false;
+			updateAchievementButtonAttentionState();
+		}
+
 		function updateAchievementsState() {
 			achievements.forEach((achievement) => {
 				const special = checkSpecialAchievementCompletion(achievement);
@@ -848,6 +872,11 @@ document.addEventListener('DOMContentLoaded', () => {
 				series.completed = series.steps.every((step) => step.claimed || step.unlocked);
 				series.fullyCompleted = series.steps.every((step) => step.claimed);
 			});
+
+			const readyIds = getReadyAchievementIds();
+			const hasNewReady = readyIds.some((id) => !seenReadyAchievementIds.has(id));
+			hasUnreadAchievement = hasNewReady;
+			updateAchievementButtonAttentionState();
 		}
 
 		function applyAchievementReward(achievement) {
@@ -997,24 +1026,17 @@ document.addEventListener('DOMContentLoaded', () => {
 		}
 
 		function unlockAchievementsButton() {
-			if (!achievementsBtn || achievementsButtonUnlocked) return;
 			achievementsButtonUnlocked = true;
-			achievementsBtn.classList.remove('locked');
-			achievementsBtn.classList.add('is-unlocked', 'unlocking');
-			setTimeout(() => {
-				if (achievementsBtn) achievementsBtn.classList.remove('unlocking');
-			}, 750);
+			if (!achievementsBtn) return;
+			achievementsBtn.classList.add('is-unlocked');
+			achievementsBtn.classList.remove('unlocking');
 		}
 
 		function restoreAchievementsButtonState() {
 			if (!achievementsBtn) return;
-			if (achievementsButtonUnlocked) {
-				achievementsBtn.classList.remove('locked');
-				achievementsBtn.classList.add('is-unlocked');
-			} else {
-				achievementsBtn.classList.add('locked');
-				achievementsBtn.classList.remove('is-unlocked', 'unlocking');
-			}
+			achievementsBtn.classList.add('is-unlocked');
+			achievementsBtn.classList.remove('unlocking');
+			updateAchievementButtonAttentionState();
 		}
 
 		function openAchievementsModal() {
@@ -1022,6 +1044,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			closeAllFeatureModals();
 			unlockAchievementsButton();
 			renderAchievements();
+			markAchievementNotificationAsRead();
 			achievementsModal.classList.remove('hidden');
 			updateUI();
 			saveGame();
@@ -1953,7 +1976,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			totalCoinsEarned: 0,
 			clickUpgradesCount: 0,
 			skinsBoughtCount: 0,
-			achievementsButtonUnlocked: false,
+			achievementsButtonUnlocked: true,
 			achievementCounters: { boostComboBest: 0, boostTime: 0 },
 			boostTypesUsed: [],
 			brightness: DEFAULT_BRIGHTNESS,
@@ -1973,7 +1996,7 @@ document.addEventListener('DOMContentLoaded', () => {
 	}
 
 	function resetAchievementsToInitialState() {
-		achievementsButtonUnlocked = false;
+		achievementsButtonUnlocked = true;
 		achievementCounters.boostComboBest = 0;
 		achievementCounters.boostTime = 0;
 		boostTypesUsed.clear();
@@ -1991,6 +2014,8 @@ document.addEventListener('DOMContentLoaded', () => {
 			});
 		});
 		updatePermanentBonusesFromAchievements();
+		hasUnreadAchievement = false;
+		seenReadyAchievementIds.clear();
 		restoreAchievementsButtonState();
 	}
 
@@ -2063,7 +2088,7 @@ document.addEventListener('DOMContentLoaded', () => {
 		skinsBoughtCount = state.skinsBoughtCount;
 
 		resetAchievementsToInitialState();
-		achievementsButtonUnlocked = state.achievementsButtonUnlocked;
+		achievementsButtonUnlocked = true;
 		achievementCounters.boostComboBest = state.achievementCounters.boostComboBest;
 		achievementCounters.boostTime = state.achievementCounters.boostTime;
 		boostTypesUsed.clear();
@@ -2092,6 +2117,8 @@ document.addEventListener('DOMContentLoaded', () => {
 		}
 		updateAchievementsState();
 		updatePermanentBonusesFromAchievements();
+		hasUnreadAchievement = false;
+		seenReadyAchievementIds.clear();
 		restoreAchievementsButtonState();
 	}
 
@@ -2256,6 +2283,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 	// Обновляет числа на экране
 		function updateUI() {
+			updateAchievementsState();
 			if (scoreEl) scoreEl.textContent = String(coins);
 			if (moneyCounterEl) moneyCounterEl.textContent = String(coins);
 			if (clickPowerEl) clickPowerEl.textContent = String(Math.round(getEffectiveClickPower() * 100) / 100);
@@ -2382,7 +2410,7 @@ document.addEventListener('DOMContentLoaded', () => {
 		if (savedTotalCoinsEarned !== null) loadedState.totalCoinsEarned = Math.max(0, toFiniteNumber(savedTotalCoinsEarned, loadedState.coins));
 		if (savedClickUpgradesCount !== null) loadedState.clickUpgradesCount = Math.max(0, Math.floor(toFiniteNumber(savedClickUpgradesCount, initialState.clickUpgradesCount)));
 		if (savedSkinsBoughtCount !== null) loadedState.skinsBoughtCount = Math.max(0, Math.floor(toFiniteNumber(savedSkinsBoughtCount, initialState.skinsBoughtCount)));
-		loadedState.achievementsButtonUnlocked = savedAchievementsButtonUnlocked === '1';
+		loadedState.achievementsButtonUnlocked = true;
 
 		if (savedAchievementCounters) {
 			try {
