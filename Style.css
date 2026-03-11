@@ -121,6 +121,7 @@ button:focus-visible,
 }
 
 .menu-card{
+	position:relative;
 	background:var(--card);
 	/* backdrop-filter: blur(10px); */
 	/* -webkit-backdrop-filter: blur(10px); */
@@ -668,10 +669,26 @@ button:focus-visible,
 	font-size:0.9em;
 }
 
-.about-go p:last-child{
-	color:#ffcc00;
-	font-weight:bold;
-	margin-bottom:15px;
+.about-go-btn{
+	padding:10px 18px;
+	border:none;
+	border-radius:12px;
+	background: linear-gradient(90deg, var(--accent), var(--accent2));
+	color:#1b1b1b;
+	font-weight:900;
+	letter-spacing:0.4px;
+	cursor:pointer;
+	touch-action:manipulation;
+	transition: transform .2s ease, box-shadow .2s ease;
+}
+
+.about-go-btn:hover{
+	transform:scale(1.03);
+	box-shadow:0 10px 24px rgba(70,78,92,0.34);
+}
+
+.about-go-btn:active{
+	transform:scale(0.98);
 }
 
 .close-btn{
@@ -684,6 +701,8 @@ button:focus-visible,
 	color: rgba(255,255,255,0.5);
 	cursor:pointer;
 	transition: color 0.2s ease;
+	z-index:5;
+	touch-action:manipulation;
 }
 .close-btn:hover{ color: var(--accent2); }
 
