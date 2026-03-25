@@ -404,9 +404,9 @@ document.addEventListener('DOMContentLoaded', () => {
 		{ id: 'eternal_generator', category: 'permanent', type: 'passive', rarity: 'epic', icon: '🔋', name: 'Вечный генератор', description: '+0.5 дохода роботов', desc: '+0.5 дохода роботов', basePrice: 5000, currentPrice: 5000, priceMultiplier: 1.35, baseEffect: 0.5, currentEffect: 0.5, effectStep: 0.5, effectMultiplier: null, purchases: 0, duration: 0, active: false, expiresAt: null },
 		{ id: 'evolution_module', category: 'permanent', type: 'passive', rarity: 'epic', icon: '🧬', name: 'Модуль эволюции', description: '+5% к силе клика за уровень', desc: '+5% к силе клика за уровень', basePrice: 12000, currentPrice: 12000, priceMultiplier: 1.5, baseEffect: 0.05, currentEffect: 0.05, effectStep: 0, effectMultiplier: null, purchases: 0, duration: 0, active: false, expiresAt: null, oneTime: true, consumed: false },
 		{ id: 'space_amplifier', category: 'permanent', type: 'passive', rarity: 'epic', icon: '🌌', name: 'Космический усилитель', description: '+10% ко всем доходам', desc: '+10% ко всем доходам', basePrice: 25000, currentPrice: 25000, priceMultiplier: 1.5, baseEffect: 0.1, currentEffect: 0.1, effectStep: 0, effectMultiplier: null, purchases: 0, duration: 0, active: false, expiresAt: null, oneTime: true, consumed: false },
-		{ id: 'critical_overload', category: 'super', type: 'temporary', rarity: 'epic', icon: '💥', name: 'Критический перегруз', description: '30% шанс x10 за клик', desc: '30% шанс x10 за клик', basePrice: 1700, currentPrice: 1700, priceMultiplier: 1.3, baseEffect: 10, currentEffect: 10, effectStep: 0, effectMultiplier: 1.5, purchases: 0, duration: 75, active: false, expiresAt: null },
+		{ id: 'critical_overload', category: 'super', type: 'temporary', rarity: 'epic', icon: '💥', name: 'Критический перегруз', description: '30% шанс x10 за клик', desc: '30% шанс x10 за клик', basePrice: 1700, currentPrice: 1700, priceMultiplier: 1.3, baseEffect: 10, currentEffect: 10, effectStep: 0, effectMultiplier: 1.5, baseChance: 0.3, currentChance: 0.3, chanceStep: 0, purchases: 0, duration: 75, active: false, expiresAt: null },
 		{ id: 'time_freeze', category: 'super', type: 'temporary', rarity: 'rare', icon: '❄', name: 'Заморозка времени', description: 'Таймеры x0.5 на 30 секунд', desc: 'Таймеры x0.5 на 30 секунд', basePrice: 1500, currentPrice: 1500, priceMultiplier: 1.25, baseEffect: 0.5, currentEffect: 0.5, effectStep: 0, effectMultiplier: null, purchases: 0, duration: 30, active: false, expiresAt: null },
-		{ id: 'galactic_breakthrough', category: 'super', type: 'temporary', rarity: 'epic', icon: '🌠', name: 'Галактический прорыв', description: 'Клики x10 и роботы x5', desc: 'Клики x10 и роботы x5', basePrice: 8000, currentPrice: 8000, priceMultiplier: 1.4, baseEffect: 10, currentEffect: 10, effectStep: 2, effectMultiplier: null, purchases: 0, duration: 15, active: false, expiresAt: null },
+		{ id: 'galactic_breakthrough', category: 'super', type: 'temporary', rarity: 'epic', icon: '🌠', name: 'Галактический прорыв', description: 'Клики x10 и роботы x5', desc: 'Клики x10 и роботы x5', basePrice: 8000, currentPrice: 8000, priceMultiplier: 1.4, baseEffect: 10, currentEffect: 10, effectStep: 2, effectMultiplier: null, baseRobotEffect: 5, currentRobotEffect: 5, robotEffectStep: 1, purchases: 0, duration: 15, active: false, expiresAt: null },
 		{ id: 'omega_mode', category: 'super', type: 'temporary', rarity: 'epic', icon: '🌀', name: 'Омега режим', description: 'Клики x20 на 20 секунд', desc: 'Клики x20 на 20 секунд', basePrice: 12000, currentPrice: 12000, priceMultiplier: 1.4, baseEffect: 20, currentEffect: 20, effectStep: 5, effectMultiplier: null, purchases: 0, duration: 20, active: false, expiresAt: null },
 	];
 		const boostById = new Map(boosts.map((boost) => [boost.id, boost]));
@@ -1600,23 +1600,40 @@ document.addEventListener('DOMContentLoaded', () => {
 		boostTimeScale = isBoostActive('time_freeze') ? 0.5 : 1;
 	}
 
+	function getBoostCurrentEffect(boostId, fallback = 1) {
+		const boost = boostById.get(boostId);
+		if (!boost) return fallback;
+		return toFiniteNumber(boost.currentEffect, fallback);
+	}
+
+	function getPassiveBoostTotalEffect(boostId, fallback = 0) {
+		const boost = boostById.get(boostId);
+		if (!boost) return fallback;
+		const purchases = getBoostLevel(boostId);
+		const step = toFiniteNumber(boost.effectStep, 0);
+		const base = toFiniteNumber(boost.baseEffect, 0);
+		if (purchases <= 0) return fallback;
+		if (step === 0) return purchases * base;
+		return purchases * base + ((purchases - 1) * purchases * step) / 2;
+	}
+
 	function getEffectiveClickPower() {
 		let power = clickPower;
-		power += getBoostLevel('processor_plus');
+		power += getPassiveBoostTotalEffect('processor_plus', 0);
 		power += permanentClickPowerBonus;
 		if (getBoostLevel('evolution_module') > 0) {
 			power *= 1 + (level * 0.05);
 		}
 		const neonBoost = boostById.get('neon_overdrive');
 		if (isBoostActive('neon_overdrive') && neonBoost) power *= toFiniteNumber(neonBoost.currentEffect, 1);
-		if (isBoostActive('galactic_breakthrough')) power *= 10;
-		if (isBoostActive('omega_mode')) power *= 20;
+		if (isBoostActive('galactic_breakthrough')) power *= getBoostCurrentEffect('galactic_breakthrough', 1);
+		if (isBoostActive('omega_mode')) power *= getBoostCurrentEffect('omega_mode', 1);
 		return power;
 	}
 
 		function getEffectiveCoinsPerClick() {
 			let coinsPerClick = getEffectiveClickPower();
-			if (isBoostActive('golden_storm')) coinsPerClick *= 2.5;
+			if (isBoostActive('golden_storm')) coinsPerClick *= getBoostCurrentEffect('golden_storm', 1);
 			if (getBoostLevel('space_amplifier') > 0) coinsPerClick *= 1.1;
 			coinsPerClick *= permanentCoinBonusMultiplier;
 			return coinsPerClick;
@@ -1624,10 +1641,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
 		function getEffectiveRobotIncome() {
 			let income = robotIncomePerSecond;
-			income += getBoostLevel('eternal_generator') * 0.5;
+			income += getPassiveBoostTotalEffect('eternal_generator', 0);
 			const droneBoost = boostById.get('drone_army');
 			if (isBoostActive('drone_army') && droneBoost) income *= toFiniteNumber(droneBoost.currentEffect, 1);
-			if (isBoostActive('galactic_breakthrough')) income *= 5;
+			const galacticBoost = boostById.get('galactic_breakthrough');
+			if (isBoostActive('galactic_breakthrough') && galacticBoost) income *= toFiniteNumber(galacticBoost.currentRobotEffect, 1);
 			if (getBoostLevel('space_amplifier') > 0) income *= 1.1;
 			income *= permanentRobotBonusMultiplier;
 			return income;
@@ -1654,15 +1672,6 @@ document.addEventListener('DOMContentLoaded', () => {
 		activeBoosts[boost.id] = { startAt, endAt: startAt + durationMs, durationMs };
 		boost.active = true;
 		boost.expiresAt = startAt + durationMs;
-
-		if (boost.id === 'time_freeze') {
-			Object.entries(activeBoosts).forEach(([id, data]) => {
-				if (id === 'time_freeze') return;
-				data.endAt += durationMs;
-				data.durationMs += durationMs;
-				scheduleBoostTimer(id);
-			});
-		}
 
 		scheduleBoostTimer(boost.id);
 		updateBoostDerivedState();
@@ -1719,6 +1728,21 @@ document.addEventListener('DOMContentLoaded', () => {
 		function renderActiveBoosts() {
 			const now = Date.now();
 			const delta = Math.max(0, (now - lastBoostTick) / 1000);
+			const freezeBoost = boostById.get('time_freeze');
+			if (freezeBoost && isBoostActive('time_freeze')) {
+				const slowFactor = Math.max(0.05, toFiniteNumber(freezeBoost.currentEffect, 0.5));
+				const extendMs = Math.max(0, (1 - slowFactor) * delta * 1000);
+				if (extendMs > 0) {
+					Object.entries(activeBoosts).forEach(([id, data]) => {
+						if (id === 'time_freeze') return;
+						if (toFiniteNumber(data.endAt, 0) <= now) return;
+						data.endAt += extendMs;
+						const boost = boostById.get(id);
+						if (boost && boost.expiresAt) boost.expiresAt = toInt(boost.expiresAt + extendMs);
+						scheduleBoostTimer(id);
+					});
+				}
+			}
 			lastBoostTick = now;
 			if (Object.keys(activeBoosts).length > 0) {
 				achievementCounters.boostTime += delta;
@@ -1789,8 +1813,12 @@ document.addEventListener('DOMContentLoaded', () => {
 	}
 
 	function getOfflineBonusReward() {
-		const base = Math.max(0, getEffectiveRobotIncome());
-		return toInt(base * 30);
+		const now = Date.now();
+		const offlineBoost = boostById.get('offline_accelerator');
+		const realOfflineIncome = calculateOfflineReward(lastSeenAt, now, Math.max(0, getEffectiveRobotIncome()), offlineBoost);
+		const offlineBonusBoost = boostById.get('offline_bonus');
+		const bonusRatio = offlineBonusBoost ? toFiniteNumber(offlineBonusBoost.currentEffect, 0.5) : 0.5;
+		return toInt(realOfflineIncome * bonusRatio);
 	}
 
 	function calculateOfflineReward(lastSeen, now, incomePerSecond, boost) {
@@ -1838,11 +1866,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
 	function recalculateBoostEffect(boost) {
 		if (!boost || boost.oneTime) return;
-		if (boost.effectMultiplier) {
-			boost.currentEffect = Math.round((toFiniteNumber(boost.currentEffect, 0) * toFiniteNumber(boost.effectMultiplier, 1)) * 100) / 100;
+		if (boost.type === 'passive') {
+			boost.currentEffect = Math.round(getPassiveBoostTotalEffect(boost.id, 0) * 100) / 100;
 			return;
 		}
-		boost.currentEffect = Math.round((toFiniteNumber(boost.currentEffect, 0) + toFiniteNumber(boost.effectStep, 0)) * 100) / 100;
+		if (boost.effectMultiplier) {
+			boost.currentEffect = Math.round((toFiniteNumber(boost.currentEffect, 0) * toFiniteNumber(boost.effectMultiplier, 1)) * 100) / 100;
+		} else {
+			boost.currentEffect = Math.round((toFiniteNumber(boost.currentEffect, 0) + toFiniteNumber(boost.effectStep, 0)) * 100) / 100;
+		}
+		if (boost.id === 'galactic_breakthrough') {
+			boost.currentRobotEffect = Math.round((toFiniteNumber(boost.currentRobotEffect, boost.baseRobotEffect || 1) + toFiniteNumber(boost.robotEffectStep, 0)) * 100) / 100;
+		}
+		if (boost.id === 'critical_overload') {
+			boost.currentChance = Math.min(1, Math.max(0, Math.round((toFiniteNumber(boost.currentChance, boost.baseChance || 0.3) + toFiniteNumber(boost.chanceStep, 0)) * 1000) / 1000));
+		}
 	}
 
 	function canBuyBoost(boost) {
@@ -2118,6 +2156,15 @@ document.addEventListener('DOMContentLoaded', () => {
 			boost.purchases = Math.max(0, toInt(saved?.purchases ?? legacyLevel));
 			boost.currentPrice = Math.max(1, toInt(saved?.currentPrice ?? (boost.basePrice * Math.pow(boost.priceMultiplier, boost.purchases))));
 			boost.currentEffect = toFiniteNumber(saved?.currentEffect, boost.baseEffect + (boost.effectStep || 0) * boost.purchases);
+			if (boost.type === 'passive') {
+				boost.currentEffect = Math.round(getPassiveBoostTotalEffect(boost.id, 0) * 100) / 100;
+			}
+			if (boost.id === 'galactic_breakthrough') {
+				boost.currentRobotEffect = toFiniteNumber(saved?.currentRobotEffect, boost.baseRobotEffect + (boost.robotEffectStep || 0) * boost.purchases);
+			}
+			if (boost.id === 'critical_overload') {
+				boost.currentChance = toFiniteNumber(saved?.currentChance, boost.baseChance);
+			}
 			boost.active = Boolean(saved?.active);
 			boost.expiresAt = saved?.expiresAt ? toInt(saved.expiresAt) : null;
 			boost.consumed = Boolean(saved?.consumed);
@@ -2351,6 +2398,8 @@ document.addEventListener('DOMContentLoaded', () => {
 				id: boost.id,
 				currentPrice: toInt(boost.currentPrice),
 				currentEffect: toFiniteNumber(boost.currentEffect, boost.baseEffect),
+				currentRobotEffect: toFiniteNumber(boost.currentRobotEffect, boost.baseRobotEffect),
+				currentChance: toFiniteNumber(boost.currentChance, boost.baseChance),
 				purchases: toInt(boost.purchases),
 				active: Boolean(boost.active),
 				expiresAt: boost.expiresAt ? toInt(boost.expiresAt) : null,
@@ -2534,9 +2583,12 @@ document.addEventListener('DOMContentLoaded', () => {
 				gainedCoins *= 25;
 				pendingSuperClick = false;
 			}
-			if (critBoostActive && Math.random() < 0.3) {
-				gainedCoins *= 10;
-				showBoostActivation(currentLanguage === 'en' ? 'CRIT x10' : 'КРИТ x10');
+			const criticalBoost = boostById.get('critical_overload');
+			const critChance = criticalBoost ? toFiniteNumber(criticalBoost.currentChance, criticalBoost.baseChance || 0.3) : 0.3;
+			const critPower = criticalBoost ? toFiniteNumber(criticalBoost.currentEffect, 10) : 10;
+			if (critBoostActive && Math.random() < critChance) {
+				gainedCoins *= critPower;
+				showBoostActivation(currentLanguage === 'en' ? `CRIT x${toInt(critPower)}` : `КРИТ x${toInt(critPower)}`);
 			}
 				gainedCoins = toInt(gainedCoins);
 				coins = toInt(coins + gainedCoins);
