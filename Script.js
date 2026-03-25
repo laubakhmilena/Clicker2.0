@@ -409,6 +409,7 @@ document.addEventListener('DOMContentLoaded', () => {
 		const ACHIEVEMENTS_STATE_KEY = 'achievementsState';
 		const ACHIEVEMENTS_BUTTON_UNLOCKED_KEY = 'achievementsButtonUnlocked';
 		const ACHIEVEMENTS_COUNTERS_KEY = 'achievementsCounters';
+		const ACHIEVEMENTS_SEEN_UNLOCKED_KEY = 'achievementsSeenUnlocked';
 		const TOTAL_CLICKS_KEY = 'totalClicks';
 		const TOTAL_COINS_EARNED_KEY = 'totalCoinsEarned';
 		const CLICK_UPGRADES_COUNT_KEY = 'clickUpgradesCount';
@@ -674,6 +675,7 @@ document.addEventListener('DOMContentLoaded', () => {
 		let permanentCoinBonusMultiplier = 1;
 		let permanentRobotBonusMultiplier = 1;
 		let permanentClickPowerBonus = 0;
+		const seenUnlockedAchievementIds = new Set();
 		const boostTypesUsed = new Set();
 		const achievementCounters = { boostComboBest: 0, boostTime: 0 };
 	let lastBoostTick = Date.now();
@@ -706,6 +708,7 @@ document.addEventListener('DOMContentLoaded', () => {
 		SKINS_BOUGHT_COUNT_KEY,
 		ACHIEVEMENTS_BUTTON_UNLOCKED_KEY,
 		ACHIEVEMENTS_COUNTERS_KEY,
+		ACHIEVEMENTS_SEEN_UNLOCKED_KEY,
 		ACHIEVEMENTS_STATE_KEY,
 		THEME_KEY,
 	];
@@ -834,6 +837,23 @@ document.addEventListener('DOMContentLoaded', () => {
 			});
 		}
 
+		function syncAchievementsAttentionEffect() {
+			if (!achievementsBtn) return;
+			const hasNewAchievement = achievements.some((achievement) => (
+				achievement.unlocked &&
+				!achievement.claimed &&
+				!seenUnlockedAchievementIds.has(achievement.id)
+			));
+			achievementsBtn.classList.toggle('has-new-achievement', hasNewAchievement);
+		}
+
+		function markUnlockedAchievementsAsSeen() {
+			achievements.forEach((achievement) => {
+				if (achievement.unlocked) seenUnlockedAchievementIds.add(achievement.id);
+			});
+			syncAchievementsAttentionEffect();
+		}
+
 		function updateAchievementsState() {
 			achievements.forEach((achievement) => {
 				const special = checkSpecialAchievementCompletion(achievement);
@@ -852,6 +872,7 @@ document.addEventListener('DOMContentLoaded', () => {
 				series.completed = series.steps.every((step) => step.claimed || step.unlocked);
 				series.fullyCompleted = series.steps.every((step) => step.claimed);
 			});
+			syncAchievementsAttentionEffect();
 		}
 
 		function applyAchievementReward(achievement) {
@@ -1025,6 +1046,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			if (!achievementsModal) return;
 			closeAllFeatureModals();
 			unlockAchievementsButton();
+			markUnlockedAchievementsAsSeen();
 			renderAchievements();
 			achievementsModal.classList.remove('hidden');
 			updateUI();
@@ -2030,6 +2052,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			achievementsButtonUnlocked: false,
 			achievementCounters: { boostComboBest: 0, boostTime: 0 },
 			boostTypesUsed: [],
+			seenUnlockedAchievementIds: [],
 			brightness: DEFAULT_BRIGHTNESS,
 			volume: DEFAULT_VOLUME,
 			theme: DEFAULT_THEME,
@@ -2050,6 +2073,7 @@ document.addEventListener('DOMContentLoaded', () => {
 		achievementsButtonUnlocked = false;
 		achievementCounters.boostComboBest = 0;
 		achievementCounters.boostTime = 0;
+		seenUnlockedAchievementIds.clear();
 		boostTypesUsed.clear();
 		achievements.forEach((item) => {
 			item.unlocked = false;
@@ -2066,6 +2090,7 @@ document.addEventListener('DOMContentLoaded', () => {
 		});
 		updatePermanentBonusesFromAchievements();
 		restoreAchievementsButtonState();
+		syncAchievementsAttentionEffect();
 	}
 
 	function clearTransientUIState() {
@@ -2141,6 +2166,11 @@ document.addEventListener('DOMContentLoaded', () => {
 		achievementsButtonUnlocked = state.achievementsButtonUnlocked;
 		achievementCounters.boostComboBest = state.achievementCounters.boostComboBest;
 		achievementCounters.boostTime = state.achievementCounters.boostTime;
+		seenUnlockedAchievementIds.clear();
+		state.seenUnlockedAchievementIds.forEach((id) => {
+			const parsedId = Math.floor(toFiniteNumber(id, -1));
+			if (parsedId > 0) seenUnlockedAchievementIds.add(parsedId);
+		});
 		boostTypesUsed.clear();
 		state.boostTypesUsed.forEach((type) => boostTypesUsed.add(String(type)));
 		const savedBoosts = Array.isArray(state.boostsState) ? state.boostsState : [];
@@ -2361,6 +2391,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			if (scoreEl) scoreEl.textContent = String(toInt(coins));
 			if (moneyCounterEl) moneyCounterEl.textContent = String(toInt(coins));
 			if (clickPowerEl) clickPowerEl.textContent = String(toInt(getEffectiveClickPower()));
+			updateAchievementsState();
 			updateLevelUI();
 			updateClickUpgradeUI();
 			updateRobotUpgradeUI();
@@ -2408,6 +2439,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			setStorageItem(SKINS_BOUGHT_COUNT_KEY, Math.max(0, Math.floor(toFiniteNumber(skinsBoughtCount, 0))));
 			setStorageItem(ACHIEVEMENTS_BUTTON_UNLOCKED_KEY, achievementsButtonUnlocked ? '1' : '0');
 			setStorageItem(ACHIEVEMENTS_COUNTERS_KEY, JSON.stringify({ ...achievementCounters, boostTypesUsed: Array.from(boostTypesUsed) }));
+			setStorageItem(ACHIEVEMENTS_SEEN_UNLOCKED_KEY, JSON.stringify(Array.from(seenUnlockedAchievementIds)));
 			setStorageItem(ACHIEVEMENTS_STATE_KEY, JSON.stringify({
 				version: ACHIEVEMENT_SERIES_SCHEMA_VERSION,
 				series: achievementSeries.map((series) => ({
@@ -2450,6 +2482,7 @@ document.addEventListener('DOMContentLoaded', () => {
 		const savedSkinsBoughtCount = getStorageItem(SKINS_BOUGHT_COUNT_KEY);
 		const savedAchievementsButtonUnlocked = getStorageItem(ACHIEVEMENTS_BUTTON_UNLOCKED_KEY);
 		const savedAchievementCounters = getStorageItem(ACHIEVEMENTS_COUNTERS_KEY);
+		const savedSeenUnlockedAchievements = getStorageItem(ACHIEVEMENTS_SEEN_UNLOCKED_KEY);
 		const savedAchievementsState = getStorageItem(ACHIEVEMENTS_STATE_KEY);
 
 		if (savedCoins !== null) loadedState.coins = Math.max(0, toInt(savedCoins));
@@ -2515,6 +2548,19 @@ document.addEventListener('DOMContentLoaded', () => {
 			} catch {
 				loadedState.achievementCounters = { ...initialState.achievementCounters };
 				loadedState.boostTypesUsed = [];
+			}
+		}
+
+		if (savedSeenUnlockedAchievements) {
+			try {
+				const parsedSeen = JSON.parse(savedSeenUnlockedAchievements);
+				if (Array.isArray(parsedSeen)) {
+					loadedState.seenUnlockedAchievementIds = parsedSeen
+						.map((id) => Math.floor(toFiniteNumber(id, -1)))
+						.filter((id) => id > 0);
+				}
+			} catch {
+				loadedState.seenUnlockedAchievementIds = [];
 			}
 		}
 
