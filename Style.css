@@ -2226,11 +2226,23 @@ body.light_theme .primary-btn{
 .menu-extra-login{
 	width:100%;
 	display:flex;
+	flex-direction:column;
+	gap:8px;
 	justify-content:center;
+	align-items:center;
 }
 
 #yandex-login-btn{
-	width:48%;
+	width:min(100%, 340px);
+}
+
+.menu-login-hint{
+	margin:0;
+	max-width:340px;
+	text-align:center;
+	font-size:12px;
+	line-height:1.35;
+	color:rgba(220, 229, 244, 0.88);
 }
 
 .ad-safe-zone{
@@ -2260,4 +2272,5 @@ body.light_theme .primary-btn{
 	.stat-badge__value{ font-size:clamp(11px, 3vw, 13px); }
 	.level-row{ margin-bottom:6px; }
 	.secondary-btn{ font-size:13px; }
+	.menu-login-hint{ font-size:11px; }
 }

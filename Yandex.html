@@ -97,6 +97,7 @@
 				<button id="settings-btn" class="menu-btn secondary-btn" data-lang="settings-btn" for="settings-modal">Настройки</button>
 				<div class="menu-extra-login">
 					<button id="yandex-login-btn" class="menu-btn secondary-btn" type="button">Войти с Яндекс ID</button>
+					<p id="yandex-login-hint" class="menu-login-hint">Войдите, чтобы сохранять прогресс в облаке и продолжать игру на других устройствах.</p>
 				</div>
 			</nav>
 		</div>
@@ -260,8 +261,8 @@
 			</div>
 		</div>
 	</section>
-	<script async src="/sdk.js" onload="initSDK()"></script>
 	<script src="Script.js"></script>
+	<script async src="/sdk.js" onload="window.initSDK && window.initSDK()"></script>
 </body>
 
 </html>

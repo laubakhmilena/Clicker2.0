@@ -7,6 +7,7 @@ let gameLoadedNotified = false;
 let gameplayStarted = false;
 let isAdShowing = false;
 let isGamePaused = false;
+let sdkInitPromise = null;
 let appHooks = {
 	onSDKReady: () => {},
 	onExternalPause: () => {},
@@ -30,6 +31,7 @@ function safeCall(fnName, ...args) {
 
 function markGameplayStart() {
 	if (!sdkReady || !ysdk?.features?.GameplayAPI || gameplayStarted) return;
+	if (typeof ysdk.features.GameplayAPI.start !== 'function') return;
 	try {
 		ysdk.features.GameplayAPI.start();
 		gameplayStarted = true;
@@ -40,6 +42,7 @@ function markGameplayStart() {
 
 function markGameplayStop() {
 	if (!sdkReady || !ysdk?.features?.GameplayAPI || !gameplayStarted) return;
+	if (typeof ysdk.features.GameplayAPI.stop !== 'function') return;
 	try {
 		ysdk.features.GameplayAPI.stop();
 		gameplayStarted = false;
@@ -60,12 +63,14 @@ function notifyLoadingReady() {
 
 async function initSDK() {
 	if (sdkReady) return ysdk;
+	if (sdkInitPromise) return sdkInitPromise;
 	if (!window.YaGames || typeof window.YaGames.init !== 'function') {
 		console.info('[Robo Clicker] YaGames SDK not available, using local mode');
 		return null;
 	}
 
-	try {
+	sdkInitPromise = (async () => {
+		try {
 		ysdk = await window.YaGames.init();
 		sdkReady = true;
 		const platformLang = ysdk?.environment?.i18n?.lang || 'ru';
@@ -95,10 +100,14 @@ async function initSDK() {
 		safeCall('onSDKReady', ysdk);
 		notifyLoadingReady();
 		return ysdk;
-	} catch (error) {
+		} catch (error) {
 		console.warn('[Robo Clicker] SDK init failed, using local mode', error);
 		return null;
-	}
+		} finally {
+			sdkInitPromise = null;
+		}
+	})();
+	return sdkInitPromise;
 }
 
 window.initSDK = initSDK;
@@ -115,6 +124,7 @@ document.addEventListener('DOMContentLoaded', () => {
 	const startBtn = document.getElementById('start-btn'); // Кнопки начать игру
 	const backBtn = document.getElementById('back-menu-btn'); // В меню
 	const yandexLoginBtn = document.getElementById('yandex-login-btn');
+	const yandexLoginHint = document.getElementById('yandex-login-hint');
 	const rewardFreeBoostBtn = document.getElementById('reward-free-boost-btn');
 	const rewardRandomSkinBtn = document.getElementById('reward-random-skin-btn');
 
@@ -157,7 +167,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			'robot-info-default': '+1/сек • 0 куплено', 'skins-btn': 'Скины', 'boosts-btn': 'Бусты', 'achievements-btn': 'Достижения',
 			'stats-btn': 'Статистика', 'skins-title': 'СКИНЫ', 'boosts-title': 'БУСТЫ', 'active-boosts': 'Активные бусты',
 			'achievements-title': 'ДОСТИЖЕНИЯ', 'stats-title': 'СТАТИСТИКА', 'theme-dark': 'Темная', 'theme-light': 'Светлая', 'theme-auto': 'Авто',
-			'yandex-login': 'Войти с Яндекс ID', 'reward-free-boost': 'Посмотреть рекламу и получить бесплатный буст', 'reward-random-skin': 'Посмотреть рекламу и открыть случайный скин',
+			'yandex-login': 'Войти с Яндекс ID', 'yandex-login-hint': 'Войдите, чтобы сохранять прогресс в облаке и продолжать игру на других устройствах.', 'reward-free-boost': 'Посмотреть рекламу и получить бесплатный буст', 'reward-random-skin': 'Посмотреть рекламу и открыть случайный скин',
 		},
 		en: {
 			gamename: 'Robo Clicker',
@@ -176,7 +186,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			'robot-info-default': '+1/sec • 0 bought', 'skins-btn': 'Skins', 'boosts-btn': 'Boosts', 'achievements-btn': 'Achievements',
 			'stats-btn': 'Statistics', 'skins-title': 'SKINS', 'boosts-title': 'BOOSTS', 'active-boosts': 'Active boosts',
 			'achievements-title': 'ACHIEVEMENTS', 'stats-title': 'STATISTICS', 'theme-dark': 'Dark', 'theme-light': 'Light', 'theme-auto': 'Auto',
-			'yandex-login': 'Sign in with Yandex ID', 'reward-free-boost': 'Watch ad and get a free boost', 'reward-random-skin': 'Watch ad and unlock a random skin',
+			'yandex-login': 'Sign in with Yandex ID', 'yandex-login-hint': 'Sign in to save progress in the cloud and continue on other devices.', 'reward-free-boost': 'Watch ad and get a free boost', 'reward-random-skin': 'Watch ad and unlock a random skin',
 		}
 	};
 
@@ -313,6 +323,7 @@ document.addEventListener('DOMContentLoaded', () => {
 		});
 
 		if (yandexLoginBtn) yandexLoginBtn.textContent = t('yandex-login');
+		if (yandexLoginHint) yandexLoginHint.textContent = t('yandex-login-hint');
 		if (rewardFreeBoostBtn) rewardFreeBoostBtn.textContent = t('reward-free-boost');
 		if (rewardRandomSkinBtn) rewardRandomSkinBtn.textContent = t('reward-random-skin');
 		if (languageSelect) languageSelect.value = currentLanguage;
@@ -1425,6 +1436,12 @@ document.addEventListener('DOMContentLoaded', () => {
 	}
 
 	function showInterstitialAd(options = {}) {
+		const minClickToAdDelayMs = 450;
+		const sinceRobotClickMs = Date.now() - lastRobotClickAt;
+		if (sinceRobotClickMs < minClickToAdDelayMs) {
+			options.onClose?.(false);
+			return;
+		}
 		if (!sdkReady || !ysdk?.adv?.showFullscreenAdv || isAdShowing) {
 			options.onClose?.();
 			return;
@@ -1504,6 +1521,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 	const tvModeEnabled = /smart-tv|smarttv|hbbtv|tizen|web0s|webos|googletv|appletv|android tv/i.test(navigator.userAgent);
 	let tvFocusIndex = 0;
+	let lastRobotClickAt = 0;
 
 	function getTvFocusable() {
 		const root = document.querySelector('.menu:not(.hidden), #game, .menu:not(.hidden) .menu-card');
@@ -3010,6 +3028,7 @@ document.addEventListener('DOMContentLoaded', () => {
 	if (clickObject) {
 		clickObject.addEventListener('pointerdown', (e) => {
 			e.preventDefault();
+			lastRobotClickAt = Date.now();
 			playSound('click');
 			let gainedCoins = getEffectiveCoinsPerClick();
 			if (pendingSuperClick) {
