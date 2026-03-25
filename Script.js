@@ -1,3 +1,108 @@
+// Yandex Games SDK state
+let ysdk = null;
+let sdkReady = false;
+let player = null;
+let isAuthorized = false;
+let gameLoadedNotified = false;
+let gameplayStarted = false;
+let isAdShowing = false;
+let isGamePaused = false;
+let appHooks = {
+	onSDKReady: () => {},
+	onExternalPause: () => {},
+	onExternalResume: () => {},
+	onPlatformLanguage: () => {},
+	onAuthStateChanged: () => {},
+};
+
+function setAppHooks(nextHooks = {}) {
+	appHooks = { ...appHooks, ...nextHooks };
+}
+
+function safeCall(fnName, ...args) {
+	try {
+		const fn = appHooks[fnName];
+		if (typeof fn === 'function') fn(...args);
+	} catch (error) {
+		console.warn(`[Robo Clicker] Hook ${fnName} failed`, error);
+	}
+}
+
+function markGameplayStart() {
+	if (!sdkReady || !ysdk?.features?.GameplayAPI || gameplayStarted) return;
+	try {
+		ysdk.features.GameplayAPI.start();
+		gameplayStarted = true;
+	} catch (error) {
+		console.warn('[Robo Clicker] GameplayAPI.start failed', error);
+	}
+}
+
+function markGameplayStop() {
+	if (!sdkReady || !ysdk?.features?.GameplayAPI || !gameplayStarted) return;
+	try {
+		ysdk.features.GameplayAPI.stop();
+		gameplayStarted = false;
+	} catch (error) {
+		console.warn('[Robo Clicker] GameplayAPI.stop failed', error);
+	}
+}
+
+function notifyLoadingReady() {
+	if (gameLoadedNotified || !sdkReady) return;
+	try {
+		ysdk?.features?.LoadingAPI?.ready?.();
+		gameLoadedNotified = true;
+	} catch (error) {
+		console.warn('[Robo Clicker] LoadingAPI.ready failed', error);
+	}
+}
+
+async function initSDK() {
+	if (sdkReady) return ysdk;
+	if (!window.YaGames || typeof window.YaGames.init !== 'function') {
+		console.info('[Robo Clicker] YaGames SDK not available, using local mode');
+		return null;
+	}
+
+	try {
+		ysdk = await window.YaGames.init();
+		sdkReady = true;
+		const platformLang = ysdk?.environment?.i18n?.lang || 'ru';
+		safeCall('onPlatformLanguage', platformLang);
+
+		try {
+			player = await ysdk.getPlayer({ scopes: false });
+			isAuthorized = Boolean(player && (player.getMode?.() === 'real' || player.getUniqueID?.()));
+		} catch (_error) {
+			player = null;
+			isAuthorized = false;
+		}
+		safeCall('onAuthStateChanged', isAuthorized);
+
+		if (typeof ysdk.on === 'function') {
+			ysdk.on('game_api_pause', () => {
+			isGamePaused = true;
+			markGameplayStop();
+			safeCall('onExternalPause');
+		});
+			ysdk.on('game_api_resume', () => {
+			isGamePaused = false;
+			safeCall('onExternalResume');
+		});
+		}
+
+		safeCall('onSDKReady', ysdk);
+		notifyLoadingReady();
+		return ysdk;
+	} catch (error) {
+		console.warn('[Robo Clicker] SDK init failed, using local mode', error);
+		return null;
+	}
+}
+
+window.initSDK = initSDK;
+
 // 1. DOM
 
 // Ждем загрузки всей страницы
@@ -9,6 +114,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
 	const startBtn = document.getElementById('start-btn'); // Кнопки начать игру
 	const backBtn = document.getElementById('back-menu-btn'); // В меню
+	const yandexLoginBtn = document.getElementById('yandex-login-btn');
+	const rewardFreeBoostBtn = document.getElementById('reward-free-boost-btn');
+	const rewardRandomSkinBtn = document.getElementById('reward-random-skin-btn');
 
 	const aboutBtn = document.getElementById('about-btn'); // Об игре
 	const closeAbout = document.getElementById('close-about');
@@ -49,6 +157,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			'robot-info-default': '+1/сек • 0 куплено', 'skins-btn': 'Скины', 'boosts-btn': 'Бусты', 'achievements-btn': 'Достижения',
 			'stats-btn': 'Статистика', 'skins-title': 'СКИНЫ', 'boosts-title': 'БУСТЫ', 'active-boosts': 'Активные бусты',
 			'achievements-title': 'ДОСТИЖЕНИЯ', 'stats-title': 'СТАТИСТИКА', 'theme-dark': 'Темная', 'theme-light': 'Светлая', 'theme-auto': 'Авто',
+			'yandex-login': 'Войти с Яндекс ID', 'reward-free-boost': 'Посмотреть рекламу и получить бесплатный буст', 'reward-random-skin': 'Посмотреть рекламу и открыть случайный скин',
 		},
 		en: {
 			gamename: 'Robo Clicker',
@@ -67,6 +176,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			'robot-info-default': '+1/sec • 0 bought', 'skins-btn': 'Skins', 'boosts-btn': 'Boosts', 'achievements-btn': 'Achievements',
 			'stats-btn': 'Statistics', 'skins-title': 'SKINS', 'boosts-title': 'BOOSTS', 'active-boosts': 'Active boosts',
 			'achievements-title': 'ACHIEVEMENTS', 'stats-title': 'STATISTICS', 'theme-dark': 'Dark', 'theme-light': 'Light', 'theme-auto': 'Auto',
+			'yandex-login': 'Sign in with Yandex ID', 'reward-free-boost': 'Watch ad and get a free boost', 'reward-random-skin': 'Watch ad and unlock a random skin',
 		}
 	};
 
@@ -202,6 +312,9 @@ document.addEventListener('DOMContentLoaded', () => {
 			el.textContent = pair[currentLanguage] || pair.ru;
 		});
 
+		if (yandexLoginBtn) yandexLoginBtn.textContent = t('yandex-login');
+		if (rewardFreeBoostBtn) rewardFreeBoostBtn.textContent = t('reward-free-boost');
+		if (rewardRandomSkinBtn) rewardRandomSkinBtn.textContent = t('reward-random-skin');
 		if (languageSelect) languageSelect.value = currentLanguage;
 		renderSkinsGrid();
 		renderBoostsUI();
@@ -215,6 +328,7 @@ document.addEventListener('DOMContentLoaded', () => {
 		currentLanguage = normalizeLanguage(language);
 		if (save) setStorageItem(LANGUAGE_KEY, currentLanguage);
 		updateLocalizedUI();
+		if (save) saveGame();
 	}
 
 	// Кликер
@@ -1049,6 +1163,8 @@ document.addEventListener('DOMContentLoaded', () => {
 			markUnlockedAchievementsAsSeen();
 			renderAchievements();
 			achievementsModal.classList.remove('hidden');
+		markGameplayStop();
+		syncBannerForScreen('achievements');
 			updateUI();
 			saveGame();
 		}
@@ -1056,6 +1172,8 @@ document.addEventListener('DOMContentLoaded', () => {
 		function closeAchievementsModal() {
 			if (!achievementsModal) return;
 			achievementsModal.classList.add('hidden');
+		syncBannerForScreen('game');
+		syncGameplayState();
 		}
 
 	// ТЕМА =========================
@@ -1115,6 +1233,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 			applyTheme(selectedTheme);
 			setStorageItem(THEME_KEY, normalizeTheme(selectedTheme));
+			saveGame();
 		});
 	}
 
@@ -1248,10 +1367,226 @@ document.addEventListener('DOMContentLoaded', () => {
 		});
 	}
 
+
+	function isMainGameplayActive() {
+		const gameVisible = menuScreen ? menuScreen.classList.contains('hidden') : true;
+		return gameVisible && !document.querySelector('.menu:not(.hidden):not(#menu)');
+	}
+
+	function syncGameplayState() {
+		if (isGamePaused || isAdShowing || !isMainGameplayActive()) {
+			markGameplayStop();
+			return;
+		}
+		markGameplayStart();
+	}
+
+	function showSafeBanner() {
+		if (!sdkReady || !ysdk?.adv) return;
+		try {
+			const status = ysdk.adv.getBannerAdvStatus?.();
+			if (!status || status.stickyAdvIsShowing || status.canShow) {
+				ysdk.adv.showBannerAdv?.();
+			}
+		} catch (error) {
+			console.warn('[Robo Clicker] showBannerAdv failed', error);
+		}
+	}
+
+	function hideSafeBanner() {
+		if (!sdkReady || !ysdk?.adv?.hideBannerAdv) return;
+		try {
+			ysdk.adv.hideBannerAdv();
+		} catch (error) {
+			console.warn('[Robo Clicker] hideBannerAdv failed', error);
+		}
+	}
+
+	function syncBannerForScreen(screenName) {
+		if (!sdkReady) return;
+		if (['boosts', 'skins', 'achievements', 'stats', 'about', 'settings'].includes(screenName)) {
+			showSafeBanner();
+		} else {
+			hideSafeBanner();
+		}
+	}
+
+	function pauseGameplayContext() {
+		isGamePaused = true;
+		pauseAllSounds();
+		stopRobotIncomeTimer();
+		markGameplayStop();
+	}
+
+	function resumeGameplayContext() {
+		isGamePaused = false;
+		if (robotIncomePerSecond > 0) startRobotIncomeTimer();
+		syncGameplayState();
+	}
+
+	function showInterstitialAd(options = {}) {
+		if (!sdkReady || !ysdk?.adv?.showFullscreenAdv || isAdShowing) {
+			options.onClose?.();
+			return;
+		}
+		isAdShowing = true;
+		pauseGameplayContext();
+		ysdk.adv.showFullscreenAdv({
+			callbacks: {
+				onOpen: () => options.onOpen?.(),
+				onClose: (wasShown) => {
+					isAdShowing = false;
+					resumeGameplayContext();
+					options.onClose?.(wasShown);
+				},
+				onError: (error) => {
+					isAdShowing = false;
+					resumeGameplayContext();
+					options.onError?.(error);
+				},
+				onOffline: () => {
+					isAdShowing = false;
+					resumeGameplayContext();
+					options.onOffline?.();
+				},
+			},
+		});
+	}
+
+	function grantRewardByType(rewardType) {
+		if (rewardType === 'boost_free') {
+			const available = boosts.filter((boost) => canBuyBoost(boost));
+			const targetBoost = available[Math.floor(Math.random() * available.length)] || boosts[0];
+			if (targetBoost) {
+				applyBoostEffect(targetBoost);
+				targetBoost.purchases = toInt(targetBoost.purchases + 1);
+				boostLevels[targetBoost.id] = toInt(targetBoost.purchases);
+				boostUsageCount[targetBoost.id] = toInt(boostUsageCount[targetBoost.id]) + 1;
+			}
+		}
+		if (rewardType === 'skin_random') {
+			const availableSkins = skins.filter((skin) => !ownedSkinIds.has(skin.id));
+			if (availableSkins.length > 0) {
+				const randomSkin = availableSkins[Math.floor(Math.random() * availableSkins.length)];
+				ownedSkinIds.add(randomSkin.id);
+				selectedSkinId = randomSkin.id;
+				skinsBoughtCount += 1;
+			}
+		}
+		if (rewardType === 'coins_bonus') {
+			const rewardCoins = Math.max(100, toInt(getEffectiveCoinsPerClick() * 100));
+			coins = toInt(coins + rewardCoins);
+			totalCoinsEarned = toInt(totalCoinsEarned + rewardCoins);
+		}
+		updateUI();
+		saveGame();
+	}
+
+	function showRewardedAd(rewardType) {
+		if (!sdkReady || !ysdk?.adv?.showRewardedVideo || isAdShowing) return;
+		isAdShowing = true;
+		pauseGameplayContext();
+		ysdk.adv.showRewardedVideo({
+			callbacks: {
+				onOpen: () => {},
+				onRewarded: () => grantRewardByType(rewardType),
+				onClose: () => {
+					isAdShowing = false;
+					resumeGameplayContext();
+				},
+				onError: () => {
+					isAdShowing = false;
+					resumeGameplayContext();
+				},
+			},
+		});
+	}
+
+	const tvModeEnabled = /smart-tv|smarttv|hbbtv|tizen|web0s|webos|googletv|appletv|android tv/i.test(navigator.userAgent);
+	let tvFocusIndex = 0;
+
+	function getTvFocusable() {
+		const root = document.querySelector('.menu:not(.hidden), #game, .menu:not(.hidden) .menu-card');
+		const scope = root || document;
+		return Array.from(scope.querySelectorAll('button:not([disabled]), [role="button"]:not([aria-disabled="true"]), select')).filter((el) => el.offsetParent !== null);
+	}
+
+	function syncTvFocus(direction = 1) {
+		if (!tvModeEnabled) return;
+		const items = getTvFocusable();
+		if (!items.length) return;
+		tvFocusIndex = (tvFocusIndex + direction + items.length) % items.length;
+		items[tvFocusIndex].focus();
+	}
+
+	function initTvControls() {
+		if (!tvModeEnabled) return;
+		document.body.classList.add('tv-mode');
+		window.addEventListener('keydown', (event) => {
+			if (['ArrowUp', 'ArrowLeft'].includes(event.key)) {
+				event.preventDefault();
+				syncTvFocus(-1);
+			}
+			if (['ArrowDown', 'ArrowRight'].includes(event.key)) {
+				event.preventDefault();
+				syncTvFocus(1);
+			}
+			if (event.key === 'Enter') {
+				event.preventDefault();
+				document.activeElement?.click?.();
+			}
+			if (event.key === 'Escape' || event.key === 'Backspace') {
+				event.preventDefault();
+				if (!closeAllFeatureModals()) goToMenu();
+			}
+		});
+	}
+
+	setAppHooks({
+		onPlatformLanguage: (lang) => {
+			if (!lang) return;
+			const normalized = normalizeLanguage(String(lang).slice(0, 2).toLowerCase());
+			applyLanguage(normalized);
+		},
+		onExternalPause: pauseGameplayContext,
+		onExternalResume: resumeGameplayContext,
+		onSDKReady: () => {
+			notifyLoadingReady();
+			syncGameplayState();
+		},
+		onAuthStateChanged: (authorized) => {
+			if (yandexLoginBtn) yandexLoginBtn.disabled = Boolean(authorized);
+		},
+	});
+
+	if (yandexLoginBtn) {
+		yandexLoginBtn.addEventListener('click', async () => {
+			if (!sdkReady || !ysdk?.auth?.openAuthDialog) return;
+			try {
+				await ysdk.auth.openAuthDialog();
+				player = await ysdk.getPlayer({ scopes: false });
+				isAuthorized = Boolean(player && (player.getMode?.() === 'real' || player.getUniqueID?.()));
+				safeCall('onAuthStateChanged', isAuthorized);
+			} catch (error) {
+				console.warn('[Robo Clicker] Auth dialog cancelled', error);
+			}
+		});
+	}
+
+	if (rewardFreeBoostBtn) {
+		rewardFreeBoostBtn.addEventListener('click', () => showRewardedAd('boost_free'));
+	}
+
+	if (rewardRandomSkinBtn) {
+		rewardRandomSkinBtn.addEventListener('click', () => showRewardedAd('skin_random'));
+	}
+
 	// Game Start
 	function startGame() {
 		if (!menuScreen) return;
 		menuScreen.classList.add('hidden');
+		syncBannerForScreen('game');
+		syncGameplayState();
 	}
 
 	// Функция возврата в меню
@@ -1259,6 +1594,8 @@ document.addEventListener('DOMContentLoaded', () => {
 		saveGame();
 		if (!menuScreen) return;
 		menuScreen.classList.remove('hidden');
+		markGameplayStop();
+		syncBannerForScreen('menu');
 	}
 
 	if (startBtn) {
@@ -1267,22 +1604,27 @@ document.addEventListener('DOMContentLoaded', () => {
 			startGame();
 		});
 	}
+	markGameplayStop();
 
 	if (backBtn) {
 		backBtn.addEventListener('click', () => {
-			goToMenu();
+			showInterstitialAd({ onClose: () => goToMenu() });
 		});
 	}
 
 	if (aboutBtn && aboutScreen) {
 		aboutBtn.onclick = () => {
 			aboutScreen.classList.remove('hidden'); // об игре
+		markGameplayStop();
+		syncBannerForScreen('about');
 		};
 	}
 
 	if (closeAbout && aboutScreen) {
 		closeAbout.onclick = () => {
 			aboutScreen.classList.add('hidden'); // крестик об игре
+		syncBannerForScreen('menu');
+		syncGameplayState();
 		};
 	}
 
@@ -1291,18 +1633,23 @@ document.addEventListener('DOMContentLoaded', () => {
 			playSound('start');
 			aboutScreen.classList.add('hidden');
 			goToMenu();
+			syncBannerForScreen('menu');
 		});
 	}
 
 	if (settingsBtn && settingsScreen) {
 		settingsBtn.onclick = () => {
 			settingsScreen.classList.remove('hidden'); // Настройки
+			markGameplayStop();
+			syncBannerForScreen('settings');
 		};
 	}
 
 	if (closeSetting && settingsScreen) {
 		closeSetting.onclick = () => {
 			settingsScreen.classList.add('hidden'); // Закрыть настройки
+			syncBannerForScreen('menu');
+			syncGameplayState();
 		};
 	}
 
@@ -1389,16 +1736,20 @@ document.addEventListener('DOMContentLoaded', () => {
 		closeAllFeatureModals();
 		renderSkinsGrid();
 		skinsModal.classList.remove('hidden');
+		markGameplayStop();
+		syncBannerForScreen('skins');
 	}
 
 	function closeSkinsModal() {
 		if (!skinsModal) return;
 		skinsModal.classList.add('hidden');
+		syncBannerForScreen('game');
+		syncGameplayState();
 	}
 
 	if (skinsBtn) {
 		skinsBtn.addEventListener('click', () => {
-			openSkinsModal();
+			showInterstitialAd({ onClose: () => openSkinsModal() });
 		});
 	}
 
@@ -1478,12 +1829,12 @@ document.addEventListener('DOMContentLoaded', () => {
 		}
 
 	function closeAllFeatureModals() {
-		// Единая точка закрытия игровых модалок: скины/бусты/достижения/статистика.
-		// Это защищает от наложения нескольких окон и сохраняет единый UX.
+		const hadOpenModal = Boolean(document.querySelector('#skins-modal:not(.hidden), #boosts-modal:not(.hidden), #achievements-modal:not(.hidden), #stats-modal:not(.hidden)'));
 		closeSkinsModal();
 		closeBoostsModal();
 		closeAchievementsModal();
 		closeStatsModal();
+		return hadOpenModal;
 	}
 
 	function openStatsModal() {
@@ -1491,11 +1842,15 @@ document.addEventListener('DOMContentLoaded', () => {
 		closeAllFeatureModals();
 		renderStatistics();
 		statsModal.classList.remove('hidden');
+		markGameplayStop();
+		syncBannerForScreen('stats');
 	}
 
 	function closeStatsModal() {
 		if (!statsModal) return;
 		statsModal.classList.add('hidden');
+		syncBannerForScreen('game');
+		syncGameplayState();
 	}
 
 	if (statsBtn) {
@@ -1833,11 +2188,15 @@ document.addEventListener('DOMContentLoaded', () => {
 		closeAllFeatureModals();
 		renderBoostsUI();
 		boostsModal.classList.remove('hidden');
+		markGameplayStop();
+		syncBannerForScreen('boosts');
 	}
 
 	function closeBoostsModal() {
 		if (!boostsModal) return;
 		boostsModal.classList.add('hidden');
+		syncBannerForScreen('game');
+		syncGameplayState();
 	}
 
 	function getOfflineBonusReward() {
@@ -1939,7 +2298,9 @@ document.addEventListener('DOMContentLoaded', () => {
 	}
 
 	if (boostsBtn) {
-		boostsBtn.addEventListener('click', openBoostsModal);
+		boostsBtn.addEventListener('click', () => {
+			showInterstitialAd({ onClose: () => openBoostsModal() });
+		});
 	}
 
 	if (closeBoostsBtn) {
@@ -2383,6 +2744,7 @@ document.addEventListener('DOMContentLoaded', () => {
 		if (robotTimer || robotIncomePerSecond <= 0) return;
 
 		robotTimer = setInterval(() => {
+			if (isGamePaused || isAdShowing) return;
 			const robotIncome = toInt(getEffectiveRobotIncome());
 			coins = toInt(coins + robotIncome);
 			totalCoinsEarned = toInt(totalCoinsEarned + robotIncome);
@@ -2412,6 +2774,24 @@ document.addEventListener('DOMContentLoaded', () => {
 			}
 			renderStatistics();
 		}
+
+
+	let cloudSyncTimer = null;
+	function scheduleCloudSync() {
+		if (!sdkReady || !isAuthorized || !player?.setData) return;
+		if (cloudSyncTimer) clearTimeout(cloudSyncTimer);
+		cloudSyncTimer = setTimeout(() => {
+			const payload = {
+				coins: Math.max(0, toInt(coins)),
+				clickPower: Math.max(1, toFiniteNumber(clickPower, 1)),
+				level: Math.max(0, Math.floor(toFiniteNumber(level, 0))),
+				updatedAt: Date.now(),
+			};
+			player.setData(payload).catch((error) => {
+				console.warn('[Robo Clicker] Cloud sync skipped', error);
+			});
+		}, 800);
+	}
 
 	// Сохраняем данные в localStorage
 	function saveGame() {
@@ -2460,6 +2840,7 @@ document.addEventListener('DOMContentLoaded', () => {
 				})),
 				legacy: achievements.map((item) => ({ id: item.id, unlocked: item.unlocked, claimed: item.claimed })),
 			}));
+			scheduleCloudSync();
 		}
 
 	// Загружаем данные из localStorage
@@ -2686,16 +3067,25 @@ document.addEventListener('DOMContentLoaded', () => {
 		themeValue: getStorageItem(THEME_KEY) || DEFAULT_THEME,
 		save: false,
 	});
+	notifyLoadingReady();
+	initTvControls();
+	initSDK();
 
 	// Сохранение при перезагрузке/закрытии и при уходе со страницы
 	window.addEventListener('beforeunload', saveGame);
 	document.addEventListener('visibilitychange', () => {
 		if (document.visibilityState === 'hidden') {
 			pauseAllSounds();
+			markGameplayStop();
 			saveGame();
+		} else {
+			syncGameplayState();
 		}
 	});
-	window.addEventListener('blur', pauseAllSounds);
+	window.addEventListener('blur', () => {
+		pauseAllSounds();
+		markGameplayStop();
+	});
 
 	// "вылет" числа в точке клика (рисуем внутри #game)
 	function createFloatingNumber(clientX, clientY, value) {

@@ -89,12 +89,15 @@
 				<h1 class="menu-title main-title" data-lang="gamename">Robo Clicker</h1>
 				<p class="menu-sub" data-lang="welcome">Кликай, улучшай и собирай скины!</p>
 			</header>
-			<main class="menu-content">
-				<button id="start-btn" class="menu-btn primary-btn" data-lang="start-btn">Начать игру</button>
-			</main>
+				<main class="menu-content">
+					<button id="start-btn" class="menu-btn primary-btn" data-lang="start-btn">Начать игру</button>
+				</main>
 			<nav class="menu-extra">
 				<button id="about-btn" class="menu-btn secondary-btn" data-lang="about-btn" for="about-modal">Об игре</button>
 				<button id="settings-btn" class="menu-btn secondary-btn" data-lang="settings-btn" for="settings-modal">Настройки</button>
+				<div class="menu-extra-login">
+					<button id="yandex-login-btn" class="menu-btn secondary-btn" type="button">Войти с Яндекс ID</button>
+				</div>
 			</nav>
 		</div>
 	</section>
@@ -145,6 +148,9 @@
 				<main class="skins-content">
 					<div id="skins-grid" class="skins-grid" aria-label="Список скинов"></div>
 				</main>
+				<div class="ad-safe-zone">
+					<button id="reward-random-skin-btn" class="menu-btn secondary-btn" type="button">Посмотреть рекламу и открыть случайный скин</button>
+				</div>
 				<button id="close-skins" class="close-btn" type="button" aria-label="Закрыть окно скинов">✕</button>
 			</div>
 		</div>
@@ -163,6 +169,9 @@
 				<main class="boosts-grid">
 					<div id="boosts-grid" aria-label="Список бустов"></div>
 				</main>
+				<div class="ad-safe-zone">
+					<button id="reward-free-boost-btn" class="menu-btn secondary-btn" type="button">Посмотреть рекламу и получить бесплатный буст</button>
+				</div>
 				<button id="close-boosts" class="close-btn" type="button" aria-label="Закрыть окно бустов">✕</button>
 			</div>
 		</div>
@@ -251,6 +260,7 @@
 			</div>
 		</div>
 	</section>
+	<script async src="/sdk.js" onload="initSDK()"></script>
 	<script src="Script.js"></script>
 </body>
 
