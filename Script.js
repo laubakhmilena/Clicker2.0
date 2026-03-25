@@ -1700,13 +1700,13 @@ document.addEventListener('DOMContentLoaded', () => {
 		refreshBoostState(boost);
 		const price = getBoostPrice(boost);
 		if (boost.oneTime && (boost.consumed || getBoostLevel(boost.id) > 0)) {
-			return { disabled: true, text: currentLanguage === 'en' ? 'Consumed' : 'Использован', meta: currentLanguage === 'en' ? 'One-time boost' : 'Одноразовый буст' };
+			return { disabled: true, text: currentLanguage === 'en' ? 'Consumed' : 'Использован' };
 		}
 		if (isBoostActive(boost.id)) {
-			return { disabled: true, text: currentLanguage === 'en' ? 'Already active' : 'Уже активен', meta: currentLanguage === 'en' ? 'Active (timer)' : 'Активен (таймер)' };
+			return { disabled: true, text: currentLanguage === 'en' ? 'Already active' : 'Уже активен' };
 		}
-		if (coins < price) return { disabled: true, text: currentLanguage === 'en' ? 'Not enough coins' : 'Недостаточно монет', meta: currentLanguage === 'en' ? `Price: ${price} 💰` : `Цена: ${price} 💰` };
-		return { disabled: false, text: currentLanguage === 'en' ? `Buy for ${price} 💰` : `Купить за ${price} 💰`, meta: currentLanguage === 'en' ? `Purchased: ${toInt(boost.purchases)}` : `Покупок: ${toInt(boost.purchases)}` };
+		if (coins < price) return { disabled: true, text: currentLanguage === 'en' ? 'Not enough coins' : 'Недостаточно монет' };
+		return { disabled: false, text: currentLanguage === 'en' ? `Buy for ${price} 💰` : `Купить за ${price} 💰` };
 	}
 
 	function renderBoostTabs() {
@@ -1751,26 +1751,19 @@ document.addEventListener('DOMContentLoaded', () => {
 	function renderBoosts() {
 		if (!boostsGrid) return;
 		const filtered = boosts.filter((boost) => boost.category === currentBoostCategory);
-		boostsGrid.innerHTML = filtered.map((boost) => {
-			refreshBoostState(boost);
-			const action = getBoostActionState(boost);
-			const rarityClass = `boost-card boost-card--${boost.rarity === 'epic' ? 'epic' : boost.rarity === 'rare' ? 'rare' : 'common'}`;
-			const nextEffect = boost.effectMultiplier
-				? Math.round((toFiniteNumber(boost.currentEffect, 0) * toFiniteNumber(boost.effectMultiplier, 1)) * 100) / 100
-				: Math.round((toFiniteNumber(boost.currentEffect, 0) + toFiniteNumber(boost.effectStep, 0)) * 100) / 100;
-			const remainingSeconds = boost.expiresAt ? Math.max(0, Math.ceil((boost.expiresAt - Date.now()) / 1000)) : 0;
+			boostsGrid.innerHTML = filtered.map((boost) => {
+				refreshBoostState(boost);
+				const action = getBoostActionState(boost);
+				const rarityClass = `boost-card boost-card--${boost.rarity === 'epic' ? 'epic' : boost.rarity === 'rare' ? 'rare' : 'common'}`;
+				const remainingSeconds = boost.expiresAt ? Math.max(0, Math.ceil((boost.expiresAt - Date.now()) / 1000)) : 0;
 			return `
 				<article class="${rarityClass} ${isBoostActive(boost.id) ? 'boost-card--active' : ''}">
 					<div class="boost-card__icon">${boost.icon}</div>
 					<h3 class="boost-card__name">${getBoostText(boost, 'name')}</h3>
 					<p class="boost-card__desc">${getBoostText(boost, 'desc')}</p>
-					<div class="boost-card__price">${action.meta}</div>
-					<div class="boost-card__meta">${currentLanguage === 'en' ? `Effect: ${boost.currentEffect}` : `Эффект: ${boost.currentEffect}`}</div>
-					<div class="boost-card__meta">${currentLanguage === 'en' ? `Next: ${nextEffect}` : `Следующий: ${nextEffect}`}</div>
 					<div class="boost-card__meta">${currentLanguage === 'en' ? `Price: ${toInt(boost.currentPrice)} 💰` : `Цена: ${toInt(boost.currentPrice)} 💰`}</div>
-					<div class="boost-card__meta">${currentLanguage === 'en' ? `Purchases: ${toInt(boost.purchases)}` : `Покупок: ${toInt(boost.purchases)}`}</div>
 					${boost.duration > 0 ? `<div class="boost-card__meta">${currentLanguage === 'en' ? `Duration: ${boost.duration}s` : `Длительность: ${boost.duration}с`}</div>` : ''}
-					<div class="boost-card__meta boost-card__timer">${isBoostActive(boost.id) ? (currentLanguage === 'en' ? `Timer: ${remainingSeconds}s` : `Таймер: ${remainingSeconds}с`) : (currentLanguage === 'en' ? 'Status: inactive' : 'Статус: не активен')}</div>
+					${isBoostActive(boost.id) ? `<div class="boost-card__meta boost-card__timer">${currentLanguage === 'en' ? `Timer: ${remainingSeconds}s` : `Таймер: ${remainingSeconds}с`}</div>` : ''}
 					<button class="boost-card__action" type="button" data-boost-id="${boost.id}" ${action.disabled ? 'disabled' : ''}>${action.text}</button>
 				</article>
 			`;
