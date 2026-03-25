@@ -1567,8 +1567,9 @@ body.light_theme .primary-btn{
 
 .boosts-tabs{
 	display:grid;
-	grid-template-columns:repeat(4, minmax(0,1fr));
+	grid-template-columns:repeat(3, minmax(0,1fr));
 	gap:8px;
+	width:100%;
 }
 
 .boosts-tab{
@@ -1579,6 +1580,8 @@ body.light_theme .primary-btn{
 	font-size:12px;
 	font-weight:800;
 	padding:9px 6px;
+	width:100%;
+	text-align:center;
 	cursor:pointer;
 	transition:transform .15s ease, box-shadow .2s ease, border-color .2s ease;
 }
@@ -1744,7 +1747,7 @@ body.light_theme .primary-btn{
 }
 
 @media (max-width: 700px){
-	.boosts-tabs{ grid-template-columns:repeat(2, minmax(0,1fr)); }
+	.boosts-tabs{ grid-template-columns:repeat(3, minmax(0,1fr)); }
 	#boosts-grid{ grid-template-columns:1fr; }
 }
 /* =========================================================
