@@ -1612,6 +1612,17 @@ document.addEventListener('DOMContentLoaded', () => {
 		}
 	}
 
+	function pauseAllSounds() {
+		Object.values(sounds).forEach((audio) => {
+			try {
+				audio.pause();
+				audio.currentTime = 0;
+			} catch {
+				// Безопасная остановка для браузеров, где аудио может быть не готово.
+			}
+		});
+	}
+
 	function updateBoostDerivedState() {
 		critBoostActive = isBoostActive('critical_overload');
 		boostTimeScale = isBoostActive('time_freeze') ? 0.5 : 1;
@@ -2679,8 +2690,12 @@ document.addEventListener('DOMContentLoaded', () => {
 	// Сохранение при перезагрузке/закрытии и при уходе со страницы
 	window.addEventListener('beforeunload', saveGame);
 	document.addEventListener('visibilitychange', () => {
-		if (document.visibilityState === 'hidden') saveGame();
+		if (document.visibilityState === 'hidden') {
+			pauseAllSounds();
+			saveGame();
+		}
 	});
+	window.addEventListener('blur', pauseAllSounds);
 
 	// "вылет" числа в точке клика (рисуем внутри #game)
 	function createFloatingNumber(clientX, clientY, value) {
