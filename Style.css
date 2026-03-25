@@ -2216,3 +2216,46 @@ body.light_theme .primary-btn{
 	.stats-item__label{ font-size:10px; }
 	.stats-item__value{ font-size:13px; }
 }
+
+/* Yandex SDK integration UI */
+.yandex-auth-block{
+	margin-top:10px;
+	display:flex;
+	flex-direction:column;
+	gap:8px;
+}
+
+.yandex-auth-hint{
+	margin:0;
+	font-size:clamp(12px, 1.9vw, 14px);
+	line-height:1.35;
+	color:var(--muted);
+}
+
+.ad-safe-zone{
+	padding:8px 14px 12px;
+	display:flex;
+	justify-content:center;
+}
+
+.ad-safe-zone .secondary-btn{
+	width:100%;
+	max-width:420px;
+}
+
+.tv-mode button:focus-visible,
+.tv-mode select:focus-visible{
+	outline:3px solid #ffcc00;
+	outline-offset:2px;
+}
+
+@media (max-width: 640px){
+	#game{
+		padding:clamp(8px, 2vh, 14px) clamp(8px, 2.5vw, 12px);
+	}
+	.game-stats-row{ gap:6px; }
+	.stat-badge{ min-height:44px; height:44px; padding:6px 8px; }
+	.stat-badge__label{ font-size:clamp(12px, 3.2vw, 14px); }
+	.stat-badge__value{ font-size:clamp(11px, 3vw, 13px); }
+	.level-row{ margin-bottom:6px; }
+}
