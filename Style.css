@@ -2246,9 +2246,10 @@ body.light_theme .primary-btn{
 }
 
 .ad-safe-zone{
-	padding:8px 14px 12px;
+	padding:12px 14px calc(18px + env(safe-area-inset-bottom, 0px));
 	display:flex;
 	justify-content:center;
+	margin-top:8px;
 }
 
 .ad-safe-zone .secondary-btn{

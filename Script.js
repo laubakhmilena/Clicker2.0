@@ -1415,14 +1415,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
 	function syncBannerForScreen(screenName) {
 		if (!sdkReady) return;
-		if (['boosts', 'skins', 'achievements', 'stats', 'about', 'settings'].includes(screenName)) {
+		if (['boosts', 'skins'].includes(screenName)) {
 			showSafeBanner();
 		} else {
 			hideSafeBanner();
 		}
 	}
 
-	function pauseGameplayContext() {
+	function pauseGameplayContext(options = {}) {
+		const wasGameplayActive = !isGamePaused && isMainGameplayActive();
+		adPauseState = {
+			wasGameplayActive,
+			reason: options.reason || 'external',
+		};
 		isGamePaused = true;
 		pauseAllSounds();
 		stopRobotIncomeTimer();
@@ -1430,8 +1435,10 @@ document.addEventListener('DOMContentLoaded', () => {
 	}
 
 	function resumeGameplayContext() {
+		const shouldResumeGameplay = adPauseState?.wasGameplayActive === true;
+		adPauseState = null;
 		isGamePaused = false;
-		if (robotIncomePerSecond > 0) startRobotIncomeTimer();
+		if (shouldResumeGameplay && robotIncomePerSecond > 0) startRobotIncomeTimer();
 		syncGameplayState();
 	}
 
@@ -1447,7 +1454,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			return;
 		}
 		isAdShowing = true;
-		pauseGameplayContext();
+		pauseGameplayContext({ reason: 'interstitial' });
 		ysdk.adv.showFullscreenAdv({
 			callbacks: {
 				onOpen: () => options.onOpen?.(),
@@ -1502,7 +1509,7 @@ document.addEventListener('DOMContentLoaded', () => {
 	function showRewardedAd(rewardType) {
 		if (!sdkReady || !ysdk?.adv?.showRewardedVideo || isAdShowing) return;
 		isAdShowing = true;
-		pauseGameplayContext();
+		pauseGameplayContext({ reason: 'rewarded' });
 		ysdk.adv.showRewardedVideo({
 			callbacks: {
 				onOpen: () => {},
@@ -1522,6 +1529,7 @@ document.addEventListener('DOMContentLoaded', () => {
 	const tvModeEnabled = /smart-tv|smarttv|hbbtv|tizen|web0s|webos|googletv|appletv|android tv/i.test(navigator.userAgent);
 	let tvFocusIndex = 0;
 	let lastRobotClickAt = 0;
+	let adPauseState = null;
 
 	function getTvFocusable() {
 		const root = document.querySelector('.menu:not(.hidden), #game, .menu:not(.hidden) .menu-card');
