@@ -159,6 +159,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			Skin: '🎭Скины: Открывай новых уникальных героев за достижения.',
 			Level: '🏆Уровни: Докажи, что ты лучший, повышая свой уровень инженера.',
 			young: 'Создано специально для юных изобретателей!',
+			'about-awaits': 'Что тебя ждёт:',
 			Go: 'ПОЕХАЛИ!',
 			settings: 'Настройки', language: '🌍 Язык', sound: '🔊 Звук', brightness: '☀️ Яркость', theme: '🌗 Тема',
 			restart: 'Сбросить весь прогресс', welcome: 'Кликай, улучшай и собирай скины!', 'start-btn': 'Начать игру',
@@ -178,6 +179,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			Skin: '🎭Skins: Unlock unique heroes through achievements.',
 			Level: '🏆Levels: Prove you are the best by leveling up your engineer rank.',
 			young: 'Created especially for young inventors!',
+			'about-awaits': 'What awaits you:',
 			Go: "LET'S GO!",
 			settings: 'Settings', language: '🌍 Language', sound: '🔊 Sound', brightness: '☀️ Brightness', theme: '🌗 Theme',
 			restart: 'Reset all progress', welcome: 'Click, upgrade, and collect skins!', 'start-btn': 'Start game',
@@ -416,7 +418,6 @@ document.addEventListener('DOMContentLoaded', () => {
 	const autoBotBtn = document.getElementById('btn-auto-bot');
 	const autoBotPriceEl = autoBotBtn ? autoBotBtn.querySelector('.price') : null;
 	const robotInfoEl = document.getElementById('robot-info');
-	const moneyCounterEl = document.getElementById('money-counter');
 
 	let robotPrice = ROBOT_BASE_PRICE;
 	let robotCount = 0;
@@ -1726,35 +1727,43 @@ document.addEventListener('DOMContentLoaded', () => {
 
 	function renderSkinsGrid() {
 		if (!skinsGrid) return;
+		skinsGrid.textContent = '';
 
-		skinsGrid.innerHTML = skins
-			.map((skin) => {
+		skins.forEach((skin) => {
 				const buttonState = getSkinButtonState(skin);
 				const rarityLabel = getRarityLabel(skin.rarity);
-				const buttonClass = buttonState.className ? `skin-card__action ${buttonState.className}` : 'skin-card__action';
-				const cardClass = buttonState.className === 'is-locked'
-					? `skin-card skin-card--${skin.rarity} skin-card--locked`
-					: `skin-card skin-card--${skin.rarity}`;
+				const card = document.createElement('article');
+				card.className = `skin-card skin-card--${skin.rarity}`;
+				if (buttonState.className === 'is-locked') {
+					card.classList.add('skin-card--locked');
+				}
 
-				return `
-					<article class="${cardClass}">
-						<div class="skin-card__icon" aria-hidden="true">${skin.icon}</div>
-						<h3 class="skin-card__name">${getSkinNameById(skin.id, skin.name)}</h3>
-						<span class="skin-card__rarity">${rarityLabel}</span>
-						<button
-							type="button"
-							class="${buttonClass}"
-							data-skin-id="${skin.id}"
-							title="${buttonState.title}"
-							aria-label="${buttonState.title}"
-							${buttonState.disabled ? 'disabled' : ''}
-						>
-							${buttonState.text}
-						</button>
-					</article>
-				`;
-			})
-			.join('');
+				const icon = document.createElement('div');
+				icon.className = 'skin-card__icon';
+				icon.setAttribute('aria-hidden', 'true');
+				icon.textContent = skin.icon;
+
+				const title = document.createElement('h3');
+				title.className = 'skin-card__name';
+				title.textContent = getSkinNameById(skin.id, skin.name);
+
+				const rarity = document.createElement('span');
+				rarity.className = 'skin-card__rarity';
+				rarity.textContent = rarityLabel;
+
+				const action = document.createElement('button');
+				action.type = 'button';
+				action.className = 'skin-card__action';
+				if (buttonState.className) action.classList.add(buttonState.className);
+				action.dataset.skinId = String(skin.id);
+				action.title = buttonState.title;
+				action.setAttribute('aria-label', buttonState.title);
+				action.disabled = buttonState.disabled;
+				action.textContent = buttonState.text;
+
+			card.append(icon, title, rarity, action);
+			skinsGrid.appendChild(card);
+		});
 	}
 
 	function openSkinsModal() {
@@ -2129,9 +2138,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
 	function renderBoostTabs() {
 		if (!boostsTabs) return;
-		boostsTabs.innerHTML = boostCategories.map((cat) => `
-			<button type="button" class="boosts-tab ${cat.id === currentBoostCategory ? 'is-active' : ''}" data-boost-category="${cat.id}">${cat.label[currentLanguage] || cat.label.ru}</button>
-		`).join('');
+		boostsTabs.textContent = '';
+		boostCategories.forEach((cat) => {
+			const btn = document.createElement('button');
+			btn.type = 'button';
+			btn.className = 'boosts-tab';
+			if (cat.id === currentBoostCategory) btn.classList.add('is-active');
+			btn.dataset.boostCategory = cat.id;
+			btn.textContent = cat.label[currentLanguage] || cat.label.ru;
+			boostsTabs.appendChild(btn);
+		});
 	}
 
 		function renderActiveBoosts() {
@@ -2159,48 +2175,106 @@ document.addEventListener('DOMContentLoaded', () => {
 			achievementCounters.boostComboBest = Math.max(achievementCounters.boostComboBest, Object.keys(activeBoosts).length);
 			if (!boostsActiveList) return;
 			const items = Object.entries(activeBoosts)
-			.filter(([, data]) => toFiniteNumber(data.endAt, 0) > now)
-			.map(([id, data]) => {
-				const boost = boostById.get(id);
-				if (!boost) return '';
-				const remainingMs = data.endAt - now;
-				const seconds = Math.max(0, Math.ceil(remainingMs / 1000));
-				const progress = data.durationMs > 0 ? (remainingMs / data.durationMs) * 100 : 0;
-				return `
-					<div class="boost-active-item">
-						<div class="boost-active-item__icon">${boost.icon}</div>
-						<div>
-							<div class="boost-active-item__name">${getBoostText(boost, 'name')} — ${seconds}${currentLanguage === 'en' ? 's' : 'с'}</div>
-							<div class="boost-active-item__time">${currentLanguage === 'en' ? 'Left' : 'Осталось'} ${seconds}${currentLanguage === 'en' ? 's' : 'с'}</div>
-						</div>
-						<div class="boost-progress"><div class="boost-progress__fill" style="width:${Math.max(0, Math.min(100, progress)).toFixed(1)}%"></div></div>
-					</div>
-				`;
-			})
-			.filter(Boolean);
-		boostsActiveList.innerHTML = items.length ? items.join('') : `<div class="boost-active-item"><div class="boost-active-item__name">${currentLanguage === 'en' ? 'No active boosts' : 'Нет активных бустов'}</div></div>`;
+				.filter(([, data]) => toFiniteNumber(data.endAt, 0) > now)
+				.map(([id, data]) => {
+					const boost = boostById.get(id);
+					if (!boost) return null;
+					const remainingMs = data.endAt - now;
+					const seconds = Math.max(0, Math.ceil(remainingMs / 1000));
+					const progress = data.durationMs > 0 ? (remainingMs / data.durationMs) * 100 : 0;
+					const row = document.createElement('div');
+					row.className = 'boost-active-item';
+
+					const icon = document.createElement('div');
+					icon.className = 'boost-active-item__icon';
+					icon.textContent = boost.icon;
+
+					const textWrap = document.createElement('div');
+					const name = document.createElement('div');
+					name.className = 'boost-active-item__name';
+					name.textContent = `${getBoostText(boost, 'name')} — ${seconds}${currentLanguage === 'en' ? 's' : 'с'}`;
+					const time = document.createElement('div');
+					time.className = 'boost-active-item__time';
+					time.textContent = `${currentLanguage === 'en' ? 'Left' : 'Осталось'} ${seconds}${currentLanguage === 'en' ? 's' : 'с'}`;
+					textWrap.append(name, time);
+
+					const progressWrap = document.createElement('div');
+					progressWrap.className = 'boost-progress';
+					const progressFill = document.createElement('div');
+					progressFill.className = 'boost-progress__fill';
+					progressFill.style.width = `${Math.max(0, Math.min(100, progress)).toFixed(1)}%`;
+					progressWrap.appendChild(progressFill);
+					row.append(icon, textWrap, progressWrap);
+					return row;
+				})
+				.filter(Boolean);
+			boostsActiveList.textContent = '';
+			if (items.length === 0) {
+				const row = document.createElement('div');
+				row.className = 'boost-active-item';
+				const name = document.createElement('div');
+				name.className = 'boost-active-item__name';
+				name.textContent = currentLanguage === 'en' ? 'No active boosts' : 'Нет активных бустов';
+				row.appendChild(name);
+				boostsActiveList.appendChild(row);
+				return;
+			}
+			items.forEach((item) => boostsActiveList.appendChild(item));
 	}
 
 	function renderBoosts() {
 		if (!boostsGrid) return;
 		const filtered = boosts.filter((boost) => boost.category === currentBoostCategory);
-			boostsGrid.innerHTML = filtered.map((boost) => {
+		boostsGrid.textContent = '';
+		filtered.forEach((boost) => {
 				refreshBoostState(boost);
 				const action = getBoostActionState(boost);
-				const rarityClass = `boost-card boost-card--${boost.rarity === 'epic' ? 'epic' : boost.rarity === 'rare' ? 'rare' : 'common'}`;
 				const remainingSeconds = boost.expiresAt ? Math.max(0, Math.ceil((boost.expiresAt - Date.now()) / 1000)) : 0;
-			return `
-				<article class="${rarityClass} ${isBoostActive(boost.id) ? 'boost-card--active' : ''}">
-					<div class="boost-card__icon">${boost.icon}</div>
-					<h3 class="boost-card__name">${getBoostText(boost, 'name')}</h3>
-					<p class="boost-card__desc">${getBoostText(boost, 'desc')}</p>
-					<div class="boost-card__meta">${currentLanguage === 'en' ? `Price: ${toInt(boost.currentPrice)} 💰` : `Цена: ${toInt(boost.currentPrice)} 💰`}</div>
-					${boost.duration > 0 ? `<div class="boost-card__meta">${currentLanguage === 'en' ? `Duration: ${boost.duration}s` : `Длительность: ${boost.duration}с`}</div>` : ''}
-					${isBoostActive(boost.id) ? `<div class="boost-card__meta boost-card__timer">${currentLanguage === 'en' ? `Timer: ${remainingSeconds}s` : `Таймер: ${remainingSeconds}с`}</div>` : ''}
-					<button class="boost-card__action" type="button" data-boost-id="${boost.id}" ${action.disabled ? 'disabled' : ''}>${action.text}</button>
-				</article>
-			`;
-		}).join('');
+				const card = document.createElement('article');
+				card.className = `boost-card boost-card--${boost.rarity === 'epic' ? 'epic' : boost.rarity === 'rare' ? 'rare' : 'common'}`;
+				if (isBoostActive(boost.id)) card.classList.add('boost-card--active');
+
+				const icon = document.createElement('div');
+				icon.className = 'boost-card__icon';
+				icon.textContent = boost.icon;
+
+				const name = document.createElement('h3');
+				name.className = 'boost-card__name';
+				name.textContent = getBoostText(boost, 'name');
+
+				const desc = document.createElement('p');
+				desc.className = 'boost-card__desc';
+				desc.textContent = getBoostText(boost, 'desc');
+
+				const price = document.createElement('div');
+				price.className = 'boost-card__meta';
+				price.textContent = currentLanguage === 'en' ? `Price: ${toInt(boost.currentPrice)} 💰` : `Цена: ${toInt(boost.currentPrice)} 💰`;
+
+				card.append(icon, name, desc, price);
+
+				if (boost.duration > 0) {
+					const duration = document.createElement('div');
+					duration.className = 'boost-card__meta';
+					duration.textContent = currentLanguage === 'en' ? `Duration: ${boost.duration}s` : `Длительность: ${boost.duration}с`;
+					card.appendChild(duration);
+				}
+
+				if (isBoostActive(boost.id)) {
+					const timer = document.createElement('div');
+					timer.className = 'boost-card__meta boost-card__timer';
+					timer.textContent = currentLanguage === 'en' ? `Timer: ${remainingSeconds}s` : `Таймер: ${remainingSeconds}с`;
+					card.appendChild(timer);
+				}
+
+				const actionBtn = document.createElement('button');
+				actionBtn.className = 'boost-card__action';
+				actionBtn.type = 'button';
+				actionBtn.dataset.boostId = boost.id;
+				actionBtn.disabled = action.disabled;
+				actionBtn.textContent = action.text;
+				card.appendChild(actionBtn);
+			boostsGrid.appendChild(card);
+		});
 	}
 
 	function renderBoostsUI() {
@@ -2788,7 +2862,6 @@ document.addEventListener('DOMContentLoaded', () => {
 	// Обновляет числа на экране
 	function updateUI() {
 			if (scoreEl) scoreEl.textContent = String(toInt(coins));
-			if (moneyCounterEl) moneyCounterEl.textContent = String(toInt(coins));
 			if (clickPowerEl) clickPowerEl.textContent = String(toInt(getEffectiveClickPower()));
 			updateAchievementsState();
 			updateLevelUI();
@@ -3126,8 +3199,7 @@ document.addEventListener('DOMContentLoaded', () => {
 		el.className = 'floating-number';
 
 		const randomX = (Math.random() - 0.5) * 40;
-
-		el.innerHTML = `<span style="color: var(--gold, #ffd24a)">+</span>${value}`;
+		el.textContent = `+${value}`;
 		el.style.left = `${x + randomX}px`;
 		el.style.top = `${y}px`;
 
