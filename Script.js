@@ -386,7 +386,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
 	const boostCategories = [
 		{ id: 'temporary', label: { ru: 'Временные', en: 'Temporary' } },
-		{ id: 'instant', label: { ru: 'Мгновенные', en: 'Instant' } },
 		{ id: 'permanent', label: { ru: 'Постоянные', en: 'Permanent' } },
 		{ id: 'super', label: { ru: 'Супер', en: 'Super' } },
 	];
@@ -396,10 +395,6 @@ document.addEventListener('DOMContentLoaded', () => {
 		{ id: 'offline_accelerator', category: 'temporary', type: 'temporary_offline', rarity: 'rare', icon: '🛰️', name: 'Офлайн-ускоритель', description: 'x5 к офлайн-доходу на 2 часа', desc: 'x5 к офлайн-доходу на 2 часа', basePrice: 800, currentPrice: 800, priceMultiplier: 1.2, baseEffect: 5, currentEffect: 5, effectStep: 0, effectMultiplier: null, purchases: 0, duration: 7200, active: false, expiresAt: null },
 		{ id: 'drone_army', category: 'temporary', type: 'temporary', rarity: 'epic', icon: '🤖', name: 'Армия дронов', description: 'x3 доход роботов на 90 секунд', desc: 'x3 доход роботов на 90 секунд', basePrice: 1800, currentPrice: 1800, priceMultiplier: 1.2, baseEffect: 3, currentEffect: 3, effectStep: 0.5, effectMultiplier: null, purchases: 0, duration: 90, active: false, expiresAt: null },
 		{ id: 'golden_storm', category: 'temporary', type: 'temporary', rarity: 'rare', icon: '🌟', name: 'Золотой шторм', description: '+150% монет за клик', desc: '+150% монет за клик на 40 секунд', basePrice: 1200, currentPrice: 1200, priceMultiplier: 1.2, baseEffect: 2.5, currentEffect: 2.5, effectStep: 0.5, effectMultiplier: null, purchases: 0, duration: 40, active: false, expiresAt: null },
-		{ id: 'coin_burst', category: 'instant', type: 'instant', rarity: 'common', icon: '💰', name: 'Монетный взрыв', description: 'Мгновенные монеты', desc: 'Сразу +500 монет', basePrice: 400, currentPrice: 400, priceMultiplier: 1.28, baseEffect: 500, currentEffect: 500, effectStep: 250, effectMultiplier: null, purchases: 0, duration: 0, active: false, expiresAt: null },
-		{ id: 'super_click', category: 'instant', type: 'instant', rarity: 'rare', icon: '🔨', name: 'Супер клик', description: 'Следующий клик x25', desc: 'Следующий клик x25', basePrice: 750, currentPrice: 750, priceMultiplier: 1.3, baseEffect: 25, currentEffect: 25, effectStep: 5, effectMultiplier: null, purchases: 0, duration: 0, active: false, expiresAt: null },
-		{ id: 'discount_protocol', category: 'instant', type: 'instant_one_time', rarity: 'common', icon: '🛒', name: 'Скидочный протокол', description: 'Следующая покупка апгрейда -50%', desc: 'Следующая покупка апгрейда -50%', basePrice: 600, currentPrice: 600, priceMultiplier: 1.25, baseEffect: 0.5, currentEffect: 0.5, effectStep: 0, effectMultiplier: null, purchases: 0, duration: 0, active: false, expiresAt: null, oneTime: true, consumed: false },
-		{ id: 'offline_bonus', category: 'instant', type: 'instant', rarity: 'rare', icon: '⏳', name: 'Офлайн бонус', description: 'Начисляет 50% офлайн дохода', desc: 'Начисляет 50% офлайн дохода', basePrice: 850, currentPrice: 850, priceMultiplier: 1.35, baseEffect: 0.5, currentEffect: 0.5, effectStep: 0, effectMultiplier: 1.5, purchases: 0, duration: 0, active: false, expiresAt: null },
 		{ id: 'processor_plus', category: 'permanent', type: 'passive', rarity: 'rare', icon: '📈', name: 'Улучшенный процессор', description: '+1 к силе клика', desc: '+1 к силе клика', basePrice: 3000, currentPrice: 3000, priceMultiplier: 1.35, baseEffect: 1, currentEffect: 1, effectStep: 1, effectMultiplier: null, purchases: 0, duration: 0, active: false, expiresAt: null },
 		{ id: 'eternal_generator', category: 'permanent', type: 'passive', rarity: 'epic', icon: '🔋', name: 'Вечный генератор', description: '+0.5 дохода роботов', desc: '+0.5 дохода роботов', basePrice: 5000, currentPrice: 5000, priceMultiplier: 1.35, baseEffect: 0.5, currentEffect: 0.5, effectStep: 0.5, effectMultiplier: null, purchases: 0, duration: 0, active: false, expiresAt: null },
 		{ id: 'evolution_module', category: 'permanent', type: 'passive', rarity: 'epic', icon: '🧬', name: 'Модуль эволюции', description: '+5% к силе клика за уровень', desc: '+5% к силе клика за уровень', basePrice: 12000, currentPrice: 12000, priceMultiplier: 1.5, baseEffect: 0.05, currentEffect: 0.05, effectStep: 0, effectMultiplier: null, purchases: 0, duration: 0, active: false, expiresAt: null, oneTime: true, consumed: false },
@@ -1896,7 +1891,7 @@ document.addEventListener('DOMContentLoaded', () => {
 		const boost = boostById.get(boostId);
 		if (!boost || !canBuyBoost(boost)) return;
 		const price = getBoostPrice(boost);
-		boostTypesUsed.add(boost.type || boost.category);
+		boostTypesUsed.add(boost.category);
 		coins = toInt(coins - price);
 		applyBoostEffect(boost);
 		boost.purchases = toInt(boost.purchases + 1);
