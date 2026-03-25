@@ -621,7 +621,7 @@ button:focus-visible,
 
 	font-weight:900;
 	font-size:24px;
-	color:#fff;
+	color:var(--gold, #ffd24a);
 	text-shadow:0 6px 18px rgba(0,0,0,0.6);
 
 	animation: floatUp .9s ease-out forwards;
