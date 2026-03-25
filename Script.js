@@ -2391,6 +2391,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			if (scoreEl) scoreEl.textContent = String(toInt(coins));
 			if (moneyCounterEl) moneyCounterEl.textContent = String(toInt(coins));
 			if (clickPowerEl) clickPowerEl.textContent = String(toInt(getEffectiveClickPower()));
+			updateAchievementsState();
 			updateLevelUI();
 			updateClickUpgradeUI();
 			updateRobotUpgradeUI();
