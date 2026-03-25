@@ -1567,8 +1567,9 @@ body.light_theme .primary-btn{
 
 .boosts-tabs{
 	display:grid;
-	grid-template-columns:repeat(4, minmax(0,1fr));
+	grid-template-columns:repeat(3, minmax(0,1fr));
 	gap:8px;
+	width:100%;
 }
 
 .boosts-tab{
@@ -1579,6 +1580,8 @@ body.light_theme .primary-btn{
 	font-size:12px;
 	font-weight:800;
 	padding:9px 6px;
+	width:100%;
+	text-align:center;
 	cursor:pointer;
 	transition:transform .15s ease, box-shadow .2s ease, border-color .2s ease;
 }
@@ -1674,6 +1677,7 @@ body.light_theme .primary-btn{
 .boost-card--common{ border-color: rgba(178,190,200,0.5); }
 .boost-card--rare{ border-color: rgba(100,178,255,0.6); box-shadow:0 0 0 1px rgba(100,178,255,0.18); }
 .boost-card--epic{ border-color: rgba(210,153,255,0.72); box-shadow:0 0 0 1px rgba(210,153,255,0.22), 0 0 12px rgba(186,106,255,0.2); }
+.boost-card--active{ border-color: rgba(120,255,180,0.75); box-shadow:0 0 0 1px rgba(120,255,180,0.25), 0 0 12px rgba(120,255,180,0.2); }
 
 .boost-card__icon{ font-size:28px; line-height:1; }
 .boost-card__name{ margin:0; font-size:14px; font-weight:800; }
@@ -1697,6 +1701,7 @@ body.light_theme .primary-btn{
 }
 
 .boost-card__meta{ font-size:11px; opacity:.8; min-height:16px; }
+.boost-card__timer{ font-weight:800; color:#9ed7ff; }
 
 .boost-activate-fx{
 	position:absolute;
@@ -1742,7 +1747,7 @@ body.light_theme .primary-btn{
 }
 
 @media (max-width: 700px){
-	.boosts-tabs{ grid-template-columns:repeat(2, minmax(0,1fr)); }
+	.boosts-tabs{ grid-template-columns:repeat(3, minmax(0,1fr)); }
 	#boosts-grid{ grid-template-columns:1fr; }
 }
 /* =========================================================
