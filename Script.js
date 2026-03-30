@@ -128,7 +128,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
 	const setupViewportScrollLock = () => {
 		document.documentElement.style.overscrollBehavior = 'none';
+		document.documentElement.style.overflow = 'hidden';
+		document.documentElement.style.height = '100%';
 		document.body.style.overscrollBehavior = 'none';
+		document.body.style.overflow = 'hidden';
+		document.body.style.height = '100%';
+		document.body.style.position = 'fixed';
+		document.body.style.inset = '0';
+		document.body.style.width = '100%';
+		window.scrollTo(0, 0);
 
 		let touchStartY = 0;
 		const onTouchStart = (event) => {
@@ -155,10 +163,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
 		window.addEventListener('touchstart', onTouchStart, { passive: true });
 		window.addEventListener('touchmove', (event) => {
-			if (!canScrollInside(event)) event.preventDefault();
+			if (!canScrollInside(event) && event.cancelable) event.preventDefault();
 		}, { passive: false });
 		window.addEventListener('wheel', (event) => {
-			if (!event.target || !canScrollInside(event)) event.preventDefault();
+			if ((!event.target || !canScrollInside(event)) && event.cancelable) event.preventDefault();
 		}, { passive: false });
 	};
 
