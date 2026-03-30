@@ -25,14 +25,20 @@
 html, body{
 	height:100%;
 	width:100%;
+	margin:0;
 	overflow:hidden;
+	overflow:clip;
+	overscroll-behavior:none;
+	scrollbar-width:none;
 	-webkit-tap-highlight-color: transparent;
 }
 
 body{
-	margin:0;
 	padding:0;
 	min-height:100dvh;
+	max-height:100dvh;
+	position:fixed;
+	inset:0;
 	color:var(--text);
 	font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 	user-select:none;
@@ -107,6 +113,22 @@ button:focus-visible,
 	position:relative;   /* floating numbers */
 	overflow:hidden;     /* prevent important UI from leaving viewport */
 	background: linear-gradient(135deg, var(--bg1), var(--bg2));
+}
+
+html::-webkit-scrollbar,
+body::-webkit-scrollbar{
+	display:none;
+}
+
+.menu-card,
+.skins-content,
+.boosts-grid,
+#boosts-active-list,
+.achievements-content,
+.stats-content{
+	overscroll-behavior:contain;
+	-webkit-overflow-scrolling:touch;
+	touch-action:pan-y;
 }
 
 /* =========================================================
