@@ -121,6 +121,49 @@ document.addEventListener('DOMContentLoaded', () => {
 	const settingsScreen = document.getElementById('settings');
 	const skinsModal = document.getElementById('skins-modal');
 
+	const isScrollable = (node) => {
+		if (!(node instanceof HTMLElement)) return false;
+		return node.scrollHeight > node.clientHeight && getComputedStyle(node).overflowY !== 'hidden';
+	};
+
+	const setupViewportScrollLock = () => {
+		document.documentElement.style.overscrollBehavior = 'none';
+		document.body.style.overscrollBehavior = 'none';
+
+		let touchStartY = 0;
+		const onTouchStart = (event) => {
+			if (event.touches && event.touches.length > 0) touchStartY = event.touches[0].clientY;
+		};
+
+		const canScrollInside = (event) => {
+			if (!event.target) return false;
+			let node = event.target instanceof Element ? event.target : null;
+			while (node && node !== document.body) {
+				if (isScrollable(node)) {
+					const deltaY = typeof event.deltaY === 'number'
+						? event.deltaY
+						: ((event.touches && event.touches.length > 0 ? event.touches[0].clientY : touchStartY) - touchStartY);
+					const atTop = node.scrollTop <= 0;
+					const atBottom = Math.ceil(node.scrollTop + node.clientHeight) >= node.scrollHeight;
+					if ((deltaY < 0 && atBottom) || (deltaY > 0 && atTop)) return false;
+					return true;
+				}
+				node = node.parentElement;
+			}
+			return false;
+		};
+
+		window.addEventListener('touchstart', onTouchStart, { passive: true });
+		window.addEventListener('touchmove', (event) => {
+			if (!canScrollInside(event)) event.preventDefault();
+		}, { passive: false });
+		window.addEventListener('wheel', (event) => {
+			if (!event.target || !canScrollInside(event)) event.preventDefault();
+		}, { passive: false });
+	};
+
+	setupViewportScrollLock();
+
 	const startBtn = document.getElementById('start-btn'); // Кнопки начать игру
 	const backBtn = document.getElementById('back-menu-btn'); // В меню
 	const yandexLoginBtn = document.getElementById('yandex-login-btn');
