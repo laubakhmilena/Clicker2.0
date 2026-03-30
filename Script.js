@@ -123,7 +123,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
 	const isScrollable = (node) => {
 		if (!(node instanceof HTMLElement)) return false;
-		return node.scrollHeight > node.clientHeight && getComputedStyle(node).overflowY !== 'hidden';
+		const styles = getComputedStyle(node);
+		const overflowY = styles.overflowY;
+		const canOverflow = overflowY === 'auto' || overflowY === 'scroll' || overflowY === 'overlay';
+		return canOverflow && node.scrollHeight > node.clientHeight;
 	};
 
 	const setupViewportScrollLock = () => {
@@ -155,10 +158,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
 		window.addEventListener('touchstart', onTouchStart, { passive: true });
 		window.addEventListener('touchmove', (event) => {
-			if (!canScrollInside(event)) event.preventDefault();
+			if (event.cancelable && !canScrollInside(event)) event.preventDefault();
 		}, { passive: false });
 		window.addEventListener('wheel', (event) => {
-			if (!event.target || !canScrollInside(event)) event.preventDefault();
+			if (event.cancelable && (!event.target || !canScrollInside(event))) event.preventDefault();
 		}, { passive: false });
 	};
 

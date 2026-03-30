@@ -29,6 +29,12 @@ html, body{
 	overscroll-behavior:none;
 	-webkit-overflow-scrolling:auto;
 	-webkit-tap-highlight-color: transparent;
+	scrollbar-width:none;
+}
+
+html::-webkit-scrollbar,
+body::-webkit-scrollbar{
+	display:none;
 }
 
 body{
