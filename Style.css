@@ -135,8 +135,6 @@ button:focus-visible,
 .menu-card{
 	position:relative;
 	background:var(--card);
-	/* backdrop-filter: blur(10px); */
-	/* -webkit-backdrop-filter: blur(10px); */
 	border:1px solid var(--glass);
 	border-radius:var(--radius);
 
@@ -145,16 +143,17 @@ button:focus-visible,
 	max-width:360px;
 	box-shadow:var(--shadow);
 
-	overflow-y:auto;
-	max-height:100%;
-	overscroll-behavior:contain;
-	-webkit-overflow-scrolling:touch;
-	touch-action:pan-y;
+	overflow:hidden;
+	max-height:none;
 }
 
 .menu-card::-webkit-scrollbar{ display:none; }
 
-.about-card{ max-width:440px; }
+.about-card{ 	overflow-y:auto;
+	max-height:100%;
+	overscroll-behavior:contain;
+	-webkit-overflow-scrolling:touch;
+	touch-action:pan-y;}
 
 .menu-title{
 	font-size:36px;
@@ -1403,6 +1402,48 @@ body.light_theme .primary-btn{
 	}
 }
 
+@media (orientation: landscape) and (max-height: 560px){
+	.boosts-card,
+	.skins-card,
+	.achievements-card{
+		height:min(94vh, 520px);
+		padding:14px 12px 10px;
+		gap:8px;
+	}
+
+	.boosts-content,
+	.skins-content,
+	.achievements-content{
+		min-height:0;
+	}
+
+	.boosts-card .ad-safe-zone,
+	.skins-card .ad-safe-zone{
+		padding:4px 8px calc(6px + env(safe-area-inset-bottom, 0px));
+		margin-top:2px;
+	}
+
+	.boosts-card .ad-safe-zone .secondary-btn,
+	.skins-card .ad-safe-zone .secondary-btn{
+		width:min(100%, 220px);
+		max-width:220px;
+		min-height:34px;
+		padding:6px 8px;
+		font-size:10px;
+		line-height:1.1;
+	}
+
+	#boosts-grid{
+		gap:8px;
+		padding-bottom:6px;
+	}
+
+	#boosts-active-list{
+		max-height:72px;
+		overflow-y:auto;
+	}
+}
+
 /* =========================================================
    16) SKINS MODAL
    ========================================================= */
@@ -2286,15 +2327,46 @@ body.light_theme .primary-btn{
 }
 
 .ad-safe-zone{
-	padding:12px 14px calc(18px + env(safe-area-inset-bottom, 0px));
+	flex: 0 0 auto;
 	display:flex;
 	justify-content:center;
-	margin-top:8px;
+	align-items:flex-end;
+	padding:6px 10px calc(8px + env(safe-area-inset-bottom, 0px));
+	margin-top:4px;
+}
+
+.boosts-card .ad-safe-zone,
+.skins-card .ad-safe-zone{
+	position:sticky;
+	bottom:0;
+	z-index:3;
+	background:linear-gradient(
+		180deg,
+		rgba(7, 28, 81, 0) 0%,
+		rgba(7, 28, 81, 0.72) 30%,
+		rgba(7, 28, 81, 0.92) 100%
+	);
+	backdrop-filter: blur(4px);
+	-webkit-backdrop-filter: blur(4px);
+}
+
+.boosts-card .ad-safe-zone .secondary-btn,
+.skins-card .ad-safe-zone .secondary-btn{
+	width:min(100%, 260px);
+	max-width:260px;
+	font-size:11px;
+	padding:7px 10px;
 }
 
 .ad-safe-zone .secondary-btn{
-	width:100%;
-	max-width:420px;
+	width:min(100%, 280px);
+	max-width:280px;
+	min-height:38px;
+	padding:8px 10px;
+	margin-top:0;
+	font-size:12px;
+	line-height:1.15;
+	border-radius:10px;
 }
 
 .tv-mode button:focus-visible,

@@ -1507,90 +1507,130 @@ document.addEventListener('DOMContentLoaded', () => {
 		markGameplayStart();
 	}
 
-	function showSafeBanner() {
-		if (!sdkReady || !ysdk?.adv) return;
-		try {
-			const status = ysdk.adv.getBannerAdvStatus?.();
-			if (!status || status.stickyAdvIsShowing || status.canShow) {
-				ysdk.adv.showBannerAdv?.();
-			}
-		} catch (error) {
-			console.warn('[Robo Clicker] showBannerAdv failed', error);
+
+async function showSafeBanner() {
+	if (!sdkReady || !ysdk?.adv?.showBannerAdv) return false;
+
+	try {
+		let status = null;
+
+		if (typeof ysdk.adv.getBannerAdvStatus === 'function') {
+			status = await ysdk.adv.getBannerAdvStatus();
 		}
+
+		// Если статус не пришёл — пробуем показать.
+		// Если баннер уже показывается — второй раз не дёргаем.
+		// Если можно показать — показываем.
+		if (!status) {
+			await ysdk.adv.showBannerAdv();
+			return true;
+		}
+
+		if (status.stickyAdvIsShowing) {
+			return true;
+		}
+
+		if (status.canShow) {
+			await ysdk.adv.showBannerAdv();
+			return true;
+		}
+
+		return false;
+	} catch (error) {
+		console.warn('[Robo Clicker] showBannerAdv failed', error);
+		return false;
+	}
+}
+
+function hideSafeBanner() {
+	if (!sdkReady || !ysdk?.adv?.hideBannerAdv) return;
+	try {
+		ysdk.adv.hideBannerAdv();
+	} catch (error) {
+		console.warn('[Robo Clicker] hideBannerAdv failed', error);
+	}
+}
+
+function syncBannerForScreen(screenName) {
+	if (!sdkReady) return;
+
+	// Баннер показываем только там, где он действительно нужен
+	if (['boosts', 'skins'].includes(screenName)) {
+		void showSafeBanner();
+	} else {
+		hideSafeBanner();
+	}
+}
+
+function pauseGameplayContext(options = {}) {
+	const wasGameplayActive = !isGamePaused && isMainGameplayActive();
+
+	adPauseState = {
+		wasGameplayActive,
+		reason: options.reason || 'external',
+	};
+
+	isGamePaused = true;
+	pauseAllSounds?.();
+	stopRobotIncomeTimer?.();
+	markGameplayStop();
+}
+
+function resumeGameplayContext() {
+	const shouldResumeGameplay = adPauseState?.wasGameplayActive === true;
+
+	adPauseState = null;
+	isGamePaused = false;
+
+	if (shouldResumeGameplay && robotIncomePerSecond > 0) {
+		startRobotIncomeTimer?.();
 	}
 
-	function hideSafeBanner() {
-		if (!sdkReady || !ysdk?.adv?.hideBannerAdv) return;
-		try {
-			ysdk.adv.hideBannerAdv();
-		} catch (error) {
-			console.warn('[Robo Clicker] hideBannerAdv failed', error);
-		}
+	syncGameplayState();
+}
+
+function showInterstitialAd(options = {}) {
+	// Убрали спорную задержку 450 мс.
+	// Оставляем только защиту от показа сразу после игрового клика.
+	const minClickToAdDelayMs = 250;
+	const sinceRobotClickMs = Date.now() - lastRobotClickAt;
+
+	if (sinceRobotClickMs < minClickToAdDelayMs) {
+		options.onClose?.(false);
+		return;
 	}
 
-	function syncBannerForScreen(screenName) {
-		if (!sdkReady) return;
-		if (['boosts', 'skins'].includes(screenName)) {
-			showSafeBanner();
-		} else {
-			hideSafeBanner();
-		}
+	if (!sdkReady || !ysdk?.adv?.showFullscreenAdv || isAdShowing) {
+		options.onClose?.(false);
+		return;
 	}
 
-	function pauseGameplayContext(options = {}) {
-		const wasGameplayActive = !isGamePaused && isMainGameplayActive();
-		adPauseState = {
-			wasGameplayActive,
-			reason: options.reason || 'external',
-		};
-		isGamePaused = true;
-		pauseAllSounds();
-		stopRobotIncomeTimer();
-		markGameplayStop();
-	}
+	isAdShowing = true;
+	pauseGameplayContext({ reason: 'interstitial' });
 
-	function resumeGameplayContext() {
-		const shouldResumeGameplay = adPauseState?.wasGameplayActive === true;
-		adPauseState = null;
-		isGamePaused = false;
-		if (shouldResumeGameplay && robotIncomePerSecond > 0) startRobotIncomeTimer();
-		syncGameplayState();
-	}
-
-	function showInterstitialAd(options = {}) {
-		const minClickToAdDelayMs = 450;
-		const sinceRobotClickMs = Date.now() - lastRobotClickAt;
-		if (sinceRobotClickMs < minClickToAdDelayMs) {
-			options.onClose?.(false);
-			return;
-		}
-		if (!sdkReady || !ysdk?.adv?.showFullscreenAdv || isAdShowing) {
-			options.onClose?.();
-			return;
-		}
-		isAdShowing = true;
-		pauseGameplayContext({ reason: 'interstitial' });
-		ysdk.adv.showFullscreenAdv({
-			callbacks: {
-				onOpen: () => options.onOpen?.(),
-				onClose: (wasShown) => {
-					isAdShowing = false;
-					resumeGameplayContext();
-					options.onClose?.(wasShown);
-				},
-				onError: (error) => {
-					isAdShowing = false;
-					resumeGameplayContext();
-					options.onError?.(error);
-				},
-				onOffline: () => {
-					isAdShowing = false;
-					resumeGameplayContext();
-					options.onOffline?.();
-				},
+	ysdk.adv.showFullscreenAdv({
+		callbacks: {
+			onOpen: () => {
+				options.onOpen?.();
 			},
-		});
-	}
+			onClose: (wasShown) => {
+				isAdShowing = false;
+				resumeGameplayContext();
+				options.onClose?.(Boolean(wasShown));
+			},
+			onError: (error) => {
+				isAdShowing = false;
+				resumeGameplayContext();
+				options.onError?.(error);
+			},
+			onOffline: () => {
+				isAdShowing = false;
+				resumeGameplayContext();
+				options.onOffline?.();
+			},
+		},
+	});
+}
 
 	function grantRewardByType(rewardType) {
 		if (rewardType === 'boost_free') {
@@ -1621,25 +1661,34 @@ document.addEventListener('DOMContentLoaded', () => {
 		saveGame();
 	}
 
-	function showRewardedAd(rewardType) {
-		if (!sdkReady || !ysdk?.adv?.showRewardedVideo || isAdShowing) return;
-		isAdShowing = true;
-		pauseGameplayContext({ reason: 'rewarded' });
-		ysdk.adv.showRewardedVideo({
-			callbacks: {
-				onOpen: () => {},
-				onRewarded: () => grantRewardByType(rewardType),
-				onClose: () => {
-					isAdShowing = false;
-					resumeGameplayContext();
-				},
-				onError: () => {
-					isAdShowing = false;
-					resumeGameplayContext();
-				},
+function showRewardedAd(rewardType) {
+	if (!sdkReady || !ysdk?.adv?.showRewardedVideo || isAdShowing) return;
+
+	isAdShowing = true;
+	pauseGameplayContext({ reason: `reward:${rewardType}` });
+
+	ysdk.adv.showRewardedVideo({
+		callbacks: {
+			onOpen: () => {},
+			onRewarded: () => {
+				grantRewardByType(rewardType);
+				updateUI?.();
+				renderBoostsUI?.();
+				renderSkinsGrid?.();
+				saveGame?.();
 			},
-		});
-	}
+			onClose: () => {
+				isAdShowing = false;
+				resumeGameplayContext();
+			},
+			onError: (error) => {
+				console.warn('[Robo Clicker] showRewardedVideo failed', error);
+				isAdShowing = false;
+				resumeGameplayContext();
+			},
+		},
+	});
+}
 
 	const tvModeEnabled = /smart-tv|smarttv|hbbtv|tizen|web0s|webos|googletv|appletv|android tv/i.test(navigator.userAgent);
 	let tvFocusIndex = 0;
@@ -2516,11 +2565,11 @@ function getRarityLabel(rarity) {
 		saveGame();
 	}
 
-	if (boostsBtn) {
-		boostsBtn.addEventListener('click', () => {
-			showInterstitialAd({ onClose: () => openBoostsModal() });
-		});
-	}
+if (boostsBtn) {
+	boostsBtn.addEventListener('click', () => {
+		openBoostsModal();
+	});
+}
 
 	if (closeBoostsBtn) {
 		closeBoostsBtn.addEventListener('click', closeBoostsModal);
