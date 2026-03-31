@@ -25,18 +25,25 @@
 html, body{
 	height:100%;
 	width:100%;
+	margin:0;
+	padding:0;
 	overflow:hidden;
+	overflow:clip;
+	overscroll-behavior:none;
 	-webkit-tap-highlight-color: transparent;
 }
 
 body{
-	margin:0;
-	padding:0;
-	min-height:100dvh;
+	position:fixed;
+	inset:0;
+	height:var(--app-height, 100svh);
+	min-height:var(--app-height, 100svh);
 	color:var(--text);
 	font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 	user-select:none;
 	-webkit-user-select:none;
+	touch-action:manipulation;
+	overscroll-behavior:none;
 
 	filter: brightness(var(--screen-brightness, 1));
 	transition: filter 0.12s linear;
@@ -84,6 +91,8 @@ button:focus-visible,
 	padding:20px;
 	position:fixed;
 	inset:0;
+	width:100%;
+	height:var(--app-height, 100svh);
 	z-index:1000;
 
 	background: linear-gradient(135deg, var(--bg1), var(--bg2));
@@ -91,20 +100,21 @@ button:focus-visible,
 	justify-content:center;
 	align-items:center;
 	max-height:100%;
-	min-height:100dvh;
+	min-height:var(--app-height, 100svh);
+	overflow:hidden;
 }
 
 #game{
+	position:fixed;
+	inset:0;
 	width:100%;
-	height:100dvh;
+	height:var(--app-height, 100svh);
 	padding:clamp(10px, 3.5vh, 40px) clamp(10px, 4vw, 20px);
 
 	display:flex;
 	flex-direction:column;
 	align-items:center;
 	justify-content:center;
-
-	position:relative;   /* floating numbers */
 	overflow:hidden;     /* prevent important UI from leaving viewport */
 	background: linear-gradient(135deg, var(--bg1), var(--bg2));
 }
@@ -137,6 +147,9 @@ button:focus-visible,
 
 	overflow-y:auto;
 	max-height:100%;
+	overscroll-behavior:contain;
+	-webkit-overflow-scrolling:touch;
+	touch-action:pan-y;
 }
 
 .menu-card::-webkit-scrollbar{ display:none; }
@@ -722,14 +735,16 @@ button:focus-visible,
 
 .settings-card{
 	background:var(--card);
-	/* backdrop-filter: blur(10px); */
-	/* -webkit-backdrop-filter: blur(10px); */
 	border:1px solid var(--glass);
 	border-radius:var(--radius);
 	box-shadow:var(--shadow);
-
 	padding:30px 40px;
 	max-width:420px;
+	max-height:calc(var(--app-height, 100svh) - 24px);
+	overflow-y:auto;
+	overscroll-behavior:contain;
+	-webkit-overflow-scrolling:touch;
+	touch-action:pan-y;
 	position:relative;
 }
 
@@ -1408,7 +1423,7 @@ body.light_theme .primary-btn{
 
 	width:min(960px, 94vw);
 	height:min(86vh, 760px);
-	max-height:calc(100dvh - 24px);
+	max-height:calc(var(--app-height, 100svh) - 24px);
 	padding:24px 18px 18px;
 	position:relative;
 
@@ -1431,6 +1446,9 @@ body.light_theme .primary-btn{
 	flex:1 1 auto;
 	min-height:0;
 	overflow-y:auto;
+	overscroll-behavior:contain;
+	-webkit-overflow-scrolling:touch;
+	touch-action:pan-y;
 	padding:4px 6px 6px;
 	scrollbar-width:thin;
 	scrollbar-color: rgba(124,205,206,0.5) transparent;
@@ -1441,6 +1459,16 @@ body.light_theme .primary-btn{
 .skins-content::-webkit-scrollbar-thumb{
 	background: linear-gradient(180deg, rgba(124,205,206,0.65), rgba(124,205,206,0.25));
 	border-radius:999px;
+}
+
+.skins-content,
+.boosts-grid,
+#boosts-active-list,
+.achievements-content,
+.stats-content{
+	overscroll-behavior:contain;
+	-webkit-overflow-scrolling:touch;
+	touch-action:pan-y;
 }
 
 .skins-grid{
@@ -1642,7 +1670,7 @@ body.light_theme .primary-btn{
 
 	width:min(980px, 95vw);
 	height:min(90vh, 800px);
-	max-height:calc(100dvh - 24px);
+	max-height:calc(var(--app-height, 100svh) - 24px);
 	padding:22px 16px 16px;
 	position:relative;
 
@@ -1705,6 +1733,9 @@ body.light_theme .primary-btn{
 	gap:8px;
 	max-height:130px;
 	overflow-y:auto;
+	overscroll-behavior:contain;
+	-webkit-overflow-scrolling:touch;
+	touch-action:pan-y;
 }
 
 .boost-active-item{
@@ -1749,6 +1780,9 @@ body.light_theme .primary-btn{
 	flex:1 1 auto;
 	min-height:0;
 	overflow-y:auto;
+	overscroll-behavior:contain;
+	-webkit-overflow-scrolling:touch;
+	touch-action:pan-y;
 	scrollbar-width:thin;
 }
 
@@ -1860,7 +1894,7 @@ body.light_theme .primary-btn{
 	box-shadow:var(--shadow);
 	width:min(980px, 95vw);
 	height:min(90vh, 820px);
-	max-height:calc(100dvh - 24px);
+	max-height:calc(var(--app-height, 100svh) - 24px);
 	padding:22px 16px 16px;
 	position:relative;
 	display:flex;
@@ -1903,6 +1937,9 @@ body.light_theme .primary-btn{
 	flex:1 1 auto;
 	min-height:0;
 	overflow-y:auto;
+	overscroll-behavior:contain;
+	-webkit-overflow-scrolling:touch;
+	touch-action:pan-y;
 	padding:4px 6px 6px;
 	scrollbar-width:thin;
 	scrollbar-color: rgba(124,205,206,0.5) transparent;
@@ -2142,7 +2179,7 @@ body.light_theme .primary-btn{
 	box-shadow:var(--shadow);
 	width:min(980px, 95vw);
 	height:min(90vh, 820px);
-	max-height:calc(100dvh - 24px);
+	max-height:calc(var(--app-height, 100svh) - 24px);
 	padding:22px 16px 16px;
 	position:relative;
 	display:flex;
@@ -2162,6 +2199,9 @@ body.light_theme .primary-btn{
 	flex:1 1 auto;
 	min-height:0;
 	overflow-y:auto;
+	overscroll-behavior:contain;
+	-webkit-overflow-scrolling:touch;
+	touch-action:pan-y;
 	display:grid;
 	gap:10px;
 	padding:2px;

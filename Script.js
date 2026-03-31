@@ -147,6 +147,84 @@ document.addEventListener('DOMContentLoaded', () => {
 	const SUPPORTED_LANGUAGES = ['ru', 'en'];
 	let currentLanguage = 'ru';
 
+	const SCROLLABLE_UI_SELECTORS = [
+		'.about-card',
+		'.settings-card',
+		'.menu-card',
+		'.skins-content',
+		'.boosts-grid',
+		'#boosts-active-list',
+		'.achievements-content',
+		'.stats-content',
+	];
+
+	function syncAppViewportHeight() {
+		const viewportHeight = Math.max(
+			320,
+			Math.round(window.visualViewport?.height || window.innerHeight || 0)
+		);
+		document.documentElement.style.setProperty('--app-height', `${viewportHeight}px`);
+	}
+
+	function setupViewportScrollLock() {
+		const SCROLLABLE_SELECTOR = SCROLLABLE_UI_SELECTORS.join(',');
+		let lastTouchY = 0;
+
+		const getAllowedScrollContainer = (target) => {
+			if (!target || !(target instanceof Element)) return null;
+			return target.closest(SCROLLABLE_SELECTOR);
+		};
+
+		const canScrollVertically = (element) => element && element.scrollHeight > element.clientHeight + 1;
+
+		const shouldBlockDirectionalScroll = (element, deltaY) => {
+			if (!canScrollVertically(element)) return true;
+			if (deltaY < 0 && element.scrollTop <= 0) return true;
+			if (deltaY > 0 && element.scrollTop + element.clientHeight >= element.scrollHeight - 1) return true;
+			return false;
+		};
+
+		const onTouchStart = (event) => {
+			lastTouchY = event.touches?.[0]?.clientY ?? 0;
+		};
+
+		const onTouchMove = (event) => {
+			const touchY = event.touches?.[0]?.clientY;
+			if (typeof touchY !== 'number') {
+				event.preventDefault();
+				return;
+			}
+
+			const scrollContainer = getAllowedScrollContainer(event.target);
+			if (!scrollContainer) {
+				event.preventDefault();
+				return;
+			}
+
+			const deltaY = lastTouchY - touchY;
+			lastTouchY = touchY;
+			if (shouldBlockDirectionalScroll(scrollContainer, deltaY)) {
+				event.preventDefault();
+			}
+		};
+
+		const onWheel = (event) => {
+			const scrollContainer = getAllowedScrollContainer(event.target);
+			if (!scrollContainer) {
+				event.preventDefault();
+				return;
+			}
+			if (shouldBlockDirectionalScroll(scrollContainer, event.deltaY)) {
+				event.preventDefault();
+			}
+		};
+
+		document.addEventListener('touchstart', onTouchStart, { passive: true });
+		document.addEventListener('touchmove', onTouchMove, { passive: false });
+		document.addEventListener('wheel', onWheel, { passive: false });
+		document.addEventListener('gesturestart', (event) => event.preventDefault(), { passive: false });
+	}
+
 	// Единый словарь локализации интерфейса.
 	// Русские значения сохранены как оригинальные формулировки проекта.
 	const TRANSLATIONS = {
@@ -3146,6 +3224,10 @@ document.addEventListener('DOMContentLoaded', () => {
 	bindGenericButtonSound();
 	initResetProgressButton();
 	initVolumeControl();
+	syncAppViewportHeight();
+	setupViewportScrollLock();
+	window.addEventListener('resize', syncAppViewportHeight, { passive: true });
+	window.visualViewport?.addEventListener('resize', syncAppViewportHeight, { passive: true });
 		loadGame(); // 1. загружаем сохранение
 		totalCoinsEarned = Math.max(toInt(totalCoinsEarned), toInt(coins));
 		restoreAchievementsButtonState();
