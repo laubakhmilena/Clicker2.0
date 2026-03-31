@@ -343,16 +343,19 @@ document.addEventListener('DOMContentLoaded', () => {
 		return '';
 	}
 
-	function updateLocalizedUI() {
-		document.documentElement.lang = currentLanguage;
-		document.querySelectorAll('[data-lang]').forEach((el) => {
+		function updateLocalizedUI() {
+			document.documentElement.lang = currentLanguage;
+
+			document.querySelectorAll('[data-lang]').forEach((el) => {
 			const key = el.dataset.lang;
 			if (!key) return;
+
 			if (el.id === 'level-text') {
 				el.dataset.langTemplate = t('level');
-				return;
+			return;
 			}
-			el.textContent = t(key);
+
+				el.textContent = t(key);
 		});
 
 		const staticMap = {
@@ -364,42 +367,74 @@ document.addEventListener('DOMContentLoaded', () => {
 			'#stats-skins-title': { ru: 'Скины', en: 'Skins' },
 			'#stats-boosts-title': { ru: 'Бусты', en: 'Boosts' },
 			'#stats-achievements-title': { ru: 'Достижения', en: 'Achievements' },
-		};
+			};
+
 		Object.entries(staticMap).forEach(([selector, labels]) => {
 			const el = document.querySelector(selector);
 			if (el) el.textContent = labels[currentLanguage] || labels.ru;
 		});
 
 		const statsFieldLabels = [
-			{ ru: 'Монеты сейчас', en: 'Coins Now' },
-			{ ru: 'Всего заработано монет', en: 'Total Coins Earned' },
-			{ ru: 'Всего кликов', en: 'Total Clicks' },
-			{ ru: 'Базовая сила клика', en: 'Base Click Power' },
-			{ ru: 'Эффективная сила клика', en: 'Effective Click Power' },
-			{ ru: 'Текущий уровень', en: 'Current Level' },
-			{ ru: 'Прогресс уровня', en: 'Level Progress' },
-			{ ru: 'До следующего уровня', en: 'Remaining to Next Level' },
-			{ ru: 'Куплено улучшений клика', en: 'Click Upgrades Purchased' },
-			{ ru: 'Роботов куплено', en: 'Robots Purchased' },
-			{ ru: 'Базовый доход роботов в секунду', en: 'Base Robot Income' },
-			{ ru: 'Эффективный доход роботов в секунду', en: 'Effective Robot Income' },
-			{ ru: 'Куплено скинов', en: 'Skins Purchased' },
-			{ ru: 'Открыто скинов', en: 'Skins Unlocked' },
-			{ ru: 'Выбранный скин', en: 'Selected Skin' },
-			{ ru: 'Улучшено бустов', en: 'Boosts Upgraded' },
-			{ ru: 'Всего использовано бустов', en: 'Boosts Used' },
-			{ ru: 'Разных типов использовано', en: 'Boost Types Used' },
-			{ ru: 'Активно сейчас', en: 'Active Boosts' },
-			{ ru: 'Лучшее комбо бустов', en: 'Best Boost Combo' },
-			{ ru: 'Суммарное время бустов (сек)', en: 'Total Boost Time' },
-			{ ru: 'Открыто достижений', en: 'Achievements Unlocked' },
-			{ ru: 'Получено наград', en: 'Rewards Claimed' },
-			{ ru: 'Система достижений', en: 'Achievement System Unlocked' },
-		];
-		document.querySelectorAll('.stats-item__label').forEach((el, index) => {
-			const pair = statsFieldLabels[index];
-			if (!pair) return;
-			el.textContent = pair[currentLanguage] || pair.ru;
+				{ ru: 'Монеты сейчас', en: 'Coins Now' },
+				{ ru: 'Всего заработано монет', en: 'Total Coins Earned' },
+				{ ru: 'Всего кликов', en: 'Total Clicks' },
+				{ ru: 'Базовая сила клика', en: 'Base Click Power' },
+				{ ru: 'Эффективная сила клика', en: 'Effective Click Power' },
+				{ ru: 'Текущий уровень', en: 'Current Level' },
+				{ ru: 'Прогресс уровня', en: 'Level Progress' },
+				{ ru: 'До следующего уровня', en: 'Remaining to Next Level' },
+				{ ru: 'Куплено улучшений клика', en: 'Click Upgrades Purchased' },
+				{ ru: 'Роботов куплено', en: 'Robots Purchased' },
+				{ ru: 'Базовый доход роботов в секунду', en: 'Base Robot Income' },
+				{ ru: 'Эффективный доход роботов в секунду', en: 'Effective Robot Income' },
+				{ ru: 'Куплено скинов', en: 'Skins Purchased' },
+				{ ru: 'Открыто скинов', en: 'Skins Unlocked' },
+				{ ru: 'Выбранный скин', en: 'Selected Skin' },
+				{ ru: 'Улучшено бустов', en: 'Boosts Upgraded' },
+				{ ru: 'Всего использовано бустов', en: 'Boosts Used' },
+				{ ru: 'Разных типов использовано', en: 'Boost Types Used' },
+				{ ru: 'Активно сейчас', en: 'Active Boosts' },
+				{ ru: 'Лучшее комбо бустов', en: 'Best Boost Combo' },
+				{ ru: 'Суммарное время бустов (сек)', en: 'Total Boost Time' },
+				{ ru: 'Открыто достижений', en: 'Achievements Unlocked' },
+				{ ru: 'Получено наград', en: 'Rewards Claimed' },
+				{ ru: 'Система достижений', en: 'Achievement System Unlocked' },
+			];
+
+	document.querySelectorAll('.stats-item__label').forEach((el, index) => {
+		const pair = statsFieldLabels[index];
+		if (!pair) return;
+		el.textContent = pair[currentLanguage] || pair.ru;
+	});
+
+	const ariaMap = {
+		'.game-stats-row': { ru: 'Игровая статистика', en: 'Game statistics' },
+		'.level-row': { ru: 'Уровень игрока', en: 'Player level' },
+		'#level-bar': { ru: 'Прогресс уровня', en: 'Level progress' },
+		'.game-upgrades': { ru: 'Улучшения', en: 'Upgrades' },
+		'.feature-panel': { ru: 'Игровые разделы', en: 'Game sections' },
+		'#skins-grid': { ru: 'Список скинов', en: 'Skins list' },
+		'#boosts-tabs': { ru: 'Категории бустов', en: 'Boost categories' },
+		'.boosts-active': { ru: 'Активные бусты', en: 'Active boosts' },
+		'#boosts-grid': { ru: 'Список бустов', en: 'Boosts list' },
+		'.achievements-overall-progress': { ru: 'Общий прогресс достижений', en: 'Overall achievement progress' },
+		'#achievements-list': { ru: 'Список достижений', en: 'Achievements list' },
+		'.stats-content': { ru: 'Игровая статистика', en: 'Game statistics' },
+		'#volume-slider': { ru: 'Громкость звука', en: 'Sound volume' },
+		'#reset-progress-btn': { ru: 'Сбросить весь прогресс', en: 'Reset all progress' },
+		'#close-skins': { ru: 'Закрыть окно скинов', en: 'Close skins window' },
+		'#close-boosts': { ru: 'Закрыть окно бустов', en: 'Close boosts window' },
+		'#close-achievements': { ru: 'Закрыть окно достижений', en: 'Close achievements window' },
+		'#close-stats': { ru: 'Закрыть окно статистики', en: 'Close statistics window' },
+	};
+
+	Object.entries(ariaMap).forEach(([selector, labels]) => {
+			const el = document.querySelector(selector);
+			if (el) el.setAttribute('aria-label', labels[currentLanguage] || labels.ru);
+		});
+
+		document.querySelectorAll('.price').forEach((el) => {
+			el.setAttribute('aria-label', currentLanguage === 'en' ? 'Price' : 'Цена');
 		});
 
 		if (yandexLoginBtn) yandexLoginBtn.textContent = t('yandex-login');
@@ -407,6 +442,7 @@ document.addEventListener('DOMContentLoaded', () => {
 		if (rewardFreeBoostBtn) rewardFreeBoostBtn.textContent = t('reward-free-boost');
 		if (rewardRandomSkinBtn) rewardRandomSkinBtn.textContent = t('reward-random-skin');
 		if (languageSelect) languageSelect.value = currentLanguage;
+
 		renderSkinsGrid();
 		renderBoostsUI();
 		renderAchievements();
@@ -1760,12 +1796,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
 	
 	// --- СКИНЫ: модалка, покупка, выбор и рендер карточек ---
-	function getRarityLabel(rarity) {
-		if (rarity === 'uncommon') return currentLanguage === 'en' ? 'Uncommon' : 'Uncommon';
-		if (rarity === 'rare') return currentLanguage === 'en' ? 'Rare' : 'Rare';
-		if (rarity === 'ultra') return currentLanguage === 'en' ? 'Ultra Rare' : 'Ultra';
-		return currentLanguage === 'en' ? 'Common' : 'Common';
-	}
+// --- СКИНЫ: модалка, покупка, выбор и рендер карточек ---
+function getRarityLabel(rarity) {
+	const rarityLabels = {
+		common: { ru: 'Обычный', en: 'Common' },
+		uncommon: { ru: 'Необычный', en: 'Uncommon' },
+		rare: { ru: 'Редкий', en: 'Rare' },
+		ultra: { ru: 'Ультраредкий', en: 'Ultra Rare' },
+	};
+
+	return rarityLabels[rarity]?.[currentLanguage] || rarityLabels.common[currentLanguage] || rarityLabels.common.ru;
+}
 
 	function updateClickObjectSkin() {
 		if (!clickObject) return;
