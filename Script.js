@@ -150,7 +150,6 @@ document.addEventListener('DOMContentLoaded', () => {
 	const SCROLLABLE_UI_SELECTORS = [
 		'.about-card',
 		'.settings-card',
-		'.menu-card',
 		'.skins-content',
 		'.boosts-grid',
 		'#boosts-active-list',
@@ -1518,24 +1517,16 @@ async function showSafeBanner() {
 			status = await ysdk.adv.getBannerAdvStatus();
 		}
 
-		// Если статус не пришёл — пробуем показать.
-		// Если баннер уже показывается — второй раз не дёргаем.
-		// Если можно показать — показываем.
-		if (!status) {
-			await ysdk.adv.showBannerAdv();
+		if (status?.stickyAdvIsShowing) {
 			return true;
 		}
 
-		if (status.stickyAdvIsShowing) {
-			return true;
+		if (status?.canShow === false) {
+			return false;
 		}
 
-		if (status.canShow) {
-			await ysdk.adv.showBannerAdv();
-			return true;
-		}
-
-		return false;
+		await ysdk.adv.showBannerAdv();
+		return true;
 	} catch (error) {
 		console.warn('[Robo Clicker] showBannerAdv failed', error);
 		return false;
@@ -1552,7 +1543,7 @@ function hideSafeBanner() {
 }
 
 function syncBannerForScreen(screenName) {
-	if (!sdkReady) return;
+	if (!sdkReady || isAdShowing) return;
 
 	// Баннер показываем только там, где он действительно нужен
 	if (['boosts', 'skins'].includes(screenName)) {
@@ -1592,7 +1583,7 @@ function resumeGameplayContext() {
 function showInterstitialAd(options = {}) {
 	// Убрали спорную задержку 450 мс.
 	// Оставляем только защиту от показа сразу после игрового клика.
-	const minClickToAdDelayMs = 250;
+	const minClickToAdDelayMs = 280;
 	const sinceRobotClickMs = Date.now() - lastRobotClickAt;
 
 	if (sinceRobotClickMs < minClickToAdDelayMs) {
@@ -1608,28 +1599,36 @@ function showInterstitialAd(options = {}) {
 	isAdShowing = true;
 	pauseGameplayContext({ reason: 'interstitial' });
 
-	ysdk.adv.showFullscreenAdv({
-		callbacks: {
-			onOpen: () => {
-				options.onOpen?.();
+	try {
+		ysdk.adv.showFullscreenAdv({
+			callbacks: {
+				onOpen: () => {
+					options.onOpen?.();
+				},
+				onClose: (wasShown) => {
+					isAdShowing = false;
+					resumeGameplayContext();
+					options.onClose?.(Boolean(wasShown));
+				},
+				onError: (error) => {
+					isAdShowing = false;
+					resumeGameplayContext();
+					options.onError?.(error);
+				},
+				onOffline: () => {
+					isAdShowing = false;
+					resumeGameplayContext();
+					options.onOffline?.();
+				},
 			},
-			onClose: (wasShown) => {
-				isAdShowing = false;
-				resumeGameplayContext();
-				options.onClose?.(Boolean(wasShown));
-			},
-			onError: (error) => {
-				isAdShowing = false;
-				resumeGameplayContext();
-				options.onError?.(error);
-			},
-			onOffline: () => {
-				isAdShowing = false;
-				resumeGameplayContext();
-				options.onOffline?.();
-			},
-		},
-	});
+		});
+	} catch (error) {
+		console.warn('[Robo Clicker] showFullscreenAdv failed', error);
+		isAdShowing = false;
+		resumeGameplayContext();
+		options.onError?.(error);
+		options.onClose?.(false);
+	}
 }
 
 	function grantRewardByType(rewardType) {
@@ -1667,27 +1666,33 @@ function showRewardedAd(rewardType) {
 	isAdShowing = true;
 	pauseGameplayContext({ reason: `reward:${rewardType}` });
 
-	ysdk.adv.showRewardedVideo({
-		callbacks: {
-			onOpen: () => {},
-			onRewarded: () => {
-				grantRewardByType(rewardType);
-				updateUI?.();
-				renderBoostsUI?.();
-				renderSkinsGrid?.();
-				saveGame?.();
+	try {
+		ysdk.adv.showRewardedVideo({
+			callbacks: {
+				onOpen: () => {},
+				onRewarded: () => {
+					grantRewardByType(rewardType);
+					updateUI?.();
+					renderBoostsUI?.();
+					renderSkinsGrid?.();
+					saveGame?.();
+				},
+				onClose: () => {
+					isAdShowing = false;
+					resumeGameplayContext();
+				},
+				onError: (error) => {
+					console.warn('[Robo Clicker] showRewardedVideo failed', error);
+					isAdShowing = false;
+					resumeGameplayContext();
+				},
 			},
-			onClose: () => {
-				isAdShowing = false;
-				resumeGameplayContext();
-			},
-			onError: (error) => {
-				console.warn('[Robo Clicker] showRewardedVideo failed', error);
-				isAdShowing = false;
-				resumeGameplayContext();
-			},
-		},
-	});
+		});
+	} catch (error) {
+		console.warn('[Robo Clicker] showRewardedVideo failed', error);
+		isAdShowing = false;
+		resumeGameplayContext();
+	}
 }
 
 	const tvModeEnabled = /smart-tv|smarttv|hbbtv|tizen|web0s|webos|googletv|appletv|android tv/i.test(navigator.userAgent);
@@ -1952,7 +1957,7 @@ function getRarityLabel(rarity) {
 
 	if (skinsBtn) {
 		skinsBtn.addEventListener('click', () => {
-			showInterstitialAd({ onClose: () => openSkinsModal() });
+			openSkinsModal();
 		});
 	}
 
