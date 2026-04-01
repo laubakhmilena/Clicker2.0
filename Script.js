@@ -13,7 +13,6 @@ let appHooks = {
 	onExternalPause: () => {},
 	onExternalResume: () => {},
 	onPlatformLanguage: () => {},
-	onAuthStateChanged: () => {},
 };
 
 function setAppHooks(nextHooks = {}) {
@@ -83,8 +82,6 @@ async function initSDK() {
 			player = null;
 			isAuthorized = false;
 		}
-		safeCall('onAuthStateChanged', isAuthorized);
-
 		if (typeof ysdk.on === 'function') {
 			ysdk.on('game_api_pause', () => {
 			isGamePaused = true;
@@ -123,8 +120,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
 	const startBtn = document.getElementById('start-btn'); // Кнопки начать игру
 	const backBtn = document.getElementById('back-menu-btn'); // В меню
-	const yandexLoginBtn = document.getElementById('yandex-login-btn');
-	const yandexLoginHint = document.getElementById('yandex-login-hint');
 	const rewardFreeBoostBtn = document.getElementById('reward-free-boost-btn');
 	const rewardRandomSkinBtn = document.getElementById('reward-random-skin-btn');
 
@@ -246,7 +241,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			'robot-info-default': '+1/сек • 0 куплено', 'skins-btn': 'Скины', 'boosts-btn': 'Бусты', 'achievements-btn': 'Достижения',
 			'stats-btn': 'Статистика', 'skins-title': 'СКИНЫ', 'boosts-title': 'БУСТЫ', 'active-boosts': 'Активные бусты',
 			'achievements-title': 'ДОСТИЖЕНИЯ', 'stats-title': 'СТАТИСТИКА', 'theme-dark': 'Темная', 'theme-light': 'Светлая', 'theme-auto': 'Авто',
-			'yandex-login': 'Войти с Яндекс ID', 'yandex-login-hint': 'Войдите, чтобы сохранять прогресс в облаке и продолжать игру на других устройствах.', 'reward-free-boost': 'Посмотреть рекламу и получить бесплатный буст', 'reward-random-skin': 'Посмотреть рекламу и открыть случайный скин',
+			'reward-free-boost': 'Посмотреть рекламу и получить бесплатный буст', 'reward-random-skin': 'Посмотреть рекламу и открыть случайный скин',
 		},
 		en: {
 			gamename: 'Robo Clicker',
@@ -266,7 +261,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			'robot-info-default': '+1/sec • 0 bought', 'skins-btn': 'Skins', 'boosts-btn': 'Boosts', 'achievements-btn': 'Achievements',
 			'stats-btn': 'Statistics', 'skins-title': 'SKINS', 'boosts-title': 'BOOSTS', 'active-boosts': 'Active boosts',
 			'achievements-title': 'ACHIEVEMENTS', 'stats-title': 'STATISTICS', 'theme-dark': 'Dark', 'theme-light': 'Light', 'theme-auto': 'Auto',
-			'yandex-login': 'Sign in with Yandex ID', 'yandex-login-hint': 'Sign in to save progress in the cloud and continue on other devices.', 'reward-free-boost': 'Watch ad and get a free boost', 'reward-random-skin': 'Watch ad and unlock a random skin',
+			'reward-free-boost': 'Watch ad and get a free boost', 'reward-random-skin': 'Watch ad and unlock a random skin',
 		}
 	};
 
@@ -445,8 +440,6 @@ document.addEventListener('DOMContentLoaded', () => {
 			el.setAttribute('aria-label', currentLanguage === 'en' ? 'Price' : 'Цена');
 		});
 
-		if (yandexLoginBtn) yandexLoginBtn.textContent = t('yandex-login');
-		if (yandexLoginHint) yandexLoginHint.textContent = t('yandex-login-hint');
 		if (rewardFreeBoostBtn) rewardFreeBoostBtn.textContent = t('reward-free-boost');
 		if (rewardRandomSkinBtn) rewardRandomSkinBtn.textContent = t('reward-random-skin');
 		if (languageSelect) languageSelect.value = currentLanguage;
@@ -1765,24 +1758,7 @@ function showRewardedAd(rewardType) {
 			notifyLoadingReady();
 			syncGameplayState();
 		},
-		onAuthStateChanged: (authorized) => {
-			if (yandexLoginBtn) yandexLoginBtn.disabled = Boolean(authorized);
-		},
 	});
-
-	if (yandexLoginBtn) {
-		yandexLoginBtn.addEventListener('click', async () => {
-			if (!sdkReady || !ysdk?.auth?.openAuthDialog) return;
-			try {
-				await ysdk.auth.openAuthDialog();
-				player = await ysdk.getPlayer({ scopes: false });
-				isAuthorized = Boolean(player && (player.getMode?.() === 'real' || player.getUniqueID?.()));
-				safeCall('onAuthStateChanged', isAuthorized);
-			} catch (error) {
-				console.warn('[Robo Clicker] Auth dialog cancelled', error);
-			}
-		});
-	}
 
 	if (rewardFreeBoostBtn) {
 		rewardFreeBoostBtn.addEventListener('click', () => showRewardedAd('boost_free'));
