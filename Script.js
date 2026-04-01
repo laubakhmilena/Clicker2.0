@@ -144,8 +144,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
 	const languageSelect = document.getElementById('language-select');
 	const LANGUAGE_KEY = 'language';
+	const LANGUAGE_USER_SELECTED_KEY = 'languageUserSelected';
 	const SUPPORTED_LANGUAGES = ['ru', 'en'];
-	let currentLanguage = 'ru';
+	let currentLanguage = 'ru';;
 
 	const SCROLLABLE_UI_SELECTORS = [
 		'.about-card',
@@ -270,7 +271,15 @@ document.addEventListener('DOMContentLoaded', () => {
 	};
 
 	function normalizeLanguage(language) {
-		return SUPPORTED_LANGUAGES.includes(language) ? language : 'ru';
+		const normalized = String(language || '')
+			.toLowerCase()
+			.replace('_', '-')
+			.split('-')[0];
+		return SUPPORTED_LANGUAGES.includes(normalized) ? normalized : 'ru';
+	}
+
+	function isLanguageManuallySelected() {
+		return getStorageItem(LANGUAGE_USER_SELECTED_KEY) === '1';
 	}
 
 	function t(key, params = {}) {
@@ -450,9 +459,14 @@ document.addEventListener('DOMContentLoaded', () => {
 	}
 
 	function applyLanguage(language, options = {}) {
-		const { save = true } = options;
+		const { save = true, userSelected = false } = options;
 		currentLanguage = normalizeLanguage(language);
-		if (save) setStorageItem(LANGUAGE_KEY, currentLanguage);
+		if (save) {
+			setStorageItem(LANGUAGE_KEY, currentLanguage);
+			if (userSelected) {
+				setStorageItem(LANGUAGE_USER_SELECTED_KEY, '1');
+			}
+		}
 		updateLocalizedUI();
 		if (save) saveGame();
 	}
@@ -1338,12 +1352,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
 	if (languageSelect) {
 		languageSelect.addEventListener('change', () => {
-			applyLanguage(languageSelect.value || 'ru');
+			applyLanguage(languageSelect.value || 'ru', { save: true, userSelected: true });
 		});
 	}
 
 	const savedLanguage = normalizeLanguage(getStorageItem(LANGUAGE_KEY));
-	applyLanguage(savedLanguage, { save: false });
+	const shouldUseManualLanguage = isLanguageManuallySelected();
+	applyLanguage(shouldUseManualLanguage ? savedLanguage : 'ru', { save: false });
 
 	// 1) При загрузке — вспомнить тему или поставить тёмную по умолчанию
 	const savedTheme = getStorageItem(THEME_KEY) || DEFAULT_THEME;
@@ -1740,8 +1755,9 @@ function showRewardedAd(rewardType) {
 	setAppHooks({
 		onPlatformLanguage: (lang) => {
 			if (!lang) return;
-			const normalized = normalizeLanguage(String(lang).slice(0, 2).toLowerCase());
-			applyLanguage(normalized);
+			if (isLanguageManuallySelected()) return;
+			const normalized = normalizeLanguage(lang);
+			applyLanguage(normalized, { save: true, userSelected: false });
 		},
 		onExternalPause: pauseGameplayContext,
 		onExternalResume: resumeGameplayContext,
