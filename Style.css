@@ -1449,6 +1449,41 @@ body.light_theme .primary-btn{
 	}
 }
 
+@media (orientation: landscape){
+	.boosts-card{
+		height:min(88vh, 620px);
+		gap:10px;
+	}
+
+	.boosts-active,
+	#boosts-active-list{
+		display:none;
+	}
+
+	.boosts-grid{
+		flex:1 1 auto;
+		min-height:0;
+	}
+
+	#boosts-grid{
+		padding-bottom:2px;
+	}
+
+	.boosts-card .ad-safe-zone{
+		padding:2px 8px calc(4px + env(safe-area-inset-bottom, 0px));
+		margin-top:0;
+		background:linear-gradient(180deg, transparent 0%, var(--glass) 55%, var(--card) 100%);
+	}
+
+	.boosts-card .ad-safe-zone .secondary-btn{
+		min-height:35px;
+		padding:7px 10px;
+		font-size:11px;
+		color:var(--text);
+		background:linear-gradient(90deg, var(--accent), var(--accent2));
+	}
+}
+
 /* =========================================================
    16) SKINS MODAL
    ========================================================= */
