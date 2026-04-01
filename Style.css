@@ -147,6 +147,11 @@ button:focus-visible,
 	max-height:none;
 }
 
+#menu .menu-card{
+	max-height:calc(var(--app-height, 100svh) - 40px);
+	overflow:hidden;
+}
+
 .menu-card::-webkit-scrollbar{ display:none; }
 
 .about-card{ 	overflow-y:auto;
@@ -1419,8 +1424,8 @@ body.light_theme .primary-btn{
 
 	.boosts-card .ad-safe-zone,
 	.skins-card .ad-safe-zone{
-		padding:4px 8px calc(6px + env(safe-area-inset-bottom, 0px));
-		margin-top:2px;
+		padding:3px 8px calc(4px + env(safe-area-inset-bottom, 0px));
+		margin-top:1px;
 	}
 
 	.boosts-card .ad-safe-zone .secondary-btn,
@@ -2327,12 +2332,12 @@ body.light_theme .primary-btn{
 }
 
 .ad-safe-zone{
-	flex: 0 0 auto;
+	flex:0 0 auto;
 	display:flex;
 	justify-content:center;
-	align-items:flex-end;
-	padding:6px 10px calc(8px + env(safe-area-inset-bottom, 0px));
-	margin-top:4px;
+	align-items:center;
+	padding:4px 8px calc(6px + env(safe-area-inset-bottom, 0px));
+	margin-top:2px;
 }
 
 .boosts-card .ad-safe-zone,
@@ -2340,14 +2345,10 @@ body.light_theme .primary-btn{
 	position:sticky;
 	bottom:0;
 	z-index:3;
-	background:linear-gradient(
-		180deg,
-		rgba(7, 28, 81, 0) 0%,
-		rgba(7, 28, 81, 0.72) 30%,
-		rgba(7, 28, 81, 0.92) 100%
-	);
-	backdrop-filter: blur(4px);
-	-webkit-backdrop-filter: blur(4px);
+	background:linear-gradient(180deg, transparent 0%, var(--glass) 48%, var(--card) 100%);
+	border-top:1px solid var(--glass);
+	backdrop-filter:blur(2px);
+	-webkit-backdrop-filter:blur(2px);
 }
 
 .boosts-card .ad-safe-zone .secondary-btn,
@@ -2361,12 +2362,15 @@ body.light_theme .primary-btn{
 .ad-safe-zone .secondary-btn{
 	width:min(100%, 280px);
 	max-width:280px;
-	min-height:38px;
-	padding:8px 10px;
+	min-height:36px;
+	padding:7px 10px;
 	margin-top:0;
 	font-size:12px;
 	line-height:1.15;
 	border-radius:10px;
+	background:linear-gradient(90deg, var(--accent), var(--accent2));
+	color:#1b1b1b;
+	border:1px solid var(--glass);
 }
 
 .tv-mode button:focus-visible,
