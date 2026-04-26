@@ -8,12 +8,12 @@ let gameplayStarted = false;
 let isAdShowing = false;
 let isGamePaused = false;
 let sdkInitPromise = null;
+let appReadyForLoadingNotification = false;
 let appHooks = {
 	onSDKReady: () => {},
 	onExternalPause: () => {},
 	onExternalResume: () => {},
 	onPlatformLanguage: () => {},
-	onAuthStateChanged: () => {},
 };
 
 function setAppHooks(nextHooks = {}) {
@@ -52,7 +52,7 @@ function markGameplayStop() {
 }
 
 function notifyLoadingReady() {
-	if (gameLoadedNotified || !sdkReady) return;
+	if (gameLoadedNotified || !sdkReady || !appReadyForLoadingNotification) return;
 	try {
 		ysdk?.features?.LoadingAPI?.ready?.();
 		gameLoadedNotified = true;
@@ -83,18 +83,13 @@ async function initSDK() {
 			player = null;
 			isAuthorized = false;
 		}
-		safeCall('onAuthStateChanged', isAuthorized);
-
 		if (typeof ysdk.on === 'function') {
 			ysdk.on('game_api_pause', () => {
-			isGamePaused = true;
-			markGameplayStop();
-			safeCall('onExternalPause');
-		});
+				safeCall('onExternalPause');
+			});
 			ysdk.on('game_api_resume', () => {
-			isGamePaused = false;
-			safeCall('onExternalResume');
-		});
+				safeCall('onExternalResume');
+			});
 		}
 
 		safeCall('onSDKReady', ysdk);
@@ -123,8 +118,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
 	const startBtn = document.getElementById('start-btn'); // Кнопки начать игру
 	const backBtn = document.getElementById('back-menu-btn'); // В меню
-	const yandexLoginBtn = document.getElementById('yandex-login-btn');
-	const yandexLoginHint = document.getElementById('yandex-login-hint');
 	const rewardFreeBoostBtn = document.getElementById('reward-free-boost-btn');
 	const rewardRandomSkinBtn = document.getElementById('reward-random-skin-btn');
 
@@ -145,7 +138,88 @@ document.addEventListener('DOMContentLoaded', () => {
 	const languageSelect = document.getElementById('language-select');
 	const LANGUAGE_KEY = 'language';
 	const SUPPORTED_LANGUAGES = ['ru', 'en'];
+	let platformLanguage = null;
 	let currentLanguage = 'ru';
+
+	const SCROLLABLE_UI_SELECTORS = [
+		'.menu',
+		'.menu-card',
+		'#game',
+		'.about-card',
+		'.settings-card',
+		'.skins-content',
+		'.boosts-grid',
+		'#boosts-active-list',
+		'.achievements-content',
+		'.stats-content',
+	];
+
+	function syncAppViewportHeight() {
+		const viewportHeight = Math.max(
+			220,
+			Math.round(window.visualViewport?.height || window.innerHeight || 0)
+		);
+		document.documentElement.style.setProperty('--app-height', `${viewportHeight}px`);
+	}
+
+	function setupViewportScrollLock() {
+		const SCROLLABLE_SELECTOR = SCROLLABLE_UI_SELECTORS.join(',');
+		let lastTouchY = 0;
+
+		const getAllowedScrollContainer = (target) => {
+			if (!target || !(target instanceof Element)) return null;
+			return target.closest(SCROLLABLE_SELECTOR);
+		};
+
+		const canScrollVertically = (element) => element && element.scrollHeight > element.clientHeight + 1;
+
+		const shouldBlockDirectionalScroll = (element, deltaY) => {
+			if (!canScrollVertically(element)) return true;
+			if (deltaY < 0 && element.scrollTop <= 0) return true;
+			if (deltaY > 0 && element.scrollTop + element.clientHeight >= element.scrollHeight - 1) return true;
+			return false;
+		};
+
+		const onTouchStart = (event) => {
+			lastTouchY = event.touches?.[0]?.clientY ?? 0;
+		};
+
+		const onTouchMove = (event) => {
+			const touchY = event.touches?.[0]?.clientY;
+			if (typeof touchY !== 'number') {
+				event.preventDefault();
+				return;
+			}
+
+			const scrollContainer = getAllowedScrollContainer(event.target);
+			if (!scrollContainer) {
+				event.preventDefault();
+				return;
+			}
+
+			const deltaY = lastTouchY - touchY;
+			lastTouchY = touchY;
+			if (shouldBlockDirectionalScroll(scrollContainer, deltaY)) {
+				event.preventDefault();
+			}
+		};
+
+		const onWheel = (event) => {
+			const scrollContainer = getAllowedScrollContainer(event.target);
+			if (!scrollContainer) {
+				event.preventDefault();
+				return;
+			}
+			if (shouldBlockDirectionalScroll(scrollContainer, event.deltaY)) {
+				event.preventDefault();
+			}
+		};
+
+		document.addEventListener('touchstart', onTouchStart, { passive: true });
+		document.addEventListener('touchmove', onTouchMove, { passive: false });
+		document.addEventListener('wheel', onWheel, { passive: false });
+		document.addEventListener('gesturestart', (event) => event.preventDefault(), { passive: false });
+	}
 
 	// Единый словарь локализации интерфейса.
 	// Русские значения сохранены как оригинальные формулировки проекта.
@@ -168,7 +242,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			'robot-info-default': '+1/сек • 0 куплено', 'skins-btn': 'Скины', 'boosts-btn': 'Бусты', 'achievements-btn': 'Достижения',
 			'stats-btn': 'Статистика', 'skins-title': 'СКИНЫ', 'boosts-title': 'БУСТЫ', 'active-boosts': 'Активные бусты',
 			'achievements-title': 'ДОСТИЖЕНИЯ', 'stats-title': 'СТАТИСТИКА', 'theme-dark': 'Темная', 'theme-light': 'Светлая', 'theme-auto': 'Авто',
-			'yandex-login': 'Войти с Яндекс ID', 'yandex-login-hint': 'Войдите, чтобы сохранять прогресс в облаке и продолжать игру на других устройствах.', 'reward-free-boost': 'Посмотреть рекламу и получить бесплатный буст', 'reward-random-skin': 'Посмотреть рекламу и открыть случайный скин',
+			'reward-free-boost': 'Посмотреть рекламу и получить случайный буст', 'reward-random-skin': 'Посмотреть рекламу и открыть случайный скин',
 		},
 		en: {
 			gamename: 'Robo Clicker',
@@ -188,12 +262,21 @@ document.addEventListener('DOMContentLoaded', () => {
 			'robot-info-default': '+1/sec • 0 bought', 'skins-btn': 'Skins', 'boosts-btn': 'Boosts', 'achievements-btn': 'Achievements',
 			'stats-btn': 'Statistics', 'skins-title': 'SKINS', 'boosts-title': 'BOOSTS', 'active-boosts': 'Active boosts',
 			'achievements-title': 'ACHIEVEMENTS', 'stats-title': 'STATISTICS', 'theme-dark': 'Dark', 'theme-light': 'Light', 'theme-auto': 'Auto',
-			'yandex-login': 'Sign in with Yandex ID', 'yandex-login-hint': 'Sign in to save progress in the cloud and continue on other devices.', 'reward-free-boost': 'Watch ad and get a free boost', 'reward-random-skin': 'Watch ad and unlock a random skin',
+			'reward-free-boost': 'Watch ad and get a random boost', 'reward-random-skin': 'Watch ad and unlock a random skin',
 		}
 	};
 
 	function normalizeLanguage(language) {
-		return SUPPORTED_LANGUAGES.includes(language) ? language : 'ru';
+		const normalized = String(language || '')
+			.toLowerCase()
+			.replace('_', '-')
+			.split('-')[0];
+		return SUPPORTED_LANGUAGES.includes(normalized) ? normalized : 'ru';
+	}
+
+	function getFallbackLanguage() {
+		const browserLanguage = normalizeLanguage(window.navigator?.language || '');
+		return browserLanguage === 'en' ? 'en' : 'ru';
 	}
 
 	function t(key, params = {}) {
@@ -265,16 +348,19 @@ document.addEventListener('DOMContentLoaded', () => {
 		return '';
 	}
 
-	function updateLocalizedUI() {
-		document.documentElement.lang = currentLanguage;
-		document.querySelectorAll('[data-lang]').forEach((el) => {
+		function updateLocalizedUI() {
+			document.documentElement.lang = currentLanguage;
+
+			document.querySelectorAll('[data-lang]').forEach((el) => {
 			const key = el.dataset.lang;
 			if (!key) return;
+
 			if (el.id === 'level-text') {
 				el.dataset.langTemplate = t('level');
-				return;
+			return;
 			}
-			el.textContent = t(key);
+
+				el.textContent = t(key);
 		});
 
 		const staticMap = {
@@ -286,49 +372,80 @@ document.addEventListener('DOMContentLoaded', () => {
 			'#stats-skins-title': { ru: 'Скины', en: 'Skins' },
 			'#stats-boosts-title': { ru: 'Бусты', en: 'Boosts' },
 			'#stats-achievements-title': { ru: 'Достижения', en: 'Achievements' },
-		};
+			};
+
 		Object.entries(staticMap).forEach(([selector, labels]) => {
 			const el = document.querySelector(selector);
 			if (el) el.textContent = labels[currentLanguage] || labels.ru;
 		});
 
 		const statsFieldLabels = [
-			{ ru: 'Монеты сейчас', en: 'Coins Now' },
-			{ ru: 'Всего заработано монет', en: 'Total Coins Earned' },
-			{ ru: 'Всего кликов', en: 'Total Clicks' },
-			{ ru: 'Базовая сила клика', en: 'Base Click Power' },
-			{ ru: 'Эффективная сила клика', en: 'Effective Click Power' },
-			{ ru: 'Текущий уровень', en: 'Current Level' },
-			{ ru: 'Прогресс уровня', en: 'Level Progress' },
-			{ ru: 'До следующего уровня', en: 'Remaining to Next Level' },
-			{ ru: 'Куплено улучшений клика', en: 'Click Upgrades Purchased' },
-			{ ru: 'Роботов куплено', en: 'Robots Purchased' },
-			{ ru: 'Базовый доход роботов в секунду', en: 'Base Robot Income' },
-			{ ru: 'Эффективный доход роботов в секунду', en: 'Effective Robot Income' },
-			{ ru: 'Куплено скинов', en: 'Skins Purchased' },
-			{ ru: 'Открыто скинов', en: 'Skins Unlocked' },
-			{ ru: 'Выбранный скин', en: 'Selected Skin' },
-			{ ru: 'Улучшено бустов', en: 'Boosts Upgraded' },
-			{ ru: 'Всего использовано бустов', en: 'Boosts Used' },
-			{ ru: 'Разных типов использовано', en: 'Boost Types Used' },
-			{ ru: 'Активно сейчас', en: 'Active Boosts' },
-			{ ru: 'Лучшее комбо бустов', en: 'Best Boost Combo' },
-			{ ru: 'Суммарное время бустов (сек)', en: 'Total Boost Time' },
-			{ ru: 'Открыто достижений', en: 'Achievements Unlocked' },
-			{ ru: 'Получено наград', en: 'Rewards Claimed' },
-			{ ru: 'Система достижений', en: 'Achievement System Unlocked' },
-		];
-		document.querySelectorAll('.stats-item__label').forEach((el, index) => {
-			const pair = statsFieldLabels[index];
-			if (!pair) return;
-			el.textContent = pair[currentLanguage] || pair.ru;
+				{ ru: 'Монеты сейчас', en: 'Coins Now' },
+				{ ru: 'Всего заработано монет', en: 'Total Coins Earned' },
+				{ ru: 'Всего кликов', en: 'Total Clicks' },
+				{ ru: 'Базовая сила клика', en: 'Base Click Power' },
+				{ ru: 'Эффективная сила клика', en: 'Effective Click Power' },
+				{ ru: 'Текущий уровень', en: 'Current Level' },
+				{ ru: 'Прогресс уровня', en: 'Level Progress' },
+				{ ru: 'До следующего уровня', en: 'Remaining to Next Level' },
+				{ ru: 'Куплено улучшений клика', en: 'Click Upgrades Purchased' },
+				{ ru: 'Роботов куплено', en: 'Robots Purchased' },
+				{ ru: 'Базовый доход роботов в секунду', en: 'Base Robot Income' },
+				{ ru: 'Эффективный доход роботов в секунду', en: 'Effective Robot Income' },
+				{ ru: 'Куплено скинов', en: 'Skins Purchased' },
+				{ ru: 'Открыто скинов', en: 'Skins Unlocked' },
+				{ ru: 'Выбранный скин', en: 'Selected Skin' },
+				{ ru: 'Улучшено бустов', en: 'Boosts Upgraded' },
+				{ ru: 'Всего использовано бустов', en: 'Boosts Used' },
+				{ ru: 'Разных типов использовано', en: 'Boost Types Used' },
+				{ ru: 'Активно сейчас', en: 'Active Boosts' },
+				{ ru: 'Лучшее комбо бустов', en: 'Best Boost Combo' },
+				{ ru: 'Суммарное время бустов (сек)', en: 'Total Boost Time' },
+				{ ru: 'Открыто достижений', en: 'Achievements Unlocked' },
+				{ ru: 'Получено наград', en: 'Rewards Claimed' },
+				{ ru: 'Система достижений', en: 'Achievement System Unlocked' },
+			];
+
+	document.querySelectorAll('.stats-item__label').forEach((el, index) => {
+		const pair = statsFieldLabels[index];
+		if (!pair) return;
+		el.textContent = pair[currentLanguage] || pair.ru;
+	});
+
+	const ariaMap = {
+		'.game-stats-row': { ru: 'Игровая статистика', en: 'Game statistics' },
+		'.level-row': { ru: 'Уровень игрока', en: 'Player level' },
+		'#level-bar': { ru: 'Прогресс уровня', en: 'Level progress' },
+		'.game-upgrades': { ru: 'Улучшения', en: 'Upgrades' },
+		'.feature-panel': { ru: 'Игровые разделы', en: 'Game sections' },
+		'#skins-grid': { ru: 'Список скинов', en: 'Skins list' },
+		'#boosts-tabs': { ru: 'Категории бустов', en: 'Boost categories' },
+		'.boosts-active': { ru: 'Активные бусты', en: 'Active boosts' },
+		'#boosts-grid': { ru: 'Список бустов', en: 'Boosts list' },
+		'.achievements-overall-progress': { ru: 'Общий прогресс достижений', en: 'Overall achievement progress' },
+		'#achievements-list': { ru: 'Список достижений', en: 'Achievements list' },
+		'.stats-content': { ru: 'Игровая статистика', en: 'Game statistics' },
+		'#volume-slider': { ru: 'Громкость звука', en: 'Sound volume' },
+		'#reset-progress-btn': { ru: 'Сбросить весь прогресс', en: 'Reset all progress' },
+		'#close-skins': { ru: 'Закрыть окно скинов', en: 'Close skins window' },
+		'#close-boosts': { ru: 'Закрыть окно бустов', en: 'Close boosts window' },
+		'#close-achievements': { ru: 'Закрыть окно достижений', en: 'Close achievements window' },
+		'#close-stats': { ru: 'Закрыть окно статистики', en: 'Close statistics window' },
+	};
+
+	Object.entries(ariaMap).forEach(([selector, labels]) => {
+			const el = document.querySelector(selector);
+			if (el) el.setAttribute('aria-label', labels[currentLanguage] || labels.ru);
 		});
 
-		if (yandexLoginBtn) yandexLoginBtn.textContent = t('yandex-login');
-		if (yandexLoginHint) yandexLoginHint.textContent = t('yandex-login-hint');
+		document.querySelectorAll('.price').forEach((el) => {
+			el.setAttribute('aria-label', currentLanguage === 'en' ? 'Price' : 'Цена');
+		});
+
 		if (rewardFreeBoostBtn) rewardFreeBoostBtn.textContent = t('reward-free-boost');
 		if (rewardRandomSkinBtn) rewardRandomSkinBtn.textContent = t('reward-random-skin');
 		if (languageSelect) languageSelect.value = currentLanguage;
+
 		renderSkinsGrid();
 		renderBoostsUI();
 		renderAchievements();
@@ -339,7 +456,9 @@ document.addEventListener('DOMContentLoaded', () => {
 	function applyLanguage(language, options = {}) {
 		const { save = true } = options;
 		currentLanguage = normalizeLanguage(language);
-		if (save) setStorageItem(LANGUAGE_KEY, currentLanguage);
+		if (save) {
+			setStorageItem(LANGUAGE_KEY, currentLanguage);
+		}
 		updateLocalizedUI();
 		if (save) saveGame();
 	}
@@ -1222,15 +1341,39 @@ document.addEventListener('DOMContentLoaded', () => {
 		}
 	}
 
+	setAppHooks({
+		onPlatformLanguage: (lang) => {
+			if (!lang) return;
+			platformLanguage = normalizeLanguage(lang);
+		},
+		onExternalPause: pauseGameplayContext,
+		onExternalResume: resumeGameplayContext,
+		onSDKReady: () => {
+			notifyLoadingReady();
+			syncGameplayState();
+		},
+	});
 
 	if (languageSelect) {
 		languageSelect.addEventListener('change', () => {
-			applyLanguage(languageSelect.value || 'ru');
+			applyLanguage(languageSelect.value || 'ru', { save: true });
 		});
 	}
 
-	const savedLanguage = normalizeLanguage(getStorageItem(LANGUAGE_KEY));
-	applyLanguage(savedLanguage, { save: false });
+	async function applyStartupLanguage() {
+		const appRoot = document.getElementById('app-root');
+
+		try {
+			const sdkInstance = await initSDK();
+			const sdkLanguage = normalizeLanguage(platformLanguage || sdkInstance?.environment?.i18n?.lang);
+			const startupLanguage = sdkInstance ? sdkLanguage : getFallbackLanguage();
+			applyLanguage(startupLanguage, { save: true });
+		} finally {
+			appRoot?.classList.remove('app-locale-pending');
+		}
+	}
+
+	applyStartupLanguage();
 
 	// 1) При загрузке — вспомнить тему или поставить тёмную по умолчанию
 	const savedTheme = getStorageItem(THEME_KEY) || DEFAULT_THEME;
@@ -1393,81 +1536,120 @@ document.addEventListener('DOMContentLoaded', () => {
 		markGameplayStart();
 	}
 
-	function showSafeBanner() {
-		if (!sdkReady || !ysdk?.adv) return;
-		try {
-			const status = ysdk.adv.getBannerAdvStatus?.();
-			if (!status || status.stickyAdvIsShowing || status.canShow) {
-				ysdk.adv.showBannerAdv?.();
-			}
-		} catch (error) {
-			console.warn('[Robo Clicker] showBannerAdv failed', error);
+
+async function showSafeBanner() {
+	if (!sdkReady || !ysdk?.adv?.showBannerAdv) return false;
+
+	try {
+		let status = null;
+
+		if (typeof ysdk.adv.getBannerAdvStatus === 'function') {
+			status = await ysdk.adv.getBannerAdvStatus();
 		}
+
+		if (status?.stickyAdvIsShowing) {
+			return true;
+		}
+
+		if (status?.canShow === false) {
+			return false;
+		}
+
+		await ysdk.adv.showBannerAdv();
+		return true;
+	} catch (error) {
+		console.warn('[Robo Clicker] showBannerAdv failed', error);
+		return false;
+	}
+}
+
+function hideSafeBanner() {
+	if (!sdkReady || !ysdk?.adv?.hideBannerAdv) return;
+	try {
+		ysdk.adv.hideBannerAdv();
+	} catch (error) {
+		console.warn('[Robo Clicker] hideBannerAdv failed', error);
+	}
+}
+
+function isLocalDevMode() {
+	const host = window.location.hostname;
+	return window.location.protocol === 'file:' || host === 'localhost' || host === '127.0.0.1';
+}
+
+function syncBannerForScreen(screenName) {
+	if (!sdkReady || isAdShowing) return;
+
+	// Баннер показываем только там, где он действительно нужен
+	if (['boosts', 'skins'].includes(screenName)) {
+		void showSafeBanner();
+	} else {
+		hideSafeBanner();
+	}
+}
+
+function pauseGameplayContext(options = {}) {
+	const wasGameplayActive = !isGamePaused && isMainGameplayActive();
+
+	adPauseState = {
+		wasGameplayActive,
+		reason: options.reason || 'external',
+	};
+
+	isGamePaused = true;
+	pauseAllSounds?.();
+	stopRobotIncomeTimer?.();
+	markGameplayStop();
+}
+
+function resumeGameplayContext() {
+	const shouldResumeGameplay = adPauseState?.wasGameplayActive === true;
+
+	adPauseState = null;
+	isGamePaused = false;
+
+	if (shouldResumeGameplay && robotIncomePerSecond > 0) {
+		startRobotIncomeTimer?.();
 	}
 
-	function hideSafeBanner() {
-		if (!sdkReady || !ysdk?.adv?.hideBannerAdv) return;
-		try {
-			ysdk.adv.hideBannerAdv();
-		} catch (error) {
-			console.warn('[Robo Clicker] hideBannerAdv failed', error);
-		}
+	syncGameplayState();
+}
+
+function showInterstitialAd(options = {}) {
+	// Убрали спорную задержку 450 мс.
+	// Оставляем только защиту от показа сразу после игрового клика.
+	const minClickToAdDelayMs = 280;
+	const sinceRobotClickMs = Date.now() - lastRobotClickAt;
+
+	if (sinceRobotClickMs < minClickToAdDelayMs) {
+		options.onClose?.(false);
+		return;
 	}
 
-	function syncBannerForScreen(screenName) {
-		if (!sdkReady) return;
-		if (['boosts', 'skins'].includes(screenName)) {
-			showSafeBanner();
-		} else {
-			hideSafeBanner();
-		}
+	if (!sdkReady || !ysdk?.adv?.showFullscreenAdv || isAdShowing) {
+		options.onClose?.(false);
+		return;
 	}
 
-	function pauseGameplayContext(options = {}) {
-		const wasGameplayActive = !isGamePaused && isMainGameplayActive();
-		adPauseState = {
-			wasGameplayActive,
-			reason: options.reason || 'external',
-		};
-		isGamePaused = true;
-		pauseAllSounds();
-		stopRobotIncomeTimer();
-		markGameplayStop();
-	}
+	isAdShowing = true;
+	pauseGameplayContext({ reason: 'interstitial' });
 
-	function resumeGameplayContext() {
-		const shouldResumeGameplay = adPauseState?.wasGameplayActive === true;
-		adPauseState = null;
-		isGamePaused = false;
-		if (shouldResumeGameplay && robotIncomePerSecond > 0) startRobotIncomeTimer();
-		syncGameplayState();
-	}
-
-	function showInterstitialAd(options = {}) {
-		const minClickToAdDelayMs = 450;
-		const sinceRobotClickMs = Date.now() - lastRobotClickAt;
-		if (sinceRobotClickMs < minClickToAdDelayMs) {
-			options.onClose?.(false);
-			return;
-		}
-		if (!sdkReady || !ysdk?.adv?.showFullscreenAdv || isAdShowing) {
-			options.onClose?.();
-			return;
-		}
-		isAdShowing = true;
-		pauseGameplayContext({ reason: 'interstitial' });
+	try {
 		ysdk.adv.showFullscreenAdv({
 			callbacks: {
-				onOpen: () => options.onOpen?.(),
+				onOpen: () => {
+					options.onOpen?.();
+				},
 				onClose: (wasShown) => {
 					isAdShowing = false;
 					resumeGameplayContext();
-					options.onClose?.(wasShown);
+					options.onClose?.(Boolean(wasShown));
 				},
 				onError: (error) => {
 					isAdShowing = false;
 					resumeGameplayContext();
 					options.onError?.(error);
+					options.onClose?.(false);
 				},
 				onOffline: () => {
 					isAdShowing = false;
@@ -1476,18 +1658,20 @@ document.addEventListener('DOMContentLoaded', () => {
 				},
 			},
 		});
+	} catch (error) {
+		console.warn('[Robo Clicker] showFullscreenAdv failed', error);
+		isAdShowing = false;
+		resumeGameplayContext();
+		options.onError?.(error);
+		options.onClose?.(false);
 	}
+}
 
 	function grantRewardByType(rewardType) {
 		if (rewardType === 'boost_free') {
-			const available = boosts.filter((boost) => canBuyBoost(boost));
-			const targetBoost = available[Math.floor(Math.random() * available.length)] || boosts[0];
-			if (targetBoost) {
-				applyBoostEffect(targetBoost);
-				targetBoost.purchases = toInt(targetBoost.purchases + 1);
-				boostLevels[targetBoost.id] = toInt(targetBoost.purchases);
-				boostUsageCount[targetBoost.id] = toInt(boostUsageCount[targetBoost.id]) + 1;
-			}
+			const available = boosts.filter((boost) => canGrantRewardBoost(boost));
+			const targetBoost = available[Math.floor(Math.random() * available.length)] || null;
+			if (targetBoost) grantBoostForReward(targetBoost);
 		}
 		if (rewardType === 'skin_random') {
 			const availableSkins = skins.filter((skin) => !ownedSkinIds.has(skin.id));
@@ -1496,6 +1680,7 @@ document.addEventListener('DOMContentLoaded', () => {
 				ownedSkinIds.add(randomSkin.id);
 				selectedSkinId = randomSkin.id;
 				skinsBoughtCount += 1;
+				updateClickObjectSkin();
 			}
 		}
 		if (rewardType === 'coins_bonus') {
@@ -1504,28 +1689,50 @@ document.addEventListener('DOMContentLoaded', () => {
 			totalCoinsEarned = toInt(totalCoinsEarned + rewardCoins);
 		}
 		updateUI();
+		renderBoostsUI();
+		renderSkinsGrid();
 		saveGame();
 	}
 
-	function showRewardedAd(rewardType) {
-		if (!sdkReady || !ysdk?.adv?.showRewardedVideo || isAdShowing) return;
-		isAdShowing = true;
-		pauseGameplayContext({ reason: 'rewarded' });
+function showRewardedAd(rewardType) {
+	if (!sdkReady || !ysdk?.adv?.showRewardedVideo || isAdShowing) {
+		if (!sdkReady && isLocalDevMode()) {
+			grantRewardByType(rewardType);
+		}
+		return;
+	}
+
+	isAdShowing = true;
+	pauseGameplayContext({ reason: `reward:${rewardType}` });
+
+	try {
 		ysdk.adv.showRewardedVideo({
 			callbacks: {
 				onOpen: () => {},
-				onRewarded: () => grantRewardByType(rewardType),
+				onRewarded: () => {
+					grantRewardByType(rewardType);
+					updateUI?.();
+					renderBoostsUI?.();
+					renderSkinsGrid?.();
+					saveGame?.();
+				},
 				onClose: () => {
 					isAdShowing = false;
 					resumeGameplayContext();
 				},
-				onError: () => {
+				onError: (error) => {
+					console.warn('[Robo Clicker] showRewardedVideo failed', error);
 					isAdShowing = false;
 					resumeGameplayContext();
 				},
 			},
 		});
+	} catch (error) {
+		console.warn('[Robo Clicker] showRewardedVideo failed', error);
+		isAdShowing = false;
+		resumeGameplayContext();
 	}
+}
 
 	const tvModeEnabled = /smart-tv|smarttv|hbbtv|tizen|web0s|webos|googletv|appletv|android tv/i.test(navigator.userAgent);
 	let tvFocusIndex = 0;
@@ -1565,37 +1772,6 @@ document.addEventListener('DOMContentLoaded', () => {
 			if (event.key === 'Escape' || event.key === 'Backspace') {
 				event.preventDefault();
 				if (!closeAllFeatureModals()) goToMenu();
-			}
-		});
-	}
-
-	setAppHooks({
-		onPlatformLanguage: (lang) => {
-			if (!lang) return;
-			const normalized = normalizeLanguage(String(lang).slice(0, 2).toLowerCase());
-			applyLanguage(normalized);
-		},
-		onExternalPause: pauseGameplayContext,
-		onExternalResume: resumeGameplayContext,
-		onSDKReady: () => {
-			notifyLoadingReady();
-			syncGameplayState();
-		},
-		onAuthStateChanged: (authorized) => {
-			if (yandexLoginBtn) yandexLoginBtn.disabled = Boolean(authorized);
-		},
-	});
-
-	if (yandexLoginBtn) {
-		yandexLoginBtn.addEventListener('click', async () => {
-			if (!sdkReady || !ysdk?.auth?.openAuthDialog) return;
-			try {
-				await ysdk.auth.openAuthDialog();
-				player = await ysdk.getPlayer({ scopes: false });
-				isAuthorized = Boolean(player && (player.getMode?.() === 'real' || player.getUniqueID?.()));
-				safeCall('onAuthStateChanged', isAuthorized);
-			} catch (error) {
-				console.warn('[Robo Clicker] Auth dialog cancelled', error);
 			}
 		});
 	}
@@ -1682,12 +1858,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
 	
 	// --- СКИНЫ: модалка, покупка, выбор и рендер карточек ---
-	function getRarityLabel(rarity) {
-		if (rarity === 'uncommon') return currentLanguage === 'en' ? 'Uncommon' : 'Uncommon';
-		if (rarity === 'rare') return currentLanguage === 'en' ? 'Rare' : 'Rare';
-		if (rarity === 'ultra') return currentLanguage === 'en' ? 'Ultra Rare' : 'Ultra';
-		return currentLanguage === 'en' ? 'Common' : 'Common';
-	}
+// --- СКИНЫ: модалка, покупка, выбор и рендер карточек ---
+function getRarityLabel(rarity) {
+	const rarityLabels = {
+		common: { ru: 'Обычный', en: 'Common' },
+		uncommon: { ru: 'Необычный', en: 'Uncommon' },
+		rare: { ru: 'Редкий', en: 'Rare' },
+		ultra: { ru: 'Ультраредкий', en: 'Ultra Rare' },
+	};
+
+	return rarityLabels[rarity]?.[currentLanguage] || rarityLabels.common[currentLanguage] || rarityLabels.common.ru;
+}
 
 	function updateClickObjectSkin() {
 		if (!clickObject) return;
@@ -1784,7 +1965,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 	if (skinsBtn) {
 		skinsBtn.addEventListener('click', () => {
-			showInterstitialAd({ onClose: () => openSkinsModal() });
+			openSkinsModal();
 		});
 	}
 
@@ -2379,6 +2560,27 @@ document.addEventListener('DOMContentLoaded', () => {
 		return true;
 	}
 
+	function canGrantRewardBoost(boost) {
+		if (!boost) return false;
+		refreshBoostState(boost);
+		if (boost.oneTime && (boost.consumed || toInt(boost.purchases) > 0)) return false;
+		if (boost.duration > 0 && isBoostActive(boost.id)) return false;
+		return true;
+	}
+
+	function grantBoostForReward(boost) {
+		if (!boost || !canGrantRewardBoost(boost)) return false;
+		boostTypesUsed.add(boost.category);
+		applyBoostEffect(boost);
+		boost.purchases = toInt(boost.purchases + 1);
+		boost.currentPrice = Math.max(1, toInt(boost.currentPrice * toFiniteNumber(boost.priceMultiplier, 1.2)));
+		recalculateBoostEffect(boost);
+		boostLevels[boost.id] = toInt(boost.purchases);
+		boostUsageCount[boost.id] = toInt(boostUsageCount[boost.id]) + 1;
+		updateBoostDerivedState();
+		return true;
+	}
+
 	function buyBoost(boostId) {
 		const boost = boostById.get(boostId);
 		if (!boost || !canBuyBoost(boost)) return;
@@ -2397,11 +2599,11 @@ document.addEventListener('DOMContentLoaded', () => {
 		saveGame();
 	}
 
-	if (boostsBtn) {
-		boostsBtn.addEventListener('click', () => {
-			showInterstitialAd({ onClose: () => openBoostsModal() });
-		});
-	}
+if (boostsBtn) {
+	boostsBtn.addEventListener('click', () => {
+		openBoostsModal();
+	});
+}
 
 	if (closeBoostsBtn) {
 		closeBoostsBtn.addEventListener('click', closeBoostsModal);
@@ -3146,6 +3348,10 @@ document.addEventListener('DOMContentLoaded', () => {
 	bindGenericButtonSound();
 	initResetProgressButton();
 	initVolumeControl();
+	syncAppViewportHeight();
+	setupViewportScrollLock();
+	window.addEventListener('resize', syncAppViewportHeight, { passive: true });
+	window.visualViewport?.addEventListener('resize', syncAppViewportHeight, { passive: true });
 		loadGame(); // 1. загружаем сохранение
 		totalCoinsEarned = Math.max(toInt(totalCoinsEarned), toInt(coins));
 		restoreAchievementsButtonState();
@@ -3167,10 +3373,9 @@ document.addEventListener('DOMContentLoaded', () => {
 		themeValue: getStorageItem(THEME_KEY) || DEFAULT_THEME,
 		save: false,
 	});
+	appReadyForLoadingNotification = true;
 	notifyLoadingReady();
 	initTvControls();
-	initSDK();
-
 	// Сохранение при перезагрузке/закрытии и при уходе со страницы
 	window.addEventListener('beforeunload', saveGame);
 	document.addEventListener('visibilitychange', () => {
@@ -3313,3 +3518,12 @@ document.addEventListener('DOMContentLoaded', () => {
 		autoBotBtn.addEventListener('click', buyAutoBot);
 	}
 });
+
+document.addEventListener("contextmenu", e => e.preventDefault(), false);
+
+document.addEventListener("keydown", e => {
+		  if ((e.ctrlKey && (e.keyCode != 67 || e.shiftKey) && e.keyCode != 35 && e.keyCode != 82 && e.keyCode != 36 && e.keyCode != 86 && e.keyCode != 88 && e.keyCode != 90 && e.keyCode != 65) || e.keyCode==123 || e.keyCode==16 || e.keyCode==73) {
+			e.stopPropagation();
+			e.preventDefault();
+		  }
+		});

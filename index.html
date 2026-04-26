@@ -3,11 +3,12 @@
 
 <head>
 	<meta charset="utf-8" />
-	<meta name="viewport" content="width=device-width,initial-scale=1" />
+	<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
 	<title>Robo Clicker</title>
-	<link rel="stylesheet" href="Style.css" /> </head>
+	<link rel="stylesheet" href="style.css" />
+</head>
 
-<body>
+<body id="app-root" class="app-locale-pending">
 	<!-- Об игре-->
 	<section id="about-modal" class="menu about-modal hidden">
 		<div class="menu-frame">
@@ -95,10 +96,6 @@
 			<nav class="menu-extra">
 					<button id="about-btn" class="menu-btn secondary-btn" data-lang="about-btn">Об игре</button>
 					<button id="settings-btn" class="menu-btn secondary-btn" data-lang="settings-btn">Настройки</button>
-				<div class="menu-extra-login">
-					<button id="yandex-login-btn" class="menu-btn secondary-btn" type="button">Войти с Яндекс ID</button>
-					<p id="yandex-login-hint" class="menu-login-hint">Войдите, чтобы сохранять прогресс в облаке и продолжать игру на других устройствах.</p>
-				</div>
 			</nav>
 		</div>
 	</section>
@@ -130,7 +127,7 @@
 		<div class="feature-panel" aria-label="Игровые разделы">
 			<button id="btn-skins" class="feature-btn" type="button"> <span class="feature-btn__icon" aria-hidden="true">👕</span> <span class="feature-btn__text" data-lang="skins-btn">Скины</span> </button>
 			<button id="btn-boosts" class="feature-btn" type="button"> <span class="feature-btn__icon" aria-hidden="true">🚀</span> <span class="feature-btn__text" data-lang="boosts-btn">Бусты</span> </button>
-			<button id="btn-achievements" class="feature-btn locked" type="button"> <span class="feature-btn__icon" aria-hidden="true">🏆</span> <span class="feature-btn__text" data-lang="achievements-btn">Достижения</span> </button>
+			<button id="btn-achievements" class="feature-btn locked" type="button" style="overflow: hidden;"> <span class="feature-btn__icon" aria-hidden="true">🏆</span> <span class="feature-btn__text" data-lang="achievements-btn">Достижения</span> </button>
 			<button id="btn-stats" class="feature-btn" type="button"> <span class="feature-btn__icon" aria-hidden="true">📊</span> <span class="feature-btn__text" data-lang="stats-btn">Статистика</span> </button>
 		</div>
 		<main class="game-arena">
@@ -171,7 +168,7 @@
 					<div id="boosts-grid" aria-label="Список бустов"></div>
 				</main>
 				<div class="ad-safe-zone">
-					<button id="reward-free-boost-btn" class="menu-btn secondary-btn" type="button">Посмотреть рекламу и получить бесплатный буст</button>
+					<button id="reward-free-boost-btn" class="menu-btn secondary-btn" type="button">Посмотреть рекламу и получить случайный буст</button>
 				</div>
 				<button id="close-boosts" class="close-btn" type="button" aria-label="Закрыть окно бустов">✕</button>
 			</div>
@@ -261,8 +258,8 @@
 			</div>
 		</div>
 	</section>
-	<script src="Script.js"></script>
-	<script async src="/sdk.js" onload="window.initSDK && window.initSDK()"></script>
+	<script src="/sdk.js"></script>
+	<script src="script.js"></script>
 </body>
 
 </html>
