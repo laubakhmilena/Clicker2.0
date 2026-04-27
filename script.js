@@ -9,6 +9,9 @@ let isAdShowing = false;
 let isGamePaused = false;
 let sdkInitPromise = null;
 let appReadyForLoadingNotification = false;
+let hasUserStartedGame = false;
+let gameSessionStartedAt = 0;
+const STARTUP_AD_GRACE_MS = 30000;
 let appHooks = {
 	onSDKReady: () => {},
 	onExternalPause: () => {},
@@ -1350,6 +1353,7 @@ document.addEventListener('DOMContentLoaded', () => {
 		onExternalResume: resumeGameplayContext,
 		onSDKReady: () => {
 			notifyLoadingReady();
+			syncBannerForScreen('menu');
 			syncGameplayState();
 		},
 	});
@@ -1580,12 +1584,27 @@ function isLocalDevMode() {
 function syncBannerForScreen(screenName) {
 	if (!sdkReady || isAdShowing) return;
 
+	if (!hasUserStartedGame || screenName === 'menu' || screenName === 'game') {
+		hideSafeBanner();
+		return;
+	}
+
 	// Баннер показываем только там, где он действительно нужен
 	if (['boosts', 'skins'].includes(screenName)) {
 		void showSafeBanner();
 	} else {
 		hideSafeBanner();
 	}
+}
+
+function getVisibleFeatureScreenName() {
+	if (document.querySelector('#boosts-modal:not(.hidden)')) return 'boosts';
+	if (document.querySelector('#skins-modal:not(.hidden)')) return 'skins';
+	if (document.querySelector('#achievements-modal:not(.hidden)')) return 'achievements';
+	if (document.querySelector('#stats-modal:not(.hidden)')) return 'stats';
+	if (document.querySelector('#settings:not(.hidden)')) return 'settings';
+	if (document.querySelector('#menu:not(.hidden)')) return 'menu';
+	return 'game';
 }
 
 function pauseGameplayContext(options = {}) {
@@ -1616,6 +1635,12 @@ function resumeGameplayContext() {
 }
 
 function showInterstitialAd(options = {}) {
+	const gameSessionAgeMs = Date.now() - gameSessionStartedAt;
+	if (!hasUserStartedGame || gameSessionAgeMs < STARTUP_AD_GRACE_MS) {
+		options.onClose?.(false);
+		return;
+	}
+
 	// Убрали спорную задержку 450 мс.
 	// Оставляем только защиту от показа сразу после игрового клика.
 	const minClickToAdDelayMs = 280;
@@ -1703,6 +1728,7 @@ function showRewardedAd(rewardType) {
 	}
 
 	isAdShowing = true;
+	hideSafeBanner();
 	pauseGameplayContext({ reason: `reward:${rewardType}` });
 
 	try {
@@ -1719,11 +1745,13 @@ function showRewardedAd(rewardType) {
 				onClose: () => {
 					isAdShowing = false;
 					resumeGameplayContext();
+					syncBannerForScreen(getVisibleFeatureScreenName());
 				},
 				onError: (error) => {
 					console.warn('[Robo Clicker] showRewardedVideo failed', error);
 					isAdShowing = false;
 					resumeGameplayContext();
+					syncBannerForScreen(getVisibleFeatureScreenName());
 				},
 			},
 		});
@@ -1731,6 +1759,7 @@ function showRewardedAd(rewardType) {
 		console.warn('[Robo Clicker] showRewardedVideo failed', error);
 		isAdShowing = false;
 		resumeGameplayContext();
+		syncBannerForScreen(getVisibleFeatureScreenName());
 	}
 }
 
@@ -1787,6 +1816,8 @@ function showRewardedAd(rewardType) {
 	// Game Start
 	function startGame() {
 		if (!menuScreen) return;
+		hasUserStartedGame = true;
+		gameSessionStartedAt = Date.now();
 		menuScreen.classList.add('hidden');
 		syncBannerForScreen('game');
 		syncGameplayState();

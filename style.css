@@ -848,12 +848,18 @@ button:focus-visible,
 	z-index:2000;
 }
 
+.settings-modal .menu-frame{
+	justify-content:center;
+	width:100%;
+}
+
 .settings-card{
 	background:var(--card);
 	border:1px solid var(--glass);
 	border-radius:var(--radius);
 	box-shadow:var(--shadow);
 	padding:30px 40px;
+	width:min(420px, 100%);
 	max-width:420px;
 	max-height:calc(var(--app-height, 100svh) - 24px);
 	overflow-y:auto;
@@ -1320,6 +1326,7 @@ body.light_theme .primary-btn{
 @media (max-width: 420px){
 	.settings-card{
 		padding:22px 18px;
+		width:min(92vw, 420px);
 		max-width:92vw;
 	}
 
@@ -1329,10 +1336,14 @@ body.light_theme .primary-btn{
 		width:100%;
 	}
 
-	.settings-list li{ width:100%; }
+	.settings-list li{
+		justify-content:center;
+		text-align:center;
+		width:100%;
+	}
 
 	.settings-list li:nth-child(even){
-		justify-content:start;
+		justify-content:center;
 		width:100%;
 		white-space:nowrap;
 	}
