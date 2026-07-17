@@ -1,0 +1,95 @@
+name: Bug report
+description: Сообщить о дефекте в Robo Clicker
+title: "[BUG]: "
+labels:
+  - bug
+body:
+  - type: dropdown
+    id: module
+    attributes:
+      label: Модуль
+      options:
+        - Главное меню
+        - Настройки
+        - Основной кликер
+        - Уровни
+        - Улучшения
+        - Роботы
+        - Скины
+        - Бусты
+        - Достижения
+        - Статистика
+        - Сохранение
+        - Yandex Games SDK / реклама
+        - UI / Accessibility
+    validations:
+      required: true
+  - type: textarea
+    id: preconditions
+    attributes:
+      label: Предусловия
+      placeholder: Состояние игры, баланс, язык, тема, localStorage...
+  - type: textarea
+    id: steps
+    attributes:
+      label: Шаги воспроизведения
+      placeholder: |
+        1. ...
+        2. ...
+        3. ...
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Фактический результат
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Ожидаемый результат
+    validations:
+      required: true
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severity
+      options:
+        - Blocker
+        - Critical
+        - Major
+        - Minor
+        - Trivial
+    validations:
+      required: true
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      options:
+        - High
+        - Medium
+        - Low
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Окружение
+      placeholder: Windows 11, Chrome, 1366x768, commit...
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence
+      description: Screenshot, video, Console, Network или Playwright trace
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Проверка автора
+      options:
+        - label: Дефект воспроизводится после очистки localStorage
+        - label: Проверена Console
+        - label: Проверена последняя версия main
