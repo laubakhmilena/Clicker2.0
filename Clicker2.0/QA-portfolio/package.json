@@ -4,11 +4,14 @@
   "private": true,
   "description": "QA portfolio for the Robo Clicker browser game",
   "scripts": {
+    "check": "node scripts/check-qa.js",
+    "build": "npm run check",
     "test": "playwright test",
+    "test:e2e": "playwright test",
     "test:headed": "playwright test --headed",
     "test:debug": "playwright test --debug",
     "test:report": "playwright show-report",
-    "serve": "http-server . -p 4173 -c-1"
+    "serve": "node scripts/static-server.js --port 4173"
   },
   "devDependencies": {
     "@playwright/test": "^1.55.0",

@@ -8,14 +8,16 @@ async function resetState(page) {
 }
 
 async function seedState(page, state) {
-  await page.goto('/');
-  await page.evaluate((entries) => {
+  const seededPage = await page.context().newPage();
+  await seededPage.addInitScript((entries) => {
     localStorage.clear();
     Object.entries(entries).forEach(([key, value]) => {
       localStorage.setItem(key, typeof value === 'string' ? value : JSON.stringify(value));
     });
   }, state);
-  await page.reload();
+  await seededPage.goto('/');
+  await page.close();
+  return seededPage;
 }
 
 async function startGame(page) {
@@ -100,40 +102,40 @@ test.describe('Robo Clicker smoke and regression', () => {
   });
 
   test('buys a click upgrade at the boundary value', async ({ page }) => {
-    await seedState(page, { coins: '85', clickPower: '1', clickUpgradePrice: '85' });
-    await startGame(page);
-    await expect(page.locator('#btn-upgrade-click')).toBeEnabled();
-    await page.locator('#btn-upgrade-click').click();
-    await expect(page.locator('#score')).toHaveText('0');
-    await expect(page.locator('#click-power-val')).toHaveText('2');
+    const seededPage = await seedState(page, { coins: '85', clickPower: '1', clickUpgradePrice: '85' });
+    await startGame(seededPage);
+    await expect(seededPage.locator('#btn-upgrade-click')).toBeEnabled();
+    await seededPage.locator('#btn-upgrade-click').click();
+    await expect(seededPage.locator('#score')).toHaveText('0');
+    await expect(seededPage.locator('#click-power-val')).toHaveText('2');
   });
 
   test('buys a robot and receives automatic income', async ({ page }) => {
-    await seedState(page, { coins: '200', robotPrice: '200', robotCount: '0', robotIncomePerSecond: '0' });
-    await startGame(page);
-    await page.locator('#btn-auto-bot').click();
-    await expect(page.locator('#robot-info')).toContainText('1 куплено');
-    await expect.poll(async () => Number(await page.locator('#score').innerText()), { timeout: 2500 }).toBeGreaterThanOrEqual(1);
+    const seededPage = await seedState(page, { coins: '200', robotPrice: '200', robotCount: '0', robotIncomePerSecond: '0' });
+    await startGame(seededPage);
+    await seededPage.locator('#btn-auto-bot').click();
+    await expect(seededPage.locator('#robot-info')).toContainText('1 куплено');
+    await expect.poll(async () => Number(await seededPage.locator('#score').innerText()), { timeout: 2500 }).toBeGreaterThanOrEqual(1);
   });
 
   test('buys and equips a skin', async ({ page }) => {
-    await seedState(page, { coins: '800', skinsOwned: '[1]', skinSelected: '1' });
-    await startGame(page);
-    await page.locator('#btn-skins').click();
-    await expect(page.locator('.skin-card')).toHaveCount(16);
-    await page.locator('[data-skin-id="2"]').click();
-    await expect(page.locator('#score')).toHaveText('0');
-    await expect(page.locator('#click-object')).toHaveText('🔧');
+    const seededPage = await seedState(page, { coins: '800', skinsOwned: '[1]', skinSelected: '1' });
+    await startGame(seededPage);
+    await seededPage.locator('#btn-skins').click();
+    await expect(seededPage.locator('.skin-card')).toHaveCount(16);
+    await seededPage.locator('[data-skin-id="2"]').click();
+    await expect(seededPage.locator('#score')).toHaveText('0');
+    await expect(seededPage.locator('#click-object')).toHaveText('🔧');
   });
 
   test('buys a temporary boost and shows it as active', async ({ page }) => {
-    await seedState(page, { coins: '300' });
-    await startGame(page);
-    await page.locator('#btn-boosts').click();
-    await page.locator('[data-boost-id="neon_overdrive"]').click();
-    await expect(page.locator('#score')).toHaveText('0');
-    await expect(page.locator('#boosts-active-list')).toContainText(/Неоновый разгон|Neon Overdrive/);
-    await expect(page.locator('[data-boost-id="neon_overdrive"]')).toBeDisabled();
+    const seededPage = await seedState(page, { coins: '300' });
+    await startGame(seededPage);
+    await seededPage.locator('#btn-boosts').click();
+    await seededPage.locator('[data-boost-id="neon_overdrive"]').click();
+    await expect(seededPage.locator('#score')).toHaveText('0');
+    await expect(seededPage.locator('#boosts-active-list')).toContainText(/Неоновый разгон|Neon Overdrive/);
+    await expect(seededPage.locator('[data-boost-id="neon_overdrive"]')).toBeDisabled();
   });
 
   test('opens achievements and renders achievement series', async ({ page }) => {

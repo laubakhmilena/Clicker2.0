@@ -53,6 +53,8 @@ Playwright-набор покрывает загрузку, локальный fa
 
 Требуются Node.js 20+ и npm.
 
+Команды ниже выполняются из каталога `Clicker2.0/QA-portfolio`. Игровые файлы находятся на уровень выше; Playwright настроен запускать сервер именно для этого каталога приложения.
+
 ```bash
 npm install
 npx playwright install chromium
