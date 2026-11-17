@@ -2,7 +2,7 @@
 
 Учебный проект для портфолио **специалиста по тестированию**. Объект тестирования — браузерная clicker-игра на HTML, CSS и JavaScript с локальным сохранением и интеграцией Yandex Games SDK.
 
-Репозиторий дополнен полноценным набором QA-артефактов, UI-автотестами Playwright, GitHub Actions и Excel-книгой для ведения проверок.
+Здесь хранятся QA-документация, UI-автотесты Playwright, Excel-книга и шаблоны GitHub Actions и Issues. Вложенная папка `.github/` не подключает эти шаблоны автоматически на уровне репозитория.
 
 ## Возможности приложения
 
@@ -32,7 +32,7 @@
 | [Excel QA workbook](qa/Robo_Clicker_QA.xlsx) | Листы «Чек-лист», «Баг-репорты», «Общие сведения» |
 | [UI-автотесты](tests/e2e/clicker.spec.js) | Smoke и regression-набор Playwright |
 | [Шаблон дефекта](.github/ISSUE_TEMPLATE/bug_report.yml) | Стандартизированная форма GitHub Issues |
-| [GitHub Actions](.github/workflows/e2e.yml) | Автоматический запуск тестов в CI |
+| [Шаблон GitHub Actions](.github/workflows/e2e.yml) | Конфигурация CI, сохранённая внутри QA-пакета |
 
 ## Тест-дизайн
 
@@ -56,7 +56,7 @@ Playwright-набор покрывает загрузку, локальный fa
 Команды ниже выполняются из каталога `Clicker2.0/QA-portfolio`. Игровые файлы находятся на уровень выше; Playwright настроен запускать сервер именно для этого каталога приложения.
 
 ```bash
-npm install
+npm ci
 npx playwright install chromium
 ```
 
@@ -87,12 +87,6 @@ npm run test:report
 │   ├── TEST_SUMMARY.md
 │   └── TRACEABILITY_MATRIX.md
 ├── tests/e2e/clicker.spec.js
-├── click.wav
-├── menu.wav
-├── start.wav
-├── index.html
-├── script.js
-├── style.css
 ├── roadmap.md
 ├── package.json
 ├── playwright.config.js
